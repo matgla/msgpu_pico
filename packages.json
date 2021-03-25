@@ -1,0 +1,43 @@
+
+{
+    "dependencies": [
+        {
+            "link": "https://github.com/raspberrypi/pico-sdk.git",
+            "type": "git",
+            "version": "1.1.0",
+            "directory": "pico-sdk",
+            "target": "pico-sdk",
+            "options": {
+                "update_submodules": true,
+                "is_cmake_library": true
+            }
+        },
+        { 
+            "link": "https://github.com/raspberrypi/pico-extras.git",
+            "type": "git",
+            "version": "master",
+            "directory": "pico-extras",
+            "target": "pico-extras",
+            "options": {
+                "update_submodules": true,
+                "is_cmake_library": true
+            }
+
+        },
+        {
+            "name": "eul",
+            "link": "https://github.com/matgla/EmbeddedUtilityLibraries.git",
+            "type": "git",
+            "version": "master",
+            "directory": "eul",
+            "target": "eul",
+            "options": {
+                "cmake_variables": {
+                    "DISABLE_TESTS": "ON",
+                    "DISABLE_SANITIZERS": "ON"
+                }
+            }
+        }
+    ]
+}
+
