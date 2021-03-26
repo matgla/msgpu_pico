@@ -30,15 +30,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(mspkg)
 
+set (PICO_COPY_TO_RAM ON)
+
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${mspkg_SOURCE_DIR}/cmake)
 include (mspkg)
 
 setup_mspkg(${mspkg_SOURCE_DIR})
 
 find_package(pico-sdk REQUIRED)
-
-#set (PICO_COPY_TO_RAM ON CACHE INTERNAL "")
-add_definitions(-DPICO_TIME_DEFAULT_ALARM_POOL_DISABLED=1)
 
 include (cmake/preload/toolchains/pico_arm_gcc)
 

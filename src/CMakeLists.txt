@@ -26,11 +26,24 @@ add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=12
 )
 target_sources(msgpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp )
 
+find_package(msgui REQUIRED)
+
+add_subdirectory(interfaces)
+add_subdirectory(generator)
+add_subdirectory(memory)
+add_subdirectory(modes)
+add_subdirectory(processor)
+
 target_link_libraries(msgpu
     PUBLIC  
         pico_stdlib
         pico_scanvideo_dpi
         pico_multicore
+        msgui
+        msgpu_generator
+        msgpu_interfaces 
+        msgpu_modes 
+        msgpu_processor
 )
 
 pico_enable_stdio_usb(msgpu 1)

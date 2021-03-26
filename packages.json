@@ -37,6 +37,20 @@
                     "DISABLE_SANITIZERS": "ON"
                 }
             }
+        },
+        {
+            "name": "msgui",
+            "link": "https://github.com/matgla/MsGui.git",
+            "type": "git",
+            "version": "master",
+            "directory": "msgui",
+            "target": "msgui",
+            "options": {
+                "cmake_variables": {
+                    "DISABLE_TESTS": "ON",
+                    "DISABLE_SANITIZERS": "ON"
+                }
+            }
         }
     ]
 }

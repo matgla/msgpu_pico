@@ -15,8 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cstdio> 
+#include <cstring> 
 
-#define PICO_SCANVIDEO_COLOR_PIN_COUNT 12
+#include <unistd.h>
 
 #include <pico.h> 
 #include <pico/scanvideo.h>
@@ -24,6 +25,11 @@
 #include <pico/multicore.h>
 #include <pico/sync.h> 
 #include <pico/stdlib.h>
+#include <hardware/clocks.h>
+#include <hardware/structs/vreg_and_chip_reset.h>
+
+#include "processor/command_processor.hpp"
+#include "processor/human_interface.hpp"
 
 #define DUAL_CORE_RENDER
 #define VGA_MODE vga_mode_640x480_60
@@ -37,6 +43,8 @@ static struct mutex frame_logic_mutex;
 
 static void frame_update_logic();
 static void render_scanline(struct scanvideo_scanline_buffer* dest, int core);
+
+vga::Mode* global_mode;
 
 void render_loop()
 {
@@ -67,8 +75,14 @@ void render_loop()
 
 struct semaphore video_setup_complete;
 
+void clear_buffer()
+{
+}
+
+int x = 0, y = 0;
 void frame_update_logic() 
 {
+    clear_buffer();
 }
 
 #define MIN_COLOR_RUN 3
@@ -112,11 +126,36 @@ void draw_line(struct scanvideo_scanline_buffer* buffer, uint16_t color)
     buffer->status = SCANLINE_OK;
 }
 
+static inline uint16_t* raw_scanline_prepare(scanvideo_scanline_buffer* dest, uint width)
+{
+    dest->data[0] = COMPOSABLE_RAW_RUN | (width + 1 - 3 << 16);
+    dest->data[width / 2 + 2] = 0x0000u | (COMPOSABLE_EOL_ALIGN << 16);
+    dest->data_used = width / 2 + 2;
+    return (uint16_t*) &dest->data[1];
+}
+
+static inline void raw_scanline_finish(scanvideo_scanline_buffer* dest)
+{
+    uint32_t first = dest->data[0];
+    uint32_t second = dest->data[1];
+
+    dest->data[0] = (first & 0x0000ffffu) | ((second & 0x0000ffffu) << 16);
+    dest->data[1] = (second & 0xffff0000u) | ((first & 0xffff0000u) >> 16);
+    dest->status = SCANLINE_OK;
+}
+
+
 void render_scanline(struct scanvideo_scanline_buffer* dest, int core)
 {
-    color = 0xfff;
-    
-    draw_line(dest, 0x0001);
+    uint16_t* color_buffer = raw_scanline_prepare(dest, VGA_MODE.width);
+
+    int l = scanvideo_scanline_number(dest->scanline_id);
+    if (global_mode)
+    {
+        global_mode->fill_scanline(std::span<uint16_t>(color_buffer, VGA_MODE.width), l);
+    }
+
+    raw_scanline_finish(dest);
 }
 
 void core1_func() 
@@ -138,18 +177,31 @@ int vga_main()
     scanvideo_timing_enable(true);
 
     sem_release(&video_setup_complete);
-    render_loop();
+//    render_loop();
     return 0;
 }
 
 int main() 
 {
-//    #if PICO_SCANVIDEO_48MHz
-//        set_sys_clock_48mhz();
-//    #endif 
+    set_sys_clock_khz(200000, true);
+     stdio_init_all();
+    
+    vga::Vga vga(&VGA_MODE);
+    vga::Mode mode(vga);
+    mode.switch_to(vga::Modes::Text_80x25);
+    global_mode = &mode; 
+    processor::CommandProcessor processor(mode);
+    processor.change();
+    
+    vga_main();
 
-    stdio_init_all();
-    return vga_main();
-
+    while (true)
+    {
+        uint8_t byte; 
+        read(STDIN_FILENO, &byte, sizeof(uint8_t));
+        uint8_t t = 'c';
+        write(STDOUT_FILENO, &t, sizeof(uint8_t)); 
+        processor.process(byte);
+    }
 } 
 
