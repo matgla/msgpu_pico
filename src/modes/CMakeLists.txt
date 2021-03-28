@@ -18,25 +18,14 @@ add_library(msgpu_modes)
 
 target_sources(msgpu_modes
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/buffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/colors.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/80x25.hpp
 
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_480_6bit.hpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.cpp
-
-
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_256.s
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.s
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_400_o.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_480_6bit.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/draw/draw_480_6bit.s
-
-        ${CMAKE_CURRENT_SOURCE_DIR}/text/80x25.cpp
-
 )
 
 target_link_libraries(msgpu_modes

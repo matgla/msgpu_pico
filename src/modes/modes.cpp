@@ -43,7 +43,7 @@ void Mode::switch_to(const Modes mode)
     {
         case Modes::Text_80x25:
         {
-            mode_ = modes::text::Mode80x25(vga_);
+            mode_ = Text_80x25_16_5x7(vga_);
         } break;
     }
 }
@@ -55,10 +55,10 @@ void Mode::render()
     }, mode_);
 }
 
-void Mode::fill_scanline(std::span<uint16_t> line, std::size_t line_number)
+std::size_t Mode::fill_scanline(std::span<uint32_t> line, std::size_t line_number)
 {
-    std::visit([line, line_number](auto&& mode) {
-        mode.fill_scanline(line, line_number);
+    return std::visit([line, line_number](auto&& mode) ->std::size_t {
+        return mode.fill_scanline(line, line_number);
     }, mode_);
 }
 
@@ -139,6 +139,13 @@ void Mode::set_color(int foreground, int background)
         {
             mode.set_color(foreground, background);
         }
+    }, mode_);
+}
+
+std::span<uint16_t> Mode::get_line(std::size_t line) 
+{
+    return std::visit([line](auto&& mode) -> std::span<uint16_t> {
+        return mode.get_line(line);
     }, mode_);
 }
 

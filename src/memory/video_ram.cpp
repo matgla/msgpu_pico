@@ -16,8 +16,8 @@
 
 #include "memory/video_ram.hpp"
 
+#include <cstdio>
+
 namespace vga
 {
-    static uint32_t memory[vga::video_ram_size / sizeof(uint32_t)];
-    uint32_t* video_ram = memory;
 }

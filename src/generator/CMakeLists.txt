@@ -28,7 +28,7 @@ target_sources(msgpu_generator
 target_link_libraries(msgpu_generator 
     PRIVATE 
         msgui
-    PUBLIC
+    PUBLIC 
         pico_multicore
         pico_stdlib
         pico_scanvideo_dpi

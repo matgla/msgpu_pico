@@ -20,7 +20,11 @@
 #include <span>
 
 #include "generator/vga.hpp"
+
+#include "modes/text/text_mode.hpp"
 #include "modes/text/80x25.hpp"
+
+#include <msgui/fonts/Font5x7.hpp>
 
 namespace vga
 {
@@ -41,8 +45,14 @@ public:
     {
     }
 
-    void fill_scanline(std::span<uint16_t> line, std::size_t line_number)
+    std::size_t fill_scanline(std::span<uint32_t> line, std::size_t line_number)
     {
+        return 0;
+    }
+
+    std::span<uint16_t> get_line(std::size_t line)
+    {
+        return std::span<uint16_t>{};
     }
 };
 
@@ -50,6 +60,9 @@ class Mode
 {
 public:
     Mode(vga::Vga& vga);
+
+    using Text_80x25_16_5x7 = modes::text::TextMode<
+        modes::text::Text_80x25_16color<msgui::fonts::Font5x7>>;
 
     void switch_to(const Modes mode);
     void render();
@@ -61,11 +74,10 @@ public:
     void set_foreground_color(int foreground);
     void set_background_color(int background);
     void set_color(int foreground, int background);
-    void fill_scanline(std::span<uint16_t> line, std::size_t line_number);
+    std::size_t fill_scanline(std::span<uint32_t> line, std::size_t line_number);
+    std::span<uint16_t> get_line(std::size_t line);
 private:
-    std::variant<None
-        , vga::modes::text::Mode80x25
-        > mode_;
+    std::variant<None, Text_80x25_16_5x7> mode_;
 
     Vga& vga_;
 };

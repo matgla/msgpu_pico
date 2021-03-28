@@ -31,16 +31,14 @@ class Vga
 public:
     Vga(const scanvideo_mode_t* mode);
     
-    struct Config
-    {
-    };
-   
+    void change_mode(const scanvideo_mode_t* mode);
 
-    void setup(const Config& config);
+    void setup();
     bool is_vsync() const;
     bool render() const;
     void render(bool enable);
 
+    std::size_t get_width() const;
 private:
     const scanvideo_mode_t* mode_;
 };

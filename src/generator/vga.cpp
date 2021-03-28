@@ -18,6 +18,9 @@
 
 #include <cstring>
 
+#include <pico/scanvideo.h>
+#include <hardware/dma.h>
+
 #include "memory/video_ram.hpp"
 
 namespace vga
@@ -26,10 +29,24 @@ namespace vga
 Vga::Vga(const scanvideo_mode_t* mode)
     : mode_(mode)
 {
+    scanvideo_setup(mode_);
+    scanvideo_timing_enable(true);
 }
 
-void Vga::setup(const Config& c)
+void Vga::setup()
 {
+    return; 
+    dma_channel_unclaim(0);
+    //dma_set_irq0_channel_mask_enabled(1, false);
+    //dma_channel_unclaim(0);
+    pio_clear_instruction_memory(pio0);
+    scanvideo_setup(mode_);
+    scanvideo_timing_enable(true);
+}
+
+void Vga::change_mode(const scanvideo_mode_t* mode)
+{
+    mode_ = mode;
 }
 
 bool Vga::is_vsync() const
@@ -44,6 +61,11 @@ bool Vga::render() const
 
 void Vga::render(bool enable)
 {
+}
+
+std::size_t Vga::get_width() const
+{
+    return mode_->width;
 }
 
 } // namespace vga

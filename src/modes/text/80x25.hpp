@@ -16,15 +16,9 @@
 
 #pragma once
 
-#include <span>
+#include <cstddef>
 
-#include <msgui/fonts/Font5x7.hpp>
-
-#include <msgui/Position.hpp>
-
-#include "generator/vga.hpp"
-
-#include "modes/types.hpp"
+#include <pico/scanvideo.h>
 
 namespace vga
 {
@@ -33,69 +27,13 @@ namespace modes
 namespace text
 {
 
-class Mode80x25
+template <typename Font>
+struct Text_80x25_16color
 {
-public:
-    using type = Text;
-
-    Mode80x25(Vga& vga);
-
-    constexpr static int get_height()
-    {
-        return 25;
-    }
-
-    constexpr static int get_width()
-    {
-        return 80;
-    }
-
-    void write(uint8_t row, uint8_t column, char c);
-    void write(const char c);
-
-    void render_test_box();
-    void render();
-
-    void move_cursor(int row_offset, int column_offset);
-
-    void set_cursor_row(int row);
-    void set_cursor_column(int column);
-    void set_cursor(int row, int column);
-    void set_foreground_color(int foreground);
-    void set_background_color(int background);
-    void set_color(int foreground, int background);
-
-    void fill_scanline(std::span<uint16_t> line, std::size_t line_number);
-private:
-    void set_pixel(msgui::Position position, int color);
-    void render_font(const auto& bitmap, const int row, const int column, const int foreground, const int background);
-
-    void clear_text_buffer();
-    void clear_changed_bitmap(); 
-
-    void add_pixel_to_render(int row, int column);
-    void set_attribute(int row, int column, int attribute);
-    uint16_t get_attribute(int row, int column) const;
-
-    void render_screen();
-    void render_cursor();
-
-    char get_character(int row, int column) const;
-    char *text_buffer_;
-    uint8_t* changed_bitmap_;
-    uint16_t* attributes_;
-
-    int foreground_ = 63;
-    int background_ = 0;
-
-    uint8_t cursor_row_{0};
-    uint8_t cursor_column_{0};
-
-    bool draw_cursor_{false};
-    bool cursor_visible_{false};
-
-    constexpr static uint16_t time_to_blink_default = 30;
-    uint16_t time_to_blink_{time_to_blink_default};
+    constexpr static std::size_t width = 80;
+    constexpr static std::size_t height = 25;
+    constexpr static std::size_t bits_per_pixel = 4; 
+    const static inline scanvideo_mode_t* mode = &vga_mode_640x480_60;
 };
 
 } // namespace text

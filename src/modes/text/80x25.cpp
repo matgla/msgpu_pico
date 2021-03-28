@@ -19,8 +19,6 @@
 #include <cstring>
 #include <cstdio>
 
-#include "modes/draw/draw_480_6bit.hpp"
-
 #include "memory/video_ram.hpp"
 
 #include <msgui/fonts/Font5x7.hpp>
@@ -58,7 +56,6 @@ struct Configuration
     constexpr static int text_buffer_size = width * height;
     constexpr static int attributes_size = width * height * 2;
     constexpr static int delta_bitmap_size = width * height / 8;
-    constexpr static auto draw_function = &draw_480_6bit_wrapper;
 };
 
 constexpr static Configuration<msgui::fonts::Font5x7, 80, 25> configuration;
@@ -67,46 +64,40 @@ constexpr static Configuration<msgui::fonts::Font5x7, 80, 25> configuration;
 
 void Mode80x25::fill_scanline(std::span<uint16_t> line, std::size_t line_number)
 {
-    std::memset(line.data(), 0, line.size() * sizeof(uint16_t));
+
+   // std::memset(line.data(), 0, line.size() * sizeof(uint16_t));
+    //if (line_number < 140)
+    //{
+    //    std::memset(line.data(), 0xff, 8 * sizeof(uint16_t));
+    //    std::memset(line.data() + 8, 0, 72 * sizeof(uint16_t));
+    //    std::memcpy(line.data() + 80, 0, 480 * sizeof(uint16_t));
+    //    std::memset(line.data() + 560, 0xff, 8 * sizeof(uint16_t));
+    //    std::memset(line.data() + 568, 0, 72 * sizeof(uint16_t));
+    //}
+    //else if (line_number > 340)
+    //{
+    //    std::memset(line.data(), 0xff, 8 * sizeof(uint16_t));
+    //    std::memset(line.data() + 8, 0, 72 * sizeof(uint16_t));
+    //    std::memset(line.data() + 560, 0xff, 8 * sizeof(uint16_t));
+    //    std::memset(line.data() + 568, 0, 72 * sizeof(uint16_t));
  
-    std::size_t text_line = line_number / configuration.font.height(); 
-
-    std::size_t bx = 0;
-    if (text_line > get_height())
-    {
-        return;
-    }
-    for (int i = 0; i < 10; ++i)
-    {
-        char c = get_character(text_line, i);
-        const auto& f = configuration.font.get(c);
-        for (int x = 0; x < configuration.character_width - 1; ++x) 
-        {
-            if (f.getPixel(x, line_number % 7) == 1)
-            {
-                line[bx] = 0xfff; 
-            }
-            else
-            {
-                //line[bx] = 0;
-            }
-            ++bx;
-        }
-    }
-
+    //}
+    //else 
+    //{
+    //    std::memset(line.data(), 0xff, 8 * sizeof(uint16_t));
+    //    std::memset(line.data() + 8, 0, 72 * sizeof(uint16_t));
+    //    //std::memcpy(line.data() + 80, video_buffer_[line_number], sizeof(video_buffer_[line_number]));
+    //    std::memset(line.data() + 560, 0xff, 8 * sizeof(uint16_t));
+    //    std::memset(line.data() + 568, 0, 72 * sizeof(uint16_t));
+    //}
 }
 
 Mode80x25::Mode80x25(vga::Vga& vga)
-    : text_buffer_(reinterpret_cast<char*>(video_ram) 
-        + configuration.video_ram_size)
-    , changed_bitmap_(reinterpret_cast<uint8_t*>(text_buffer_) 
-        + configuration.text_buffer_size)
-    , attributes_(reinterpret_cast<uint16_t*>(changed_bitmap_ + configuration.delta_bitmap_size))
 {
-    render_test_box();
-
-    clear_changed_bitmap();
-    clear_text_buffer();
+   // std::memset(video_buffer_, 0xf0, 480*200*sizeof(uint16_t));
+    //render_test_box();
+  //  clear_changed_bitmap();
+  //  clear_text_buffer();
 }
 
 void Mode80x25::move_cursor(int row_offset, int column_offset)
@@ -154,12 +145,15 @@ void Mode80x25::set_cursor(int row, int column)
 
 void Mode80x25::render_test_box()
 {
-    for (int i = 0; i < configuration.resolution_width; ++i)
+    for (int i = 0; i < 320; ++i)//configuration.resolution_width; ++i)
     {
-        set_pixel({.x = i, .y = 0}, 15);
-        set_pixel({.x = 0, .y = i % configuration.resolution_height}, 20);
-        set_pixel({.x = configuration.resolution_width - 1, .y = i % configuration.resolution_height}, 17);
-        set_pixel({.x = i, .y = configuration.resolution_height - 1}, 18);
+        set_pixel({.x = i, .y = 0}, 0xfff);
+        set_pixel({.x = i, .y = 240 - 1}, 0xfff);
+    }
+    for (int i = 0; i < 240; ++i)
+    {
+        set_pixel({.x = 0, .y = i}, 0xfff);
+        set_pixel({.x = 319, .y = i}, 0xfff);
     }
 }
 
@@ -214,6 +208,7 @@ void Mode80x25::set_color(int foreground, int background)
 
 void Mode80x25::render()
 {
+    return;
     --time_to_blink_;
     
     render_screen();
@@ -228,18 +223,21 @@ void Mode80x25::render()
 
 void Mode80x25::set_pixel(msgui::Position position, int color)
 {
-    const int pixel_slot = position.y * configuration.resolution_width / 5 + position.x / 5; // 5 pixels in uint32_t
-    constexpr int bits_per_pixel = 6;
-    constexpr int pixels_in_4bytes = 5;
-    const int offset = bits_per_pixel * (position.x % pixels_in_4bytes);
-    video_ram[pixel_slot] &= ~(0x3f << offset);
-    video_ram[pixel_slot] |= (color << offset);
+    const int pixel_slot = position.y * 320 + position.x; 
+
+
+    if (position.x >= 480 || position.y >= 200)
+    {
+        return;
+    }
+    video_buffer_[position.y][position.x] = color;
 }
 
 void Mode80x25::render_font(const auto& bitmap, 
     const int row, const int column, 
     const int foreground, const int background)
 {
+    return;
     constexpr int height = configuration.character_height - 1;
     constexpr int width = configuration.character_width - 1;
     for (int y = 0; y < height; ++y)
@@ -373,6 +371,14 @@ char Mode80x25::get_character(int row, int column) const
     return text_buffer_[row * get_width() + column];
 }
 
+std::span<uint16_t> Mode80x25::get_line(std::size_t line)
+{
+    if (line < 200) 
+    {
+        //return std::span<uint16_t>(video_buffer_[line], sizeof(video_buffer_[line]));
+    }
+    return std::span<uint16_t>{};
+}
 
 } // namespace text
 } // namespace modes
