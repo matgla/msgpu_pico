@@ -20,6 +20,4 @@
 
 namespace vga
 {
-    constexpr uint32_t video_ram_size = 200 * 1024;
-    extern uint32_t* video_ram;
 } // namespace vga

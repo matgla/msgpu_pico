@@ -21,6 +21,8 @@
 
 #include <array>
 
+namespace vga 
+{
 namespace modes 
 {
 namespace details
@@ -122,9 +124,17 @@ template <std::size_t width, std::size_t bits_per_pixel>
 class LineBuffer
 {
     using T = details::get_underlaying_type<details::get_type_id<bits_per_pixel>()>::type;
+
+    using SelfType = LineBuffer<width, bits_per_pixel>;
+
     constexpr static std::size_t pixels_in_type = details::pixels_in_type<bits_per_pixel, T>();
+    
+    using DataType = std::array<T, details::get_size<width, bits_per_pixel, T>()>;
 public:
+
+    using PixelType = T;
     constexpr static T mask = details::get_mask<bits_per_pixel>();
+
     type_wrapper<T> operator[](std::size_t index)
     {
         const T offset = (index % pixels_in_type) * bits_per_pixel;
@@ -137,8 +147,63 @@ public:
         return wrapper;
     }
 
+    struct iterator 
+    {
+        iterator(std::size_t pos, SelfType& self) 
+            : pos_(pos)
+            , self_(self)
+        {
+        }
+
+        iterator operator++(int) 
+        {
+            iterator prev = *this; 
+            pos_ += 1; 
+            return prev;
+        }
+        
+        iterator& operator++()
+        {
+            ++pos_;
+            return *this;
+        }
+
+        type_wrapper<T> operator*()
+        {
+            return self_[pos_]; 
+        }
+
+        bool operator==(const iterator& it) const
+        {
+            return it.pos_ == pos_; 
+        }
+
+        bool operator!=(const iterator& it) const 
+        {
+            return it.pos_ != pos_;
+        }
+
+        private:
+            std::size_t pos_;
+            SelfType& self_;
+    };
+
+    iterator begin() 
+    {
+        return iterator(0, *this);
+    }
+
+    iterator end()
+    {
+        return iterator(width, *this);
+    }
+
+    void clear()
+    {
+        buf.fill(0);
+    }
 private:
-    T buf[details::get_size<width, bits_per_pixel, T>()];
+    DataType buf;
 };
 
 template <std::size_t width, std::size_t height, std::size_t bits_per_pixel>
@@ -146,13 +211,25 @@ class Buffer
 {
 public: 
     using LineType = LineBuffer<width, bits_per_pixel>;
-   
+    using PixelType = LineType::PixelType;
+
     LineType& operator[](const std::size_t index) 
     {
         return buffer_[index];
     }
+
+    void clear()
+    {
+        for (auto& line : buffer_)
+        {
+            line.clear();
+        }
+    }
+    constexpr static std::size_t color_depth = details::get_mask<bits_per_pixel>();
 private:
-    LineType buffer_[height];
+    std::array<LineType, height> buffer_;
 };
+
 } // namespace modes
+} // namespace vga 
 

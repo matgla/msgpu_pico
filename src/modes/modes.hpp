@@ -78,7 +78,6 @@ public:
     std::span<uint16_t> get_line(std::size_t line);
 private:
     std::variant<None, Text_80x25_16_5x7> mode_;
-
     Vga& vga_;
 };
 
