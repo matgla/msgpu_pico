@@ -20,4 +20,9 @@
 
 namespace vga
 {
+
+//static uint32_t video_memory[video_ram_size / sizeof(uint32_t)];
+
+//std::span<uint32_t> video_memory{video_memory};
+
 }

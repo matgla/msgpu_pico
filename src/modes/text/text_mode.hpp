@@ -29,6 +29,7 @@
 #include "modes/buffer.hpp"
 
 #include <pico/sync.h>
+#include <pico/time.h>
 
 namespace vga
 {
@@ -44,6 +45,9 @@ public:
     using type = Text;
 
     TextMode(Vga& vga)
+        : cursor_(0, 0)
+        , foreground_(Configuration::Color::white)
+        , background_(Configuration::Color::black)
     {
         buffer_.clear();
         vga.change_mode(Configuration::mode);
@@ -64,21 +68,45 @@ public:
     // CURSOR 
     void move_cursor(int row, int column)
     {
+        if (row + cursor_.y >= Configuration::resolution_height || row + cursor_.y < 0) 
+        {
+            return;
+        }
+    
+        if (column + cursor_.x >= Configuration::resolution_width || column + cursor_.x < 0)
+        {
+            return;
+        }
+        
+        msgui::Position previous_position = cursor_;
+        cursor_.x += column * Configuration::font::width; 
+        cursor_.y += row * Configuration::font::height;
+        render_font(previous_position, text_buffer_[previous_position.y][previous_position.x], foreground_, background_);
     }
+
+
 
     void set_cursor(int row, int column)
     {
-
+        set_cursor_row(row);
+        set_cursor_column(column);
     }
 
     void set_cursor_column(int column)
     {
-
+        if (column >= 0 && column <= Configuration::resolution_width)
+        {
+            cursor_.x = column;
+        }
     }
    
     void set_cursor_row(int row)
     {
-
+        if (row >= 0 && row <= Configuration::resolution_height)
+        {
+            cursor_.y = row;
+        }
+ 
     }
     // PIXEL MANAGEMENT 
     void set_color(int foreground, int background)
@@ -96,47 +124,66 @@ public:
 
     void write(char c)
     {
-
+        write(cursor_, c);   
     }
 
+    void write(const msgui::Position cursor, char c)
+    {
+        if (cursor.y >= Configuration::resolution_height || cursor.x >= Configuration::resolution_width)
+        {
+            return;
+        }
+
+        cursor_.x = cursor.x + Configuration::font::width;
+        cursor_.y = cursor.y;
+
+        if (cursor_.x >= Configuration::resolution_width)
+        {
+            cursor_.x = 0;
+            cursor_.y += Configuration::font::height;
+        }
+
+        if (cursor_.y >= Configuration::resolution_height)
+        {
+            cursor_.y = 0;
+        }
+
+        //text_buffer_[cursor_.y][cursor_.x] = c;
+        render_font(cursor, c, foreground_, background_);
+        //add_character_to_render(cursor);
+    }
     // BUFFER MANAGEMENT
+    
+    void add_character_to_render(const msgui::Position& pos)
+    {
+        delta_[pos.y][pos.x] = 1;
+    }
+
     std::span<uint16_t> get_line(const std::size_t line) const
     {
         return std::span<uint16_t>();
     }
 
-    void copy_line_to_buffer(std::size_t line_number, std::size_t next_line_id)
+    void __time_critical_func(copy_line_to_buffer)(std::size_t line_number, std::size_t next_line_id)
     {
-   //     if(line_number % 3 == 0)
-   //     {
-   //         line_number = 226;
-   //     }
-   //     else if (line_number % 3 == 1)
-   //     {
-   //         line_number = 227;
-   //     }
-   //     else 
-   //     {
-   //         line_number = 228;
-   //     }
-
         if (line_number < Configuration::resolution_height)
         {
-            std::transform(std::begin(buffer_[line_number]), std::end(buffer_[line_number]), std::begin(current_line_[next_line_id]), [line_number](const BufferType::PixelType pixel) -> uint16_t
+            const auto& line = buffer_[line_number];
+            auto& buffer_line = current_line_[next_line_id];
+            for (int i = 0; i < line.size(); ++i)
             {
-                typename BufferType::PixelType pixel_id = pixel;
-                return Configuration::color_pallete[pixel_id];
-            });
+                const typename BufferType::PixelType pixel_id = line[i];
+                const uint8_t colors = line.get(i);
+                buffer_line[i] = Configuration::color_pallete[colors & 0xf];
+                buffer_line[++i] = Configuration::color_pallete[colors >> 4]; 
+                //buffer_line[++i] = Configuration::color_pallete[colors];
+            }
 
-        }
-        else 
-        {
-            std::memset(current_line_[next_line_id], 0x00, sizeof(current_line_[next_line_id])); 
         }
  
     }
 
-    std::size_t fill_scanline(std::span<uint32_t> line, std::size_t line_number)
+    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
     {
         const uint16_t* current_line = current_line_[line_number % buffer_size];
         std::size_t next_line_id = (line_number + 1) % buffer_size; 
@@ -163,7 +210,36 @@ public:
     }
 
     // RENDERING
-   
+    void render_cursor()
+    {
+        const typename Configuration::Color fg = Configuration::Color::black;
+        render_font(cursor_, ' ', fg, cursor_color_);
+    }
+    void __time_critical_func(render_font)(const msgui::Position& position, char c,const Configuration::Color fg, const Configuration::Color bg)
+    {
+        constexpr int height = Configuration::font::height;
+        constexpr int width = Configuration::font::width;
+        const auto& bitmap = Configuration::font::data.get(c); 
+        const auto& data = bitmap.data();
+
+        for (int y = 0; y < height; ++y)
+        {
+            const uint8_t line = data[y];
+            for (int x = 0; x < width; ++x)
+            {
+                if (line & (1 <<(8 - x)))
+                {
+                    buffer_[position.y + y][position.x + x] = static_cast<uint8_t>(fg);
+                }
+                else 
+                {
+                    buffer_[position.y + y][position.x + x] = static_cast<uint8_t>(bg);
+                }
+            }
+        }
+         
+    }
+
     void render_box()
     {
         const uint16_t color = 0xf;
@@ -180,37 +256,113 @@ public:
         }
     }
 
-    void render()
+    void __time_critical_func(render_screen)()
     {
-        render_test_pattern();
+    }
+    void __time_critical_func(render)()
+    {
+   //static int i = 0; 
+        //static int x = 0;
+        //static bool is_rising = 0;
+        
+        ////test_in_ram_func();
+        //if (is_rising)
+        //{
+
+        //    if (x < 640)  
+        //    {
+        //        for (int i = 0; i < 4; ++i)
+        //        {
+        //        ++x;
+        //        for (int y = 0; y < 16; ++y)
+        //        {
+        //            buffer_[y][x] = 0; 
+        //        }
+        //        for (int y = 16; y < 32; ++y)
+        //        {
+        //            buffer_[y][x] = 1; 
+        //        }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        is_rising = false; 
+        //    }
+        //}
+        //if (!is_rising)
+        //{
+
+        //    if (x > 0)  
+        //    {
+        //        --x;
+        //        for (int y = 0; y < 16; ++y)
+        //        {
+        //            buffer_[y][x] = 1; 
+        //        }
+        //        for (int y = 16; y < 32; ++y)
+        //        {
+        //            buffer_[y][x] = 2; 
+        //        }
+
+        //    }
+        //    else
+        //    {
+        //        is_rising = true; 
+        //    }
+        //}
+
+        ++time_to_toggle_; 
+        if (time_to_toggle_ == 60)
+        {
+            time_to_toggle_ = 0; 
+            if (cursor_color_ == Configuration::Color::white)
+            {
+                cursor_color_ = Configuration::Color::black; 
+            }
+            else 
+            {
+                cursor_color_ = Configuration::Color::white;
+            }
+            render_cursor();
+        }
         copy_line_to_buffer(0, 0);
     }
+    
 
-    void render_test_pattern()
+    void __time_critical_func(render_test_pattern)(int i)
     {
-        for (int i = 0; i < 16; i++)
+        for (int y = 8 + i * 8 + 2* i; y < (i + 2) * 8 + 2* i; ++y)
         {
-            for (int x = 16; x < 64-16; ++x)
+            auto& line  = buffer_[y];
+            for (int x = 16; x < 640-16; ++x)
             {
-                for (int y = 8 + i * 8 + 2* i; y < (i + 2) * 8 + 2* i; ++y)
-                {
-                    buffer_[y][x] = i;
-                }
+                line[x] = i;
             }
-
         }
     }
 
 private:
     char text_buffer_[Configuration::height][Configuration::width];
+
+    msgui::Position cursor_;
+
     
     using BufferType = modes::Buffer<Configuration::resolution_width, Configuration::resolution_height, Configuration::bits_per_pixel>;
     BufferType buffer_;
- 
-    constexpr static std::size_t buffer_size = 4;
+
+    using DeltaBitmap = modes::Buffer<Configuration::width, Configuration::height, 8>;
+    DeltaBitmap delta_;
+    constexpr static std::size_t buffer_size = 5;
     uint16_t current_line_[buffer_size][Configuration::resolution_width];
     uint16_t current_line_id_;
+    Configuration::Color cursor_color_;
+    uint8_t time_to_toggle_;
+
+    Configuration::Color foreground_;
+    Configuration::Color background_;
 };
+
+
 
 } // namespace text
 } // namespace modes

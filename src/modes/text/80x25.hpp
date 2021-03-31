@@ -30,12 +30,32 @@ namespace text
 template <typename Font>
 struct Text_80x25_16color
 {
+    using font = Font;
     constexpr static std::size_t width = 80;
     constexpr static std::size_t height = 25;
     constexpr static std::size_t bits_per_pixel = 4; 
-    const static inline scanvideo_mode_t* mode = &vga_mode_320x240_60;
-    constexpr static std::size_t resolution_width = 320;
-    constexpr static std::size_t resolution_height = 240;
+    const static inline scanvideo_mode_t* mode = &vga_mode_640x480_60;
+    constexpr static std::size_t resolution_width = 640;
+    constexpr static std::size_t resolution_height = 480;
+    
+    enum class Color : uint8_t {
+        black = 0x0, 
+        blue = 0x1,
+        green = 0x2,
+        cyan = 0x3, 
+        red = 0x4, 
+        mageta = 0x5,
+        orange = 0x6, 
+        grey = 0x7, 
+        dark_grey = 0x8,
+        bright_blue = 0x9,
+        bright_green = 0xa, 
+        bright_cyan = 0xb, 
+        bright_red = 0xc, 
+        bright_magneta = 0xd, 
+        yellow = 0xe, 
+        white = 0xf
+    };
 
     static inline std::array<uint16_t, 16> color_pallete = {
         0x000, // black         0x00

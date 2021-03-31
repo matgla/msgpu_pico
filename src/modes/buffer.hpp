@@ -101,20 +101,35 @@ constexpr std::size_t get_size()
 template <typename Type>
 struct type_wrapper
 {
-    type_wrapper& operator=(uint8_t val)
+    type_wrapper& __time_critical_func(operator=)(uint8_t val)
     {
         *ptr &= ~(mask);
         *ptr |= (val << offset);
         return *this;  
     }
+    
 
     template <typename T>
-    operator T() const 
+    __time_critical_func(operator T()) const 
     {
         return ((*ptr) & mask) >> offset; 
     }
 
     Type* const ptr;
+    const Type mask;
+    const Type offset;
+};
+
+template <typename Type>
+struct const_type_wrapper
+{
+    template <typename T>
+    __time_critical_func(operator T()) const 
+    {
+        return ((*ptr) & mask) >> offset; 
+    }
+
+    const Type* const ptr;
     const Type mask;
     const Type offset;
 };
@@ -135,7 +150,7 @@ public:
     using PixelType = T;
     constexpr static T mask = details::get_mask<bits_per_pixel>();
 
-    type_wrapper<T> operator[](std::size_t index)
+    type_wrapper<T> __time_critical_func(operator[])(std::size_t index)
     {
         const T offset = (index % pixels_in_type) * bits_per_pixel;
         const std::size_t position = (index * bits_per_pixel) / (sizeof(T) * 8);
@@ -146,6 +161,25 @@ public:
         };
         return wrapper;
     }
+    
+    T __time_critical_func(get)(std::size_t index) const
+    {
+        const std::size_t position = (index * bits_per_pixel) / (sizeof(T) * 8);
+
+        return buf[position]; 
+    }
+    const_type_wrapper<T> __time_critical_func(operator[])(std::size_t index) const 
+    {
+        const T offset = (index % pixels_in_type) * bits_per_pixel;
+        const std::size_t position = (index * bits_per_pixel) / (sizeof(T) * 8);
+        const_type_wrapper<T> wrapper{
+            .ptr = &buf[position],
+            .mask = mask << offset,
+            .offset = offset
+        };
+        return wrapper;
+ 
+    }
 
     struct iterator 
     {
@@ -155,30 +189,35 @@ public:
         {
         }
 
-        iterator operator++(int) 
+        iterator __time_critical_func(operator++)(int) 
         {
             iterator prev = *this; 
             pos_ += 1; 
             return prev;
         }
         
-        iterator& operator++()
+        iterator& __time_critical_func(operator++)()
         {
             ++pos_;
             return *this;
         }
 
-        type_wrapper<T> operator*()
+        iterator __time_critical_func(operator-)(int decr)
+        {
+            return iterator(pos_ - decr, self_);
+        }
+
+        type_wrapper<T> __time_critical_func(operator*)()
         {
             return self_[pos_]; 
         }
 
-        bool operator==(const iterator& it) const
+        bool __time_critical_func(operator==)(const iterator& it) const
         {
             return it.pos_ == pos_; 
         }
 
-        bool operator!=(const iterator& it) const 
+        bool __time_critical_func(operator!=)(const iterator& it) const 
         {
             return it.pos_ != pos_;
         }
@@ -198,6 +237,10 @@ public:
         return iterator(width, *this);
     }
 
+    constexpr static std::size_t size()
+    {
+        return width;
+    }
     void clear()
     {
         buf.fill(0);
@@ -213,7 +256,7 @@ public:
     using LineType = LineBuffer<width, bits_per_pixel>;
     using PixelType = LineType::PixelType;
 
-    LineType& operator[](const std::size_t index) 
+    LineType& __time_critical_func(operator[])(const std::size_t index) 
     {
         return buffer_[index];
     }
@@ -225,9 +268,14 @@ public:
             line.clear();
         }
     }
+
+    constexpr static std::size_t size() 
+    {
+        return height;
+    }
     constexpr static std::size_t color_depth = details::get_mask<bits_per_pixel>();
 private:
-    std::array<LineType, height> buffer_;
+    LineType buffer_[height];
 };
 
 } // namespace modes

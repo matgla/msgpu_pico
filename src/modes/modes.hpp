@@ -11,8 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
@@ -24,7 +23,7 @@
 #include "modes/text/text_mode.hpp"
 #include "modes/text/80x25.hpp"
 
-#include <msgui/fonts/Font5x7.hpp>
+#include <msgui/fonts/Font8x16.hpp>
 
 namespace vga
 {
@@ -61,11 +60,11 @@ class Mode
 public:
     Mode(vga::Vga& vga);
 
-    using Text_80x25_16_5x7 = modes::text::TextMode<
-        modes::text::Text_80x25_16color<msgui::fonts::Font5x7>>;
+    using Text_80x25_16_8x16 = modes::text::TextMode<
+        modes::text::Text_80x25_16color<msgui::fonts::Font8x16>>;
 
     void switch_to(const Modes mode);
-    void render();
+    void __time_critical_func(render)();
     void write(char c);
     void move_cursor(int row, int column);
     void set_cursor(int row, int column);
@@ -74,11 +73,18 @@ public:
     void set_foreground_color(int foreground);
     void set_background_color(int background);
     void set_color(int foreground, int background);
-    std::size_t fill_scanline(std::span<uint32_t> line, std::size_t line_number);
+    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number);
     std::span<uint16_t> get_line(std::size_t line);
+    
+    using VariantType = std::variant<
+        None, 
+        Text_80x25_16_8x16
+    >;
 private:
-    std::variant<None, Text_80x25_16_5x7> mode_;
     Vga& vga_;
+
+    VariantType mode_;
+   // Text_80x25_16_5x7 test_mode_;
 };
 
 } // namespace vga

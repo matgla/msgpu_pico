@@ -26,7 +26,6 @@
 #include <pico/sync.h> 
 #include <pico/stdlib.h>
 #include <hardware/clocks.h>
-#include <hardware/structs/vreg_and_chip_reset.h>
 
 #include "processor/command_processor.hpp"
 #include "processor/human_interface.hpp"
@@ -39,11 +38,11 @@ static struct mutex frame_logic_mutex;
 static void frame_update_logic();
 static void render_scanline(struct scanvideo_scanline_buffer* dest, int core);
 
-//static vga::Vga vga_generator(&vga_mode_640x480_60);
+static vga::Mode* global_mode;
 
-vga::Mode* global_mode;
+static int y = 0; 
 
-void render_loop()
+void __time_critical_func(render_loop)()
 {
     static uint32_t last_frame_num = 0;
     int core_num = get_core_num();
@@ -53,15 +52,14 @@ void render_loop()
         struct scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(true);
 
         mutex_enter_blocking(&frame_logic_mutex);
-
         uint32_t frame_num = scanvideo_frame_number(scanline_buffer->scanline_id);
 
         if (frame_num != last_frame_num)
         {
             last_frame_num = frame_num; 
             frame_update_logic();
+        
         }
-
         mutex_exit(&frame_logic_mutex);
 
         render_scanline(scanline_buffer, core_num);
@@ -71,7 +69,7 @@ void render_loop()
 
 struct semaphore video_setup_complete;
 
-void frame_update_logic() 
+void __time_critical_func(frame_update_logic)() 
 {
     if (global_mode)
     {
@@ -79,10 +77,8 @@ void frame_update_logic()
     }
 }
 
-//uint16_t buf[640];
-void render_scanline(struct scanvideo_scanline_buffer* dest, int core)
+void __time_critical_func(render_scanline)(struct scanvideo_scanline_buffer* dest, int core) 
 {
-    //std::memset(buf, 0x00, sizeof(buf));
     int l = scanvideo_scanline_number(dest->scanline_id);
     if (global_mode)
     {
@@ -90,24 +86,6 @@ void render_scanline(struct scanvideo_scanline_buffer* dest, int core)
     
         dest->data_used = size;
         dest->status = SCANLINE_OK;
-  //  static uint32_t postamble[] = {
-  //          0x0000u | (COMPOSABLE_EOL_ALIGN << 16)
-  //  };
-  //      dest->data[0] = 4;
-  //      dest->data[1] = host_safe_hw_ptr(dest->data + 8);
-  //      dest->data[2] = 158;
-  //      dest->data[3] = host_safe_hw_ptr(buf + 4);
-  //      dest->data[4] = count_of(postamble);
-  //      dest->data[5] = host_safe_hw_ptr(postamble);
-  //      dest->data[6] = 0;
-  //      dest->data[7] = 0; 
-  //      dest->data_used = 8; 
-
-        
-  //      dest->data[8] = (buf[0] << 16u) | COMPOSABLE_RAW_RUN;
-  //      dest->data[9] = (buf[1] << 16u) | 0;
-  //      dest->data[10] = (COMPOSABLE_RAW_RUN << 16u) | buf[2];
-  //      dest->data[11] = ((317 + 1 - 3) << 16u) | buf[3];
     }
 }
 
@@ -118,43 +96,53 @@ void core1_func()
 }
 
 
+int64_t timer_callback(alarm_id_t alarm_id, void *user_data) {
+    struct scanvideo_scanline_buffer *buffer = scanvideo_begin_scanline_generation(false);
+    while (buffer) {
+        render_scanline(buffer, 0);
+        scanvideo_end_scanline_generation(buffer);
+        buffer = scanvideo_begin_scanline_generation(false);
+    }
+    return 100;
+}
+
 int vga_main()
 {
     mutex_init(&frame_logic_mutex);
     sem_init(&video_setup_complete, 0, 1);
 
     multicore_launch_core1(core1_func);
-
+    //add_alarm_in_us(100, timer_callback, NULL, true);
     return 0;
 }
 
 int main() 
 {
-    set_sys_clock_khz(200000, true);
+    set_sys_clock_khz(250000, true);
     stdio_init_all();
-    static vga::Vga vga(&vga_mode_320x240_60); 
+    vga::Vga vga(&vga_mode_640x480_60); 
     static vga::Mode mode(vga);
     mode.switch_to(vga::Modes::Text_80x25);
     global_mode = &mode; 
     static processor::CommandProcessor processor(mode);
     processor.change();
- 
     vga_main();
-  
+ 
     vga.setup();
   
     sem_release(&video_setup_complete);
   
-    render_loop();
+ //   render_loop();
+
+    for (char c = '!'; c < 126; ++c) 
+    {
+        processor.process(c);
+    }
     while (true)
     {
         uint8_t byte; 
         read(STDIN_FILENO, &byte, sizeof(uint8_t));
-        write(STDOUT_FILENO, &byte, sizeof(uint8_t)); 
         processor.process(byte);
-    }
-    while (true)
-    {
     }
 } 
 

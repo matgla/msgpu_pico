@@ -32,24 +32,21 @@ std::string_view to_string(Modes mode)
 }
 
 Mode::Mode(vga::Vga& vga)
-    : mode_(None{})
-    , vga_(vga)
+    : vga_(vga)
+  //  , test_mode_(vga)
 {
+
+    mode_.emplace<Text_80x25_16_8x16>(vga_);
+
 }
 
 void Mode::switch_to(const Modes mode)
 {
-    switch (mode)
-    {
-        case Modes::Text_80x25:
-        {
-            mode_ = Text_80x25_16_5x7(vga_);
-        } break;
-    }
 }
 
 void Mode::render()
 {
+   // test_mode_.render();
     std::visit([](auto&& mode) {
         mode.render();
     }, mode_);
@@ -57,6 +54,7 @@ void Mode::render()
 
 std::size_t Mode::fill_scanline(std::span<uint32_t> line, std::size_t line_number)
 {
+//    return test_mode_.fill_scanline(line, line_number);
     return std::visit([line, line_number](auto&& mode) ->std::size_t {
         return mode.fill_scanline(line, line_number);
     }, mode_);

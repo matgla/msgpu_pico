@@ -17,7 +17,14 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 
 namespace vga
 {
+
+
+//constexpr std::size_t video_ram_size = 640 * 480 / 2;
+//extern std::span<uint32_t> video_ram;
+
+
 } // namespace vga
