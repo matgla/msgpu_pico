@@ -138,6 +138,16 @@ int main()
     {
         processor.process(c);
     }
+
+    processor.process('\n');
+
+    std::string_view text("The quick brown fox jumps over the lazy dog. :)");
+
+    for (char c : text)
+    {
+        processor.process(c);
+    }
+
     while (true)
     {
         uint8_t byte; 
