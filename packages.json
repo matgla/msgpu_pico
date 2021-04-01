@@ -51,6 +51,22 @@
                     "DISABLE_SANITIZERS": "ON"
                 }
             }
+        },
+        {
+            "name": "littlefs",
+            "link": "https://github.com/littlefs-project/littlefs.git",
+            "type": "git",
+            "version": "v2.4.0",
+            "directory": "littlefs",
+            "target": "littlefs",
+            "options": {
+                "create_library": {
+                    "type": "STATIC",
+                    "sources_filter": [ "*.c", "*.h"],
+                    "sources_directory": "",
+                    "include_directories": [""]
+                }
+            }
         }
     ]
 }

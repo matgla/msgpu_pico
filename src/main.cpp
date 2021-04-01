@@ -30,6 +30,7 @@
 #include "processor/command_processor.hpp"
 #include "processor/human_interface.hpp"
 
+#include "disk/disk.hpp"
 
 extern const struct scanvideo_pio_program video_24mhz_composable;
 
@@ -131,9 +132,13 @@ int main()
     vga.setup();
   
     sem_release(&video_setup_complete);
-  
+ 
+    uint8_t byte = 0; 
+    while (byte != 's')
+    {
+        read(STDIN_FILENO, &byte, sizeof(uint8_t));
+    } 
  //   render_loop();
-
     for (char c = '!'; c < 126; ++c) 
     {
         processor.process(c);
@@ -141,16 +146,18 @@ int main()
 
     processor.process('\n');
 
-    std::string_view text("The quick brown fox jumps over the lazy dog. :)");
+    std::string_view text("The whait? quick brown fox jumps over the lazy dog. :)");
 
     for (char c : text)
     {
         processor.process(c);
     }
+    
+    disk::Disk disk; 
+    disk.load();
 
     while (true)
     {
-        uint8_t byte; 
         read(STDIN_FILENO, &byte, sizeof(uint8_t));
         processor.process(byte);
     }

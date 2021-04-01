@@ -31,14 +31,17 @@ target_sources(msgpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp )
 
 find_package(msgui REQUIRED)
 
+add_subdirectory(disk)
 add_subdirectory(interfaces)
 add_subdirectory(generator)
 add_subdirectory(memory)
 add_subdirectory(modes)
 add_subdirectory(processor)
 
+find_package(littlefs REQUIRED)
+
 target_link_libraries(msgpu
-    PUBLIC  
+    PRIVATE 
         pico_stdlib
         pico_scanvideo_dpi
         pico_multicore
@@ -48,10 +51,15 @@ target_link_libraries(msgpu
         msgpu_modes 
         msgpu_processor
         msgpu_video_ram
+        msgpu_disk
 )
 
 pico_enable_stdio_usb(msgpu 1)
 pico_enable_stdio_uart(msgpu 0)
 
 pico_add_extra_outputs(msgpu)
+
+pico_set_linker_script(msgpu 
+    ${PROJECT_SOURCE_DIR}/linker_script.ld 
+)
 

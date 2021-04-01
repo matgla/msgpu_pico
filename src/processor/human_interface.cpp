@@ -235,7 +235,6 @@ void HumanInterface::process(uint8_t byte)
         escape_code_ = true;
         return;
     }
-    printf("%c", byte);
     mode_->write(static_cast<char>(byte));
 
 }
