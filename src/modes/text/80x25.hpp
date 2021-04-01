@@ -1,8 +1,7 @@
 // This file is part of MS GPU project.
 // Copyright (C) 2020 Mateusz Stadnik
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
@@ -34,6 +33,7 @@ struct Text_80x25_16color
     constexpr static std::size_t width = 80;
     constexpr static std::size_t height = 25;
     constexpr static std::size_t bits_per_pixel = 4; 
+    using ColorType = uint8_t;
     const static inline scanvideo_mode_t* mode = &vga_mode_640x480_60;
     constexpr static std::size_t resolution_width = 640;
     constexpr static std::size_t resolution_height = 480;

@@ -68,23 +68,25 @@ public:
     // CURSOR 
     void move_cursor(int row, int column)
     {
-        if (row + cursor_.y >= Configuration::resolution_height || row + cursor_.y < 0) 
+        if (row + cursor_.y >= Configuration::height || row + cursor_.y < 0) 
         {
             return;
         }
     
-        if (column + cursor_.x >= Configuration::resolution_width || column + cursor_.x < 0)
+        if (column + cursor_.x >= Configuration::width || column + cursor_.x < 0)
         {
             return;
         }
-        
-        msgui::Position previous_position = cursor_;
-        cursor_.x += column * Configuration::font::width; 
-        cursor_.y += row * Configuration::font::height;
-        render_font(previous_position, text_buffer_[previous_position.y][previous_position.x], foreground_, background_);
+        const msgui::Position char_position = cursor_; 
+        const msgui::Position previous_position{
+            .x = cursor_.x * Configuration::font::width,
+            .y = cursor_.y * Configuration::font::height
+        };
+        cursor_.x += column;
+        cursor_.y += row;
+        render_font(previous_position, text_buffer_[char_position.y][char_position.x], foreground_, background_);
+        render_cursor(Configuration::Color::white, Configuration::Color::black); 
     }
-
-
 
     void set_cursor(int row, int column)
     {
@@ -94,23 +96,39 @@ public:
 
     void set_cursor_column(int column)
     {
-        if (column >= 0 && column <= Configuration::resolution_width)
+        const msgui::Position char_position = cursor_; 
+        const msgui::Position previous_position{
+            .x = cursor_.x * Configuration::font::width,
+            .y = cursor_.y * Configuration::font::height
+        };
+        if (column >= 0 && column <= Configuration::width)
         {
             cursor_.x = column;
         }
+        render_font(previous_position, text_buffer_[char_position.y][char_position.x], foreground_, background_);
+        render_cursor(Configuration::Color::white, Configuration::Color::black); 
     }
    
     void set_cursor_row(int row)
     {
-        if (row >= 0 && row <= Configuration::resolution_height)
+        const msgui::Position char_position = cursor_; 
+        const msgui::Position previous_position{
+            .x = cursor_.x * Configuration::font::width, 
+            .y = cursor_.y * Configuration::font::height
+        };
+        if (row >= 0 && row <= Configuration::height)
         {
             cursor_.y = row;
         }
- 
+        
+        render_font(previous_position, text_buffer_[char_position.y][char_position.x], foreground_, background_);
+        render_cursor(Configuration::Color::white, Configuration::Color::black);
     }
     // PIXEL MANAGEMENT 
     void set_color(int foreground, int background)
     {
+        set_background_color(background);
+        set_foreground_color(foreground);
     }
 
     void set_background_color(int background)
@@ -129,27 +147,31 @@ public:
 
     void write(const msgui::Position cursor, char c)
     {
-        if (cursor.y >= Configuration::resolution_height || cursor.x >= Configuration::resolution_width)
+        if (cursor.y >= Configuration::height || cursor.x >= Configuration::width)
         {
             return;
         }
 
-        cursor_.x = cursor.x + Configuration::font::width;
+        text_buffer_[cursor.y][cursor.x] = c;
+        cursor_.x = cursor.x + 1;
         cursor_.y = cursor.y;
 
-        if (cursor_.x >= Configuration::resolution_width)
+        if (cursor_.x >= Configuration::width)
         {
             cursor_.x = 0;
-            cursor_.y += Configuration::font::height;
+            ++cursor_.y;
         }
 
-        if (cursor_.y >= Configuration::resolution_height)
+        if (cursor_.y >= Configuration::height)
         {
             cursor_.y = 0;
         }
 
-        //text_buffer_[cursor_.y][cursor_.x] = c;
-        render_font(cursor, c, foreground_, background_);
+        const msgui::Position cursor_pos {
+            .x = cursor.x * Configuration::font::width, 
+            .y = cursor.y * Configuration::font::height
+        };
+        render_font(cursor_pos, c, foreground_, background_);
         //add_character_to_render(cursor);
     }
     // BUFFER MANAGEMENT
@@ -210,10 +232,13 @@ public:
     }
 
     // RENDERING
-    void render_cursor()
+    void render_cursor(Configuration::Color fg, Configuration::Color bg)
     {
-        const typename Configuration::Color fg = Configuration::Color::black;
-        render_font(cursor_, ' ', fg, cursor_color_);
+        const msgui::Position cursor_pos {
+            .x = cursor_.x * Configuration::font::width,
+            .y = cursor_.y * Configuration::font::height
+        }; 
+        render_font(cursor_pos, text_buffer_[cursor_.y][cursor_.x], bg, fg);
     }
     void __time_critical_func(render_font)(const msgui::Position& position, char c,const Configuration::Color fg, const Configuration::Color bg)
     {
@@ -221,7 +246,7 @@ public:
         constexpr int width = Configuration::font::width;
         const auto& bitmap = Configuration::font::data.get(c); 
         const auto& data = bitmap.data();
-
+        
         for (int y = 0; y < height; ++y)
         {
             const uint8_t line = data[y];
@@ -312,18 +337,20 @@ public:
         //}
 
         ++time_to_toggle_; 
-        if (time_to_toggle_ == 60)
+        if (time_to_toggle_ == 30)
         {
             time_to_toggle_ = 0; 
             if (cursor_color_ == Configuration::Color::white)
             {
                 cursor_color_ = Configuration::Color::black; 
+                cursor_bg_ = Configuration::Color::white;
             }
             else 
             {
                 cursor_color_ = Configuration::Color::white;
+                cursor_bg_ = Configuration::Color::black;
             }
-            render_cursor();
+            render_cursor(cursor_color_, cursor_bg_);
         }
         copy_line_to_buffer(0, 0);
     }
@@ -355,8 +382,9 @@ private:
     constexpr static std::size_t buffer_size = 5;
     uint16_t current_line_[buffer_size][Configuration::resolution_width];
     uint16_t current_line_id_;
-    Configuration::Color cursor_color_;
     uint8_t time_to_toggle_;
+    Configuration::Color cursor_color_;
+    Configuration::Color cursor_bg_;
 
     Configuration::Color foreground_;
     Configuration::Color background_;
