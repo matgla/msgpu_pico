@@ -31,6 +31,7 @@ target_sources(msgpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp )
 
 find_package(msgui REQUIRED)
 
+add_subdirectory(config)
 add_subdirectory(disk)
 add_subdirectory(interfaces)
 add_subdirectory(generator)
@@ -52,6 +53,7 @@ target_link_libraries(msgpu
         msgpu_processor
         msgpu_video_ram
         msgpu_disk
+        msgpu_config
 )
 
 pico_enable_stdio_usb(msgpu 1)

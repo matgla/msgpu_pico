@@ -19,12 +19,10 @@ add_library(msgpu_config)
 target_sources(msgpu_config
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/reader.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/writer.hpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/config_manipulator.hpp
 
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/config.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/writer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/config_manipulator.cpp
 )
 
 target_link_libraries(msgpu_config

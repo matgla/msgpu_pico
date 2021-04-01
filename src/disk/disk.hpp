@@ -25,7 +25,9 @@ class Disk
 {
 public:
     void load();
+    void close();
 
+    lfs_t& get_lfs();
 private: 
     void initialize_drive();
 

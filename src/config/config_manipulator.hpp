@@ -14,26 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#pragma once 
+
+#include <string_view>
+
+#include "disk/disk.hpp"
+
 namespace config 
 {
 
-enum class Mode 
-{
-    mode_1024x768_63,
-    mode_800x600_60,
-    mode_640x480_60,
-    mode_400x240_60,
-    mode_320x240_60,
-    mode_256x192_50,
-    mode_720p_60
-};
-
-class Config 
+class ConfigManipulator
 {
 public:
-    Mode mode;
-};
+    ConfigManipulator(disk::Disk& disk, const std::string_view& file);
 
+    void set_parameter(const std::string_view& parameter, const std::string_view& value);
+
+    void print() const;
+private:
+    const std::string_view file_;
+    disk::Disk& disk_;
+};
 
 } // namespace config
 

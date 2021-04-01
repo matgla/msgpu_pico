@@ -14,22 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
-
-#include "disk/disk.hpp"
+#include "config/config_manipulator.hpp"
 
 namespace config 
 {
 
-enum class Mode 
+ConfigManipulator::ConfigManipulator(disk::Disk& disk, const std::string_view& file)
+    : disk_(disk)
+    , file_(file) 
 {
-    640x480_60,
-    320x240_60
 }
 
-class Config 
+void ConfigManipulator::set_parameter(const std::string_view& parameter, const std::string_view& value)
 {
-};
+
+}
+
+void ConfigManipulator::print() const
+{
+    lfs_file_t file;
+    lfs_file_open(&get_lfs(), &file, file_.get(), LFS_O_RDONLY);
+    
+}
 
 } // namespace config
 

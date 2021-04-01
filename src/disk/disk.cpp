@@ -120,7 +120,17 @@ void Disk::initialize_drive()
     printf("Write\n");
 
     printf("Work done unmounting...\n");
+//    lfs_unmount(&lfs_);
+}
+
+void Disk::close() 
+{
     lfs_unmount(&lfs_);
+}
+
+lfs_t& Disk::get_lfs() 
+{
+    return lfs_;
 }
 
 }

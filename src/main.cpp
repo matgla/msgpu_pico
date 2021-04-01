@@ -32,6 +32,8 @@
 
 #include "disk/disk.hpp"
 
+#include "config/config_manipulator.hpp"
+
 extern const struct scanvideo_pio_program video_24mhz_composable;
 
 static struct mutex frame_logic_mutex;
@@ -156,9 +158,16 @@ int main()
     disk::Disk disk; 
     disk.load();
 
+    config::ConfigManipulator config(disk, "video_config.txt"); 
+    config.print();
+
     while (true)
     {
         read(STDIN_FILENO, &byte, sizeof(uint8_t));
+        if (byte == 'c')
+        {
+            config.set_parameter("test", "some_value");
+        }
         processor.process(byte);
     }
 } 
