@@ -21,7 +21,8 @@
 #include "generator/vga.hpp"
 
 #include "modes/text/text_mode.hpp"
-#include "modes/text/80x25.hpp"
+#include "modes/text/80x30_16.hpp"
+#include "modes/text/40x30_16.hpp"
 
 #include <msgui/fonts/Font8x16.hpp>
 
@@ -30,8 +31,12 @@ namespace vga
 
 enum class Modes
 {
-    Text_80x25 = 0,
-    Graphic_256x240 = 1
+    Text_80x30_16,
+    Text_40x30_16,
+    Text_40x30_12bit,
+    Graphic_640x480_16,
+    Graphic_320x240_16,
+    Graphic_320x240_12bit
 };
 
 std::string_view to_string(Modes mode);
@@ -53,6 +58,10 @@ public:
     {
         return std::span<uint16_t>{};
     }
+
+    void clear()
+    {
+    }
 };
 
 class Mode
@@ -60,9 +69,13 @@ class Mode
 public:
     Mode(vga::Vga& vga);
 
-    using Text_80x25_16_8x16 = modes::text::TextMode<
-        modes::text::Text_80x25_16color<msgui::fonts::Font8x16>>;
+    using Text_80x30_16_8x16 = modes::text::TextMode<
+        modes::text::Text_80x30_16color<msgui::fonts::Font8x16>>;
 
+    using Text_40x30_16_8x16 = modes::text::TextMode<
+        modes::text::Text_40x30_16color<msgui::fonts::Font8x16>>;
+
+    void clear();
     void switch_to(const Modes mode);
     void __time_critical_func(render)();
     void write(char c);
@@ -78,13 +91,14 @@ public:
     
     using VariantType = std::variant<
         None, 
-        Text_80x25_16_8x16
+        Text_80x30_16_8x16,
+        Text_40x30_16_8x16
     >;
 private:
     Vga& vga_;
 
     VariantType mode_;
-   // Text_80x25_16_5x7 test_mode_;
+   // Text_80x30_16_5x7 test_mode_;
 };
 
 } // namespace vga

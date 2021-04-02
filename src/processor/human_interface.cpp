@@ -16,10 +16,14 @@
 
 #include "processor/human_interface.hpp"
 
-#include <cstdio>
 #include <algorithm>
+#include <cstdio>
+#include <charconv>
+
+#include <unistd.h> 
 
 #include <eul/mpl/tuples/for_each.hpp>
+#include <eul/utils/string.hpp>
 
 #include "modes/colors.hpp"
 
@@ -42,6 +46,10 @@ template <typename... handlers>
 class Handlers
 {
 public:
+    Handlers(handlers... h) : handlers_(h...) 
+    {
+    }
+
     std::tuple<handlers...> handlers_;
 };
 
@@ -52,33 +60,119 @@ Handlers(handlers...) -> Handlers<handlers...>;
 HumanInterface::HumanInterface(vga::Mode& mode)
     : position_(0)
     , mode_(&mode)
+    , state_(State::waiting_for_command)
 {
     printf("\n> ");
 }
 
+void HumanInterface::write()
+{
+    state_ = State::writing;
+}
+
 void HumanInterface::process_command()
 {
-    buffer_[position_] = 0;
     printf("\nProcessing command: %s\n", buffer_);
-    position_ = 0;
     to_parse_ = buffer_;
 
     const auto command = get_next_part();
 
     const static Handlers handlers {
-        Handler{"help", this, &HumanInterface::help}
+        Handler{"help", this, &HumanInterface::help},
+        Handler{"write", this, &HumanInterface::write},
+        Handler{"clear", this, &HumanInterface::clear},
+        Handler{"mode", this, &HumanInterface::mode}
     };
 
-    eul::mpl::tuples::for_each(handlers.handlers_, [&command](const auto& handler) {
+    eul::mpl::tuples::for_each(handlers.handlers_, [&command](auto& handler) {
         if (command == handler.handler_.first)
         {
-            const auto* object = handler.handler_.second.first;
+            auto* object = handler.handler_.second.first;
             (object->*handler.handler_.second.second)();
         }
     });
 }
 
+void HumanInterface::mode()
+{
+    const auto arg = get_next_part();
+   
+    int mode;
+    std::from_chars(arg.begin(), arg.end(), mode);
+    printf("Changing mode to: %d\n", mode);
+    
+    switch (mode)
+    {
+        case 1: 
+        {
+            mode_->switch_to(vga::Modes::Text_80x30_16);
+        } break;
+        case 2: 
+        {
+            mode_->switch_to(vga::Modes::Text_40x30_16);
+        } break;
+        case 3: 
+        {
+            mode_->switch_to(vga::Modes::Text_40x30_12bit);
+        } break;
+        case 10: 
+        {
+            mode_->switch_to(vga::Modes::Graphic_640x480_16);
+        } break;
+        case 11: 
+        {
+            mode_->switch_to(vga::Modes::Graphic_320x240_16);
+        } break;
+        case 12: 
+        {
+            mode_->switch_to(vga::Modes::Graphic_320x240_12bit);
+        } break;
+    }
+}
+
 void HumanInterface::process(uint8_t byte)
+{
+    ::write(STDOUT_FILENO, &byte, sizeof(byte));
+    if (escape_code_ && byte == 27)
+    {
+        state_ = State::waiting_for_command;
+        position_ = 0;
+        return;
+    }
+
+    switch (state_)
+    {
+        case State::waiting_for_command:
+        {
+            if (byte == '\b')
+            {
+                if (position_ > 0) position_--;
+                buffer_[position_] = 0;
+                return;
+            }
+            if (byte == '\n' || byte == '\r')
+            {
+                buffer_[position_] = 0;
+                position_ = 0;
+                process_command();
+                return;
+            }
+
+            buffer_[position_] = byte;
+            if (position_ < sizeof(buffer_) - 1)
+            {
+                ++position_;
+            }
+ 
+        } break; 
+        case State::writing:
+        {
+            process_write(byte);
+        } break; 
+    }
+}
+
+void HumanInterface::process_write(uint8_t byte)
 {
     // backspace
     if (byte == 8)
@@ -239,8 +333,37 @@ void HumanInterface::process(uint8_t byte)
 
 }
 
-void HumanInterface::help() const
+void HumanInterface::help() 
 {
+    const auto arg = get_next_part();
+
+    if (arg.size())
+    {
+        if (arg == "mode")
+        {
+            printf("Select mode of display\nAvailable modes:\n");
+            printf("  1 - Text mode 80x30 with 16 color pallete\n");
+            printf("  2 - Text mode 40x30 with 16 color pallete\n");
+            printf("  3 - Text mode 40x30 with 12-bit RGB\n");
+            printf("  10 - Graphic mode 640x480 with 16 color pallete\n");
+            printf("  11 - Graphic mode 320x240 with 16 color pallete\n");
+            printf("  12 - Graphic mode 320x240 with 12-bit RGB\n");
+        }
+
+        else
+        {
+            printf("Not recognized argument for help: ");
+            for (const char c : arg)
+            {
+                printf("%c", c);
+            }
+            printf("\n");
+        }
+
+
+        return;
+    }
+
     printf("Available commands:\n");
     printf("  mode [mode] - select display mode\n");
     printf("To get more information please write help [command].\n");
@@ -252,10 +375,19 @@ std::string_view HumanInterface::get_next_part()
     {
         return to_parse_;
     }
+
     to_parse_.remove_prefix(std::min(to_parse_.find_first_not_of(" "), to_parse_.size()));
-    const auto next_part = to_parse_.substr(0, std::min(to_parse_.find_first_not_of(" "), to_parse_.size()));
-    to_parse_.remove_suffix(next_part.size());
+    printf("To parse: %s (%d)\n", to_parse_.data(), to_parse_.size());
+    const auto next_part = to_parse_.substr(0, std::min(to_parse_.find_first_of(" "), to_parse_.size()));
+    printf("Next part: %s (%d)\n", next_part.data(), next_part.size());
+    to_parse_.remove_prefix(next_part.size());
     return next_part;
+}
+
+void HumanInterface::clear()
+{
+    printf("Clearing screen\n");
+    mode_->clear();
 }
 
 } // namespace processor

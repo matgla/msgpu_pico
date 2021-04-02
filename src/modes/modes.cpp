@@ -25,23 +25,36 @@ std::string_view to_string(Modes mode)
 {
     switch (mode)
     {
-        case Modes::Text_80x25: return "Text_80x25";
-        case Modes::Graphic_256x240: return "Graphic_256x240";
+        case Modes::Text_80x30_16: return "Text_80x30_16color";
+        case Modes::Text_40x30_16: return "Text_40x30_16color";
+        case Modes::Text_40x30_12bit: return "Text_40x30_12bit";
+        case Modes::Graphic_640x480_16: return "Graphic_640x480_16color";
+        case Modes::Graphic_320x240_16: return "Graphic_320x240_16color";
+        case Modes::Graphic_320x240_12bit: return "Graphic_320x240_12bit";
+
     }
     return "Unknown";
 }
 
 Mode::Mode(vga::Vga& vga)
     : vga_(vga)
-  //  , test_mode_(vga)
 {
-
-    mode_.emplace<Text_80x25_16_8x16>(vga_);
-
+    mode_.emplace<Text_80x30_16_8x16>(vga_);
 }
 
 void Mode::switch_to(const Modes mode)
 {
+    switch(mode)
+    {
+        case Modes::Text_80x30_16:
+        {
+            mode_.emplace<Text_80x30_16_8x16>(vga_);
+        } break;
+        case Modes::Text_40x30_16:
+        {
+            mode_.emplace<Text_40x30_16_8x16>(vga_);
+        }
+    }
 }
 
 void Mode::render()
@@ -67,6 +80,13 @@ void Mode::write(char c)
         {
             mode.write(c);
         }
+    }, mode_);
+}
+
+void Mode::clear()
+{
+    std::visit([](auto&& mode) {
+        mode.clear();
     }, mode_);
 }
 

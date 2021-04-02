@@ -50,6 +50,10 @@ public:
         , background_(Configuration::Color::black)
     {
         buffer_.clear();
+        for (auto& line : text_buffer_)
+        {
+            line.fill(0);
+        }
         vga.change_mode(Configuration::mode);
         vga.setup();
         render_box();
@@ -133,6 +137,7 @@ public:
 
     void set_background_color(int background)
     {
+        
     }
 
     void set_foreground_color(int foreground)
@@ -232,6 +237,18 @@ public:
     }
 
     // RENDERING
+    //
+
+    void clear() 
+    {
+        cursor_ = {0, 0};
+        buffer_.clear();
+        for (auto& line : text_buffer_)
+        {
+            line.fill(0);
+        }
+    }
+
     void render_cursor(Configuration::Color fg, Configuration::Color bg)
     {
         const msgui::Position cursor_pos {
@@ -369,7 +386,7 @@ public:
     }
 
 private:
-    char text_buffer_[Configuration::height][Configuration::width];
+    std::array<std::array<char, Configuration::width>, Configuration::height> text_buffer_;
 
     msgui::Position cursor_;
 

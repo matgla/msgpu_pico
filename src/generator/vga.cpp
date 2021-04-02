@@ -17,9 +17,11 @@
 #include "generator/vga.hpp"
 
 #include <cstring>
+#include <cstdio> 
 
 #include <pico/scanvideo.h>
 #include <hardware/dma.h>
+#include <hardware/sync.h>
 
 #include "memory/video_ram.hpp"
 
@@ -35,13 +37,20 @@ Vga::Vga(const scanvideo_mode_t* mode)
 
 void Vga::setup()
 {
-    return; 
-    dma_channel_unclaim(0);
+  //  return; 
+ //   scanvideo_timing_enable(false);
+ //   dma_channel_unclaim(0);
     //dma_set_irq0_channel_mask_enabled(1, false);
     //dma_channel_unclaim(0);
-    pio_clear_instruction_memory(pio0);
-    scanvideo_setup(mode_);
+//    pio_clear_instruction_memory(pio0);
+    uint32_t mask = save_and_disable_interrupts();
+    //printf("VGA setup\n");
+    scanvideo_change_mode(mode_);
+    //printf("VGA mode selected\n");
+
     scanvideo_timing_enable(true);
+    //printf("VGA setup done\n");
+    restore_interrupts(mask);
 }
 
 void Vga::change_mode(const scanvideo_mode_t* mode)

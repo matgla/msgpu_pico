@@ -96,6 +96,7 @@ void core1_func()
 {
     sem_acquire_blocking(&video_setup_complete);
     render_loop();
+    printf("Core 1 finished\n");
 }
 
 
@@ -123,9 +124,10 @@ int main()
 {
     set_sys_clock_khz(250000, true);
     stdio_init_all();
+ 
     vga::Vga vga(&vga_mode_640x480_60); 
     static vga::Mode mode(vga);
-    mode.switch_to(vga::Modes::Text_80x25);
+    mode.switch_to(vga::Modes::Text_80x30_16);
     global_mode = &mode; 
     static processor::CommandProcessor processor(mode);
     processor.change();
@@ -135,39 +137,10 @@ int main()
   
     sem_release(&video_setup_complete);
  
-    uint8_t byte = 0; 
-    while (byte != 's')
-    {
-        read(STDIN_FILENO, &byte, sizeof(uint8_t));
-    } 
- //   render_loop();
-    for (char c = '!'; c < 126; ++c) 
-    {
-        processor.process(c);
-    }
-
-    processor.process('\n');
-
-    std::string_view text("The whait? quick brown fox jumps over the lazy dog. :)");
-
-    for (char c : text)
-    {
-        processor.process(c);
-    }
-    
-    disk::Disk disk; 
-    disk.load();
-
-    config::ConfigManipulator config(disk, "video_config.txt"); 
-    config.print();
-
+    uint8_t byte; 
     while (true)
     {
         read(STDIN_FILENO, &byte, sizeof(uint8_t));
-        if (byte == 'c')
-        {
-            config.set_parameter("test", "some_value");
-        }
         processor.process(byte);
     }
 } 

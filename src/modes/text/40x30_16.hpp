@@ -27,16 +27,16 @@ namespace text
 {
 
 template <typename Font>
-struct Text_80x25_16color
+struct Text_40x30_16color
 {
     using font = Font;
-    constexpr static std::size_t width = 80;
-    constexpr static std::size_t height = 25;
+    constexpr static std::size_t width = 40;
+    constexpr static std::size_t height = 30;
     constexpr static std::size_t bits_per_pixel = 4; 
     using ColorType = uint8_t;
-    const static inline scanvideo_mode_t* mode = &vga_mode_640x480_60;
-    constexpr static std::size_t resolution_width = 640;
-    constexpr static std::size_t resolution_height = 480;
+    const static inline scanvideo_mode_t* mode = &vga_mode_320x240_60;
+    constexpr static std::size_t resolution_width = 320;
+    constexpr static std::size_t resolution_height = 240;
     
     enum class Color : uint8_t {
         black = 0x0, 

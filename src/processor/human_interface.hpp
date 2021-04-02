@@ -33,17 +33,27 @@ public:
     void process(uint8_t byte);
 
 private:
+    void process_write(uint8_t byte);
     void process_command();
     std::string_view get_next_part();
 
-    void help() const;
+    void write();
+    void help();
+    void mode();
+    void clear();
 
+    enum class State 
+    {
+        waiting_for_command, 
+        writing
+    };
     char buffer_[100];
     std::string_view to_parse_;
     int position_;
     vga::Mode* mode_;
     bool escape_code_ = false;
     bool cursor_move_ = false;
+    State state_;
 };
 
 } // namespace processor

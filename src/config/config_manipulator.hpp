@@ -30,10 +30,17 @@ public:
 
     void set_parameter(const std::string_view& parameter, const std::string_view& value);
 
-    void print() const;
+    void print();
+    void open(); 
+    void close(); 
 private:
+    int read_line();
+
+    bool opened_;
+    char line_buffer_[255];  
     const std::string_view file_;
     disk::Disk& disk_;
+    lfs_file_t file_handle_;
 };
 
 } // namespace config

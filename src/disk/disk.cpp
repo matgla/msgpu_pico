@@ -108,18 +108,18 @@ void Disk::initialize_drive()
 
     uint32_t boot_count = 0;
     
-    lfs_file_t file;
-    lfs_file_open(&lfs_, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
-    lfs_file_read(&lfs_, &file, &boot_count, sizeof(boot_count));
+//    lfs_file_t file;
+//    lfs_file_open(&lfs_, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
+//    lfs_file_read(&lfs_, &file, &boot_count, sizeof(boot_count));
     
-    printf("Boot counter: %d\n", boot_count);
-    ++boot_count; 
+//    printf("Boot counter: %d\n", boot_count);
+//    ++boot_count; 
 
-    printf("Rewind\n");
-    lfs_file_rewind(&lfs_, &file);
-    printf("Write\n");
+//    printf("Rewind\n");
+//    lfs_file_rewind(&lfs_, &file);
+//    printf("Write\n");
 
-    printf("Work done unmounting...\n");
+//    printf("Work done unmounting...\n");
 //    lfs_unmount(&lfs_);
 }
 
