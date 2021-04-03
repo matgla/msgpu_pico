@@ -21,7 +21,9 @@ target_sources(msgpu_modes
         ${CMAKE_CURRENT_SOURCE_DIR}/buffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/colors.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/text/80x25.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/text/text_mode.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/text/80x30_16.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/text/40x30_16.hpp
 
     PRIVATE
 

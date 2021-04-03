@@ -137,12 +137,12 @@ public:
 
     void set_background_color(int background)
     {
-        
+        background_ = static_cast<Configuration::Color>(background); 
     }
 
     void set_foreground_color(int foreground)
     {
-
+        foreground_ = static_cast<Configuration::Color>(foreground);
     }
 
     void write(char c)
@@ -176,7 +176,7 @@ public:
             .x = cursor.x * Configuration::font::width, 
             .y = cursor.y * Configuration::font::height
         };
-        render_font(cursor_pos, c, foreground_, background_);
+        render_font(cursor_pos, c, cursor_color_, cursor_bg_);
         //add_character_to_render(cursor);
     }
     // BUFFER MANAGEMENT

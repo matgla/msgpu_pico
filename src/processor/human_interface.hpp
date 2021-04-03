@@ -41,6 +41,7 @@ private:
     void help();
     void mode();
     void clear();
+    void set_color();
 
     enum class State 
     {

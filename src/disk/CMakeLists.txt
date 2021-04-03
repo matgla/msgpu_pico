@@ -25,9 +25,6 @@ target_sources(msgpu_disk
 )
 
 target_link_libraries(msgpu_disk
-    PRIVATE 
-        pico_stdlib
-        hardware_flash
     PUBLIC
         littlefs
 )
@@ -41,4 +38,7 @@ target_compile_options(msgpu_disk PUBLIC
 target_include_directories(msgpu_disk
     PUBLIC 
         ${PROJECT_SOURCE_DIR}/src
+    PRIVATE 
+        $<TARGET_PROPERTY:pico_stdlib,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:hardware_flash,INTERFACE_INCLUDE_DIRECTORIES>
 )

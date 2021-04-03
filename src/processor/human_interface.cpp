@@ -81,7 +81,8 @@ void HumanInterface::process_command()
         Handler{"help", this, &HumanInterface::help},
         Handler{"write", this, &HumanInterface::write},
         Handler{"clear", this, &HumanInterface::clear},
-        Handler{"mode", this, &HumanInterface::mode}
+        Handler{"mode", this, &HumanInterface::mode},
+        Handler{"set_color", this, &HumanInterface::set_color}
     };
 
     eul::mpl::tuples::for_each(handlers.handlers_, [&command](auto& handler) {
@@ -91,6 +92,33 @@ void HumanInterface::process_command()
             (object->*handler.handler_.second.second)();
         }
     });
+}
+
+void HumanInterface::set_color()
+{
+    const auto type = get_next_part();
+    const auto color = get_next_part();
+    
+    int color_number = 0;
+    std::from_chars(color.begin(), color.end(), color_number); 
+
+    if (type == "fg")
+    {
+        mode_->set_foreground_color(color_number);
+    }
+    else if (type == "bg")
+    {
+        mode_->set_background_color(color_number);
+    }
+    else 
+    {
+        printf("Unknown type: ");
+        for (const char c : type)
+        {
+            printf("%c", c);
+        }
+        printf("\n");
+    }
 }
 
 void HumanInterface::mode()

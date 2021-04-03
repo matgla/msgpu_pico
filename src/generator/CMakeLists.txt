@@ -28,10 +28,6 @@ target_sources(msgpu_generator
 target_link_libraries(msgpu_generator 
     PRIVATE 
         msgui
-    PUBLIC 
-        pico_multicore
-        pico_stdlib
-        pico_scanvideo_dpi
 )
 
 target_compile_options(msgpu_generator PUBLIC
@@ -43,4 +39,8 @@ target_compile_options(msgpu_generator PUBLIC
 target_include_directories(msgpu_generator
     PUBLIC 
         ${PROJECT_SOURCE_DIR}/src
+        $<TARGET_PROPERTY:pico_multicore,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:pico_stdlib,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:pico_scanvideo_dpi,INTERFACE_INCLUDE_DIRECTORIES>
+
 )
