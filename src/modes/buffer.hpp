@@ -27,45 +27,6 @@ namespace modes
 {
 namespace details
 {
-template <std::size_t bits_per_pixel>
-constexpr std::size_t get_type_id()
-{
-    if constexpr (bits_per_pixel % 8 == 0)
-    {
-        return bits_per_pixel / 8;
-    }
-    return bits_per_pixel / 8 + 1;
-}
-
-template <std::size_t bytes> 
-struct get_underlaying_type
-{
-};
-
-template <>
-struct get_underlaying_type<1>
-{
-    using type = uint8_t;
-};
-
-template <>
-struct get_underlaying_type<2>
-{
-    using type = uint16_t;
-};
-
-template <>
-struct get_underlaying_type<3>
-{
-    using type = uint16_t;
-};
-
-
-template <>
-struct get_underlaying_type<4>
-{
-    using type = uint32_t;
-};
 
 template <std::size_t bits_per_pixel, typename T>
 constexpr std::size_t pixels_in_type()
@@ -138,7 +99,7 @@ struct const_type_wrapper
 template <std::size_t width, std::size_t bits_per_pixel>
 class LineBuffer
 {
-    using T = details::get_underlaying_type<details::get_type_id<bits_per_pixel>()>::type;
+    using T = uint32_t;
 
     using SelfType = LineBuffer<width, bits_per_pixel>;
 

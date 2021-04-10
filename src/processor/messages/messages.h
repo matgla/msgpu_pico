@@ -1,5 +1,5 @@
-// This file is part of MS GPU project.
-// Copyright (C) 2020 Mateusz Stadnik
+// This file is part of msgpu project.
+// Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,33 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#pragma once 
 
-#include <cstdint>
-
-namespace processor 
+#ifdef __cplusplus 
+extern "C"
 {
+#endif // __cplusplus
 
-class MachineInterface
-{
-public:
-    MachineInterface();
+#include <stdint.h>
 
-    void process(uint8_t byte);
+typedef enum : uint8_t {
+    info_req_id = 1, 
+    info_resp_id = 2
+} Message;
 
-private:
-    enum class State : uint8_t 
-    {
-        waiting_for_id,
-        receiving_command, 
-        processing_command
-    };
-
-    State state_;
-    char buffer_[255];
-    std::size_t size_to_get_;
-    uint8_t message_id_;
-};
-
-} // namespace processor
-
+#ifdef __cplusplus 
+} // extern "C" 
+#endif

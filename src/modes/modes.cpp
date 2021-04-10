@@ -54,6 +54,10 @@ void Mode::switch_to(const Modes mode)
         {
             mode_.emplace<Text_40x30_16_8x16>(vga_);
         }
+        case Modes::Text_40x30_12bit:
+        {
+            mode_.emplace<Text_40x30_12bit_8x16>(vga_);
+        }
     }
 }
 

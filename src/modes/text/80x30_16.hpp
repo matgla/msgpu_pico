@@ -37,8 +37,9 @@ struct Text_80x30_16color
     const static inline scanvideo_mode_t* mode = &vga_mode_640x480_60;
     constexpr static std::size_t resolution_width = 640;
     constexpr static std::size_t resolution_height = 480;
-    
-    enum class Color : uint8_t {
+    constexpr static bool uses_color_palette = true;
+
+    enum Color : ColorType {
         black = 0x0, 
         blue = 0x1,
         green = 0x2,
@@ -57,7 +58,7 @@ struct Text_80x30_16color
         white = 0xf
     };
 
-    static inline std::array<uint16_t, 16> color_pallete = {
+    static inline std::array<uint16_t, 16> color_palette = {
         0x000, // black         0x00
         0xc00, // blue          0x01
         0x0c0, // green         0x02

@@ -130,7 +130,7 @@ int main()
     mode.switch_to(vga::Modes::Text_80x30_16);
     global_mode = &mode; 
     static processor::CommandProcessor processor(mode);
-    processor.change();
+    //processor.change();
     vga_main();
  
     vga.setup();

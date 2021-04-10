@@ -26,37 +26,10 @@
 #include <eul/utils/string.hpp>
 
 #include "modes/colors.hpp"
+#include "processor/handler.hpp"
 
-
-namespace processor
+namespace processor 
 {
-
-template <typename T, typename C>
-class Handler
-{
-public:
-    constexpr Handler(std::string_view name, C* object, T data) : handler_(name, std::make_pair(object, data))
-    {
-    }
-
-    std::pair<std::string_view, std::pair<C*, T>> handler_;
-};
-
-template <typename... handlers>
-class Handlers
-{
-public:
-    Handlers(handlers... h) : handlers_(h...) 
-    {
-    }
-
-    std::tuple<handlers...> handlers_;
-};
-
-
-template <typename... handlers>
-Handlers(handlers...) -> Handlers<handlers...>;
-
 HumanInterface::HumanInterface(vga::Mode& mode)
     : position_(0)
     , mode_(&mode)
@@ -97,11 +70,22 @@ void HumanInterface::process_command()
 void HumanInterface::set_color()
 {
     const auto type = get_next_part();
-    const auto color = get_next_part();
+    auto color = get_next_part();
     
     int color_number = 0;
-    std::from_chars(color.begin(), color.end(), color_number); 
 
+    if (color.starts_with("0x"))
+    {
+        color.remove_prefix(2);
+        std::from_chars(color.begin(), color.end(), color_number, 16);
+    }
+    else 
+    {
+        std::from_chars(color.begin(), color.end(), color_number); 
+    }
+
+
+    printf ("Setting color %d\n", color_number);
     if (type == "fg")
     {
         mode_->set_foreground_color(color_number);
@@ -120,6 +104,7 @@ void HumanInterface::set_color()
         printf("\n");
     }
 }
+
 
 void HumanInterface::mode()
 {
@@ -405,9 +390,7 @@ std::string_view HumanInterface::get_next_part()
     }
 
     to_parse_.remove_prefix(std::min(to_parse_.find_first_not_of(" "), to_parse_.size()));
-    printf("To parse: %s (%d)\n", to_parse_.data(), to_parse_.size());
     const auto next_part = to_parse_.substr(0, std::min(to_parse_.find_first_of(" "), to_parse_.size()));
-    printf("Next part: %s (%d)\n", next_part.data(), next_part.size());
     to_parse_.remove_prefix(next_part.size());
     return next_part;
 }

@@ -23,6 +23,7 @@
 #include "modes/text/text_mode.hpp"
 #include "modes/text/80x30_16.hpp"
 #include "modes/text/40x30_16.hpp"
+#include "modes/text/40x30_12bit.hpp"
 
 #include <msgui/fonts/Font8x16.hpp>
 
@@ -69,11 +70,14 @@ class Mode
 public:
     Mode(vga::Vga& vga);
 
-    using Text_80x30_16_8x16 = modes::text::TextMode<
+    using Text_80x30_16_8x16 = modes::text::PaletteTextMode<
         modes::text::Text_80x30_16color<msgui::fonts::Font8x16>>;
 
-    using Text_40x30_16_8x16 = modes::text::TextMode<
+    using Text_40x30_16_8x16 = modes::text::PaletteTextMode<
         modes::text::Text_40x30_16color<msgui::fonts::Font8x16>>;
+
+    using Text_40x30_12bit_8x16 = modes::text::TextMode<
+        modes::text::Text_40x30_12bit<msgui::fonts::Font8x16>>;
 
     void clear();
     void switch_to(const Modes mode);
@@ -92,7 +96,8 @@ public:
     using VariantType = std::variant<
         None, 
         Text_80x30_16_8x16,
-        Text_40x30_16_8x16
+        Text_40x30_16_8x16,
+        Text_40x30_12bit_8x16
     >;
 private:
     Vga& vga_;
