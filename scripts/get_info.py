@@ -16,20 +16,23 @@ argparser.add_argument("--interface", help="Path to directory with interface")
 argparser.add_argument("--serial", help="MSGPU serial port", required=True)
 args = argparser.parse_args()
 
-ser = serial.Serial(args.serial, 115200)
-ser.write([1])
+# ser = serial.Serial(args.serial, 115200)
+# ser.write([1])
 
-print("Getting info")
-id = ser.read(1)
-print("Message id: ", id)
+# print("Getting info")
+# id = ser.read(1)
+# print("Message id: ", id)
 
 cparser = cstruct.cstruct()
 cparser.load(""" 
     #define MAX_MODES 16 
-    
+   
+    typedef uint8 uint8_t;
+    typedef uint16 uint16_t;
+
     typedef struct {
-        uint8 uses_color_palette : 1;
-        uint8 mode : 1;
+        uint8_t uses_color_palette : 1;
+        uint8_t mode : 1;
         uint8 id : 6;
         uint16 resolution_width;
         uint16 resolution_height;
@@ -45,6 +48,6 @@ cparser.load("""
 
 message_size = len(cparser.info_resp)
 print("message size: ", message_size)
-payload = ser.read(message_size)
-message = cparser.info_resp(payload)
-print (message)
+#payload = ser.read(message_size)
+#message = cparser.info_resp(payload)
+#print (message)
