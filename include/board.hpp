@@ -16,18 +16,12 @@
 
 #pragma once 
 
-#ifdef __cplusplus 
-extern "C"
+namespace msgpu 
 {
-#endif // __cplusplus
 
-#include <stdint.h>
+void initialize_board();
 
-typedef enum : uint8_t {
-    info_req_id = 1, 
-    info_resp_id = 2
-} Message;
+void initialize_signal_generator();
 
-#ifdef __cplusplus 
-} // extern "C" 
-#endif
+} // namespace msgpu  
+

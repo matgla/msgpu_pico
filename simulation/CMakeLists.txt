@@ -1,4 +1,4 @@
-# This file is part of msgpu project.
+# This file is part of msgpu project. 
 # Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,31 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_disk)
+add_executable(msgpu_sim)
 
-target_sources(msgpu_disk
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/disk.hpp
-
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/disk.cpp
-)
-
-target_link_libraries(msgpu_disk
-    PUBLIC
-        littlefs
-)
-
-target_compile_options(msgpu_disk PUBLIC
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
-    $<$<CONFIG:DEBUG>:-Og -g>
-    $<$<CONFIG:RELEASE>:-Os>
-)
-
-target_include_directories(msgpu_disk
-    PUBLIC 
-        ${PROJECT_SOURCE_DIR}/src
+target_sources(msgpu_sim 
     PRIVATE 
-        $<TARGET_PROPERTY:pico_stdlib,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:hardware_flash,INTERFACE_INCLUDE_DIRECTORIES>
+        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+)
+
+find_package(SFML 2 REQUIRED network audio graphics window system)
+
+target_link_libraries(msgpu_sim 
+    PRIVATE 
+        sfml-graphics        
 )

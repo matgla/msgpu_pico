@@ -14,34 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#include "modes/mode_base.hpp"
 
-#include <string_view>
+#include "generator/vga.hpp"
 
-#include "disk/disk.hpp"
-
-namespace config 
+namespace vga::modes 
 {
 
-class ConfigManipulator
+void vga_change_mode(const Modes mode)
 {
-public:
-    ConfigManipulator(disk::Disk& disk, const std::string_view& file);
 
-    void set_parameter(const std::string_view& parameter, const std::string_view& value);
+    switch (mode) 
+    {
+        case Modes::Text_40x30_12bit:
+        case Modes::Text_40x30_16:
+        {
+            get_vga().change_mode(&vga_mode_320x240_60);
+        } break;
+        case Modes::Text_80x30_16:
+        {
+            get_vga().change_mode(&vga_mode_640x480_60);
+        }
+    }
 
-    void print();
-    void open(); 
-    void close(); 
-private:
-    int read_line();
+    get_vga().setup();
+}
 
-    bool opened_;
-    char line_buffer_[255];  
-    const std::string_view file_;
-    disk::Disk& disk_;
-    lfs_file_t file_handle_;
-};
-
-} // namespace config
+} // namespace vga::modes
 

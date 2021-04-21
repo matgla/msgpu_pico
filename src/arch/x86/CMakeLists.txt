@@ -1,4 +1,4 @@
-# This file is part of msgpu project.
+# This file is part of MSGPU project.
 # Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,29 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_config)
+message (STATUS "Configuring simulation")
 
-target_sources(msgpu_config
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/config_manipulator.hpp
+add_library(msgpu_arch STATIC)
 
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/config_manipulator.cpp
-)
-
-target_link_libraries(msgpu_config
+target_sources(msgpu_arch 
     PRIVATE 
-        msgpu_disk
+        ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
 )
 
-target_compile_options(msgpu_config PUBLIC
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
-    $<$<CONFIG:DEBUG>:-Og -g>
-    $<$<CONFIG:RELEASE>:-Os>
+find_package(SFML 2 REQUIRED graphics) 
+
+target_link_libraries(msgpu_arch 
+    PRIVATE 
+        msgpu_interface
+        sfml-graphics
 )
 
-target_include_directories(msgpu_config
-    PUBLIC 
-        ${PROJECT_SOURCE_DIR}/src
-)

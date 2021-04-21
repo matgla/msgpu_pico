@@ -14,15 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#pragma once 
 
-#ifdef __cplusplus 
-extern "C"
+namespace vga::modes 
 {
-#endif // __cplusplus 
 
-#define packed __attribute__((packed))
+enum class Modes
+{
+    Text_80x30_16,
+    Text_40x30_16,
+    Text_40x30_12bit,
+    Graphic_640x480_16,
+    Graphic_320x240_16,
+    Graphic_320x240_12bit
+};
 
-#ifdef __cplusplus
-}
-#endif // __cplusplus
+std::string_view to_string(Modes mode);
+
+} // namespace vga::modes
+

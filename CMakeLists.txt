@@ -35,21 +35,27 @@ include (mspkg)
 
 setup_mspkg(${mspkg_SOURCE_DIR})
 
-find_package(pico-sdk REQUIRED)
+if (NOT ${USE_SIMULATION})
+    find_package(pico-sdk REQUIRED)
+    include (cmake/preload/toolchains/pico_arm_gcc)
+    include (pico_sdk_init)
+endif ()
 
-include (cmake/preload/toolchains/pico_arm_gcc)
-
-include (pico_sdk_init)
 enable_language(ASM C CXX) 
-
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(pico-extras REQUIRED)
-include (external/pico_extras_import)
-
-pico_sdk_init()
+if (NOT ${USE_SIMULATION})
+    find_package(pico-extras REQUIRED)
+    include (external/pico_extras_import)
+    pico_sdk_init()
+endif ()
 
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 20)
 
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/scripts/message_generator.py)
+
+add_subdirectory(scripts)
+add_subdirectory(${PROJECT_BINARY_DIR}/messages)
+add_subdirectory(include)
 add_subdirectory(src)

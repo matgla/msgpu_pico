@@ -18,45 +18,31 @@
 
 #include <any>
 
+#include "generator/vga.hpp"
+
 namespace vga
 {
 
-std::string_view to_string(Modes mode)
+Mode::Mode()
 {
-    switch (mode)
-    {
-        case Modes::Text_80x30_16: return "Text_80x30_16color";
-        case Modes::Text_40x30_16: return "Text_40x30_16color";
-        case Modes::Text_40x30_12bit: return "Text_40x30_12bit";
-        case Modes::Graphic_640x480_16: return "Graphic_640x480_16color";
-        case Modes::Graphic_320x240_16: return "Graphic_320x240_16color";
-        case Modes::Graphic_320x240_12bit: return "Graphic_320x240_12bit";
-
-    }
-    return "Unknown";
+    mode_.emplace<Text_80x30_16_8x16>(vga::get_vga());
 }
 
-Mode::Mode(vga::Vga& vga)
-    : vga_(vga)
-{
-    mode_.emplace<Text_80x30_16_8x16>(vga_);
-}
-
-void Mode::switch_to(const Modes mode)
+void Mode::switch_to(const vga::modes::Modes mode)
 {
     switch(mode)
     {
-        case Modes::Text_80x30_16:
+        case modes::Modes::Text_80x30_16:
         {
-            mode_.emplace<Text_80x30_16_8x16>(vga_);
+            mode_.emplace<Text_80x30_16_8x16>(vga::get_vga());
         } break;
-        case Modes::Text_40x30_16:
+        case modes::Modes::Text_40x30_16:
         {
-            mode_.emplace<Text_40x30_16_8x16>(vga_);
+            mode_.emplace<Text_40x30_16_8x16>(vga::get_vga());
         }
-        case Modes::Text_40x30_12bit:
+        case modes::Modes::Text_40x30_12bit:
         {
-            mode_.emplace<Text_40x30_12bit_8x16>(vga_);
+            mode_.emplace<Text_40x30_12bit_8x16>(vga::get_vga());
         }
     }
 }

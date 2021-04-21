@@ -20,8 +20,8 @@
 
 #include <unistd.h>
 
-#include "processor/messages/info_resp.h"
-#include "processor/messages/messages.h"
+#include "messages/info_resp.hpp"
+#include "messages/messages.hpp"
 
 namespace processor 
 {
@@ -47,7 +47,7 @@ void send_info()
         .color_depth = 16 
     };
 
-    Message id = Message::info_resp_id;
+    Messages id = Messages::info_resp;
     write(STDOUT_FILENO, &id, sizeof(id));
     write(STDOUT_FILENO, &resp, sizeof(info_resp));
     
@@ -67,8 +67,8 @@ void MachineInterface::process(uint8_t byte)
     {
         case State::waiting_for_id:
         {
-            message_id_ = byte; 
-            if (message_id_ == Message::info_req_id)
+            message_id_ = static_cast<Messages>(byte); 
+            if (message_id_ == Messages::info_req)
             {
                 size_to_get_ = 0;
                 send_info();

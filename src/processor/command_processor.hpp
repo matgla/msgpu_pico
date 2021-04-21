@@ -23,6 +23,7 @@
 #include "processor/human_interface.hpp"
 #include "processor/machine_interface.hpp"
 #include "modes/modes.hpp"
+
 namespace processor
 {
 

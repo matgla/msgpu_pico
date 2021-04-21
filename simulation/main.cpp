@@ -14,26 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace config 
+#include <iostream> 
+
+#include <SFML/Graphics.hpp>
+
+int main(int argc, char* argv[]) 
 {
+    std::cerr << "========================================" << std::endl;
+    std::cerr << "=          MSGPU SIMULATION            =" << std::endl;
+    std::cerr << "========================================" << std::endl;
 
-enum class Mode 
-{
-    mode_1024x768_63,
-    mode_800x600_60,
-    mode_640x480_60,
-    mode_400x240_60,
-    mode_320x240_60,
-    mode_256x192_50,
-    mode_720p_60
-};
+    sf::Window app(sf::VideoMode(800, 600), "MSGPU sim");
 
-class Config 
-{
-public:
-    Mode mode;
-};
-
-
-} // namespace config
-
+    while (app.isOpen())
+    {
+        sf::Event event;
+        while (app.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+            {
+                app.close();
+            }
+            app.display();
+        }
+    }
+} 

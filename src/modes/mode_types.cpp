@@ -1,4 +1,4 @@
-// This file is part of msgpu project.
+// This file is part of msgput project.
 // Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,39 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#include "modes/mode_types.hpp"
 
-#include <stdint.h>
-
-#include "util.h"
-
-extern "C" 
+namespace vga::mode 
 {
 
-#define MAX_MODES 16
-
-enum Mode
+std::string_view to_string(Modes mode)
 {
-    Text = 0, 
-    Graphic = 1
-};
+    switch (mode)
+    {
+        case Modes::Text_80x30_16: return "Text_80x30_16color";
+        case Modes::Text_40x30_16: return "Text_40x30_16color";
+        case Modes::Text_40x30_12bit: return "Text_40x30_12bit";
+        case Modes::Graphic_640x480_16: return "Graphic_640x480_16color";
+        case Modes::Graphic_320x240_16: return "Graphic_320x240_16color";
+        case Modes::Graphic_320x240_12bit: return "Graphic_320x240_12bit";
 
-typedef struct packed
-{
-    uint8_t uses_color_palette : 1, 
-            mode : 1,
-            id : 6;
-    uint16_t resolution_width;
-    uint16_t resolution_height;
-    uint16_t color_depth;
-} mode_info;
+    }
+    return "Unknown";
+}
 
-typedef struct packed
-{
-    uint8_t version_major;
-    uint8_t version_minor;
-    mode_info modes[MAX_MODES];
-} info_resp;
-
-} // extern "C"
+} // namespace vga::mode
 

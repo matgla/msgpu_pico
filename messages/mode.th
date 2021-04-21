@@ -1,0 +1,19 @@
+/* include: <stdint.h> */
+
+enum Mode
+{
+    Text = 0, 
+    Graphic = 1
+};
+
+struct mode_info 
+{
+    uint8 uses_color_palette : 1;
+    uint8 mode : 1;
+    uint8 id : 6;
+    uint16 resolution_width;
+    uint16 resolution_height;
+    uint16 color_depth;
+};
+
+

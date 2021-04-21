@@ -18,8 +18,6 @@
 #include <variant>
 #include <span>
 
-#include "generator/vga.hpp"
-
 #include "modes/text/text_mode.hpp"
 #include "modes/text/80x30_16.hpp"
 #include "modes/text/40x30_16.hpp"
@@ -30,17 +28,6 @@
 namespace vga
 {
 
-enum class Modes
-{
-    Text_80x30_16,
-    Text_40x30_16,
-    Text_40x30_12bit,
-    Graphic_640x480_16,
-    Graphic_320x240_16,
-    Graphic_320x240_12bit
-};
-
-std::string_view to_string(Modes mode);
 
 class None
 {
@@ -68,7 +55,7 @@ public:
 class Mode
 {
 public:
-    Mode(vga::Vga& vga);
+    Mode();
 
     using Text_80x30_16_8x16 = modes::text::PaletteTextMode<
         modes::text::Text_80x30_16color<msgui::fonts::Font8x16>>;
@@ -80,7 +67,7 @@ public:
         modes::text::Text_40x30_12bit<msgui::fonts::Font8x16>>;
 
     void clear();
-    void switch_to(const Modes mode);
+    void switch_to(const vga::modes::Modes mode);
     void __time_critical_func(render)();
     void write(char c);
     void move_cursor(int row, int column);
@@ -100,7 +87,6 @@ public:
         Text_40x30_12bit_8x16
     >;
 private:
-    Vga& vga_;
 
     VariantType mode_;
    // Text_80x30_16_5x7 test_mode_;
