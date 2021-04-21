@@ -14,20 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#include "modes/mode_base.hpp"
 
-#ifdef __cplusplus 
-extern "C"
+#include "generator/vga.hpp"
+
+namespace vga::modes 
 {
-#endif // __cplusplus
 
-#include <stdint.h>
+void vga_change_mode(const Modes mode)
+{
 
-typedef enum : uint8_t {
-    info_req_id = 1, 
-    info_resp_id = 2
-} Message;
+    switch (mode) 
+    {
+        case Modes::Text_40x30_12bit:
+        case Modes::Text_40x30_16:
+        {
+            get_vga().change_mode(&vga_mode_320x240_60);
+        } break;
+        case Modes::Text_80x30_16:
+        {
+            get_vga().change_mode(&vga_mode_640x480_60);
+        }
+    }
 
-#ifdef __cplusplus 
-} // extern "C" 
-#endif
+    get_vga().setup();
+}
+
+} // namespace vga::modes
+

@@ -18,6 +18,8 @@
 
 #include <cstdint>
 
+#include "messages/messages.hpp"
+
 namespace processor 
 {
 
@@ -39,7 +41,7 @@ private:
     State state_;
     char buffer_[255];
     std::size_t size_to_get_;
-    uint8_t message_id_;
+    Messages message_id_;
 };
 
 } // namespace processor

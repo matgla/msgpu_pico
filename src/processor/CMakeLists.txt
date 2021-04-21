@@ -29,16 +29,20 @@ target_sources(msgpu_processor
 
 
 target_link_libraries(msgpu_processor 
-    PUBLIC 
-        msgpu_generator
+    PRIVATE 
         msgpu_modes 
         msgui
+    PUBLIC 
+        msgpu_messages
 )
 
-target_compile_options(msgpu_processor PUBLIC
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
-    $<$<CONFIG:DEBUG>:-Og -g>
-    $<$<CONFIG:RELEASE>:-Os>
+target_compile_options(msgpu_processor 
+    PUBLIC
+        $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
+        $<$<CONFIG:DEBUG>:-Og -g>
+        $<$<CONFIG:RELEASE>:-Os>
+    PRIVATE 
+        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wpedantic -Werror>
 )
 
 target_include_directories(msgpu_processor

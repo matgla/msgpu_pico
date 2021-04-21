@@ -16,8 +16,14 @@
 
 #pragma once 
 
+#include <span>
+
+#include <msgui/Position.hpp>
+
 #include "generator/vga.hpp"
+
 #include "modes/buffer.hpp"
+#include "modes/mode_types.hpp"
 
 namespace vga::modes 
 {
@@ -43,15 +49,16 @@ struct BufferTypeGeneratorImpl<Configuration, false>
     using type = std::array<std::array<uint16_t, Configuration::resolution_width>, Configuration::resolution_width>;
 };
 
+void vga_change_mode(const Modes mode);
+
 template <typename Configuration> 
 class ModeBase 
 {
 public:
-    ModeBase(Vga& vga)
+    ModeBase()
     {
-        vga.change_mode(Configuration::mode);
-        vga.setup();
-    }
+        vga_change_mode(Configuration::mode);
+   }
 
    
     void base_render()
@@ -96,10 +103,6 @@ template <typename Configuration>
 class BufferedModeBase : public ModeBase<Configuration>
 {
 public: 
-    BufferedModeBase(Vga& vga)
-        : ModeBase<Configuration>(vga)
-    {
-    }
 
     void clear() 
     {

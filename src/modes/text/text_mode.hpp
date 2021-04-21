@@ -44,8 +44,7 @@ class TextModeBase : public Base<Configuration>
 {
 public:
     TextModeBase(Vga& vga)
-        : Base<Configuration>(vga)
-        , cursor_(0, 0)
+        : cursor_(0, 0)
         , foreground_(Configuration::Color::white)
         , background_(Configuration::Color::black)
     {

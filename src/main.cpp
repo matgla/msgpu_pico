@@ -125,7 +125,6 @@ int main()
     set_sys_clock_khz(250000, true);
     stdio_init_all();
  
-    vga::Vga vga(&vga_mode_640x480_60); 
     static vga::Mode mode(vga);
     mode.switch_to(vga::Modes::Text_80x30_16);
     global_mode = &mode; 

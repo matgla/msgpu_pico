@@ -26,7 +26,7 @@ target_sources(msgpu_modes
         ${CMAKE_CURRENT_SOURCE_DIR}/text/40x30_16.hpp
 
     PRIVATE
-
+        ${CMAKE_CURRENT_SOURCE_DIR}/mode_base.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.cpp
 )
 

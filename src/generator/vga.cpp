@@ -28,8 +28,7 @@
 namespace vga
 {
 
-Vga::Vga(const scanvideo_mode_t* mode)
-    : mode_(mode)
+Vga::Vga(modes::Modes mode)
 {
     scanvideo_setup(mode_);
     scanvideo_timing_enable(true);
@@ -75,6 +74,12 @@ void Vga::render(bool enable)
 std::size_t Vga::get_width() const
 {
     return mode_->width;
+}
+
+Vga& get_vga() 
+{
+    static Vga vga(&vga_mode_640x480_60);
+    return vga;
 }
 
 } // namespace vga

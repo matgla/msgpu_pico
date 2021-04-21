@@ -17,7 +17,7 @@
 
 #include <cstddef>
 
-#include <pico/scanvideo.h>
+#include "modes/mode_types.hpp"
 
 namespace vga
 {
@@ -34,7 +34,7 @@ struct Text_40x30_16color
     constexpr static std::size_t height = 30;
     constexpr static std::size_t bits_per_pixel = 4; 
     using ColorType = uint8_t;
-    const static inline scanvideo_mode_t* mode = &vga_mode_320x240_60;
+    constexpr static Modes mode = Modes::Text_40x30_16;
     constexpr static std::size_t resolution_width = 320;
     constexpr static std::size_t resolution_height = 240;
     constexpr static bool uses_color_palette = true;

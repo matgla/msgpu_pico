@@ -20,6 +20,7 @@
 
 #include "generator/timings.hpp"
 
+#include "modes/mode_types.hpp"
 #include <pico/scanvideo.h>
 #include <pico/scanvideo/composable_scanline.h>
 
@@ -29,9 +30,9 @@ namespace vga
 class Vga
 {
 public:
-    Vga(const scanvideo_mode_t* mode);
+    Vga(modes::Modes mode);
     
-    void change_mode(const scanvideo_mode_t* mode);
+    void change_mode(modes::Modes mode);
 
     void setup();
     bool is_vsync() const;
@@ -39,8 +40,8 @@ public:
     void render(bool enable);
 
     std::size_t get_width() const;
-private:
-    const scanvideo_mode_t* mode_;
 };
+
+Vga& get_vga();
 
 } // namespace vga
