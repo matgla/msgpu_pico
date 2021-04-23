@@ -16,7 +16,6 @@
 
 #pragma once 
 
-<<<<<<< HEAD:include/board.hpp
 namespace msgpu 
 {
 
@@ -25,22 +24,4 @@ void initialize_board();
 void initialize_signal_generator();
 
 } // namespace msgpu  
-=======
-namespace vga::modes 
-{
-
-enum class Modes
-{
-    Text_80x30_16,
-    Text_40x30_16,
-    Text_40x30_12bit,
-    Graphic_640x480_16,
-    Graphic_320x240_16,
-    Graphic_320x240_12bit
-};
-
-std::string_view to_string(Modes mode);
-
-} // namespace vga::modes
->>>>>>> 512f3036c96baa6b52ef91b776b90ab589666397:src/modes/mode_types.hpp
 
