@@ -19,31 +19,10 @@
 
 #include <unistd.h>
 
-//#include <pico.h> 
-//#include <pico/scanvideo.h>
-//#include <pico/scanvideo/composable_scanline.h>
-//#include <pico/multicore.h>
-//#include <pico/sync.h> 
-//#include <pico/stdlib.h>
-//#include <hardware/clocks.h>
-
-//#include "processor/command_processor.hpp"
-//#include "processor/human_interface.hpp"
-
-//#include "disk/disk.hpp"
-
-//#include "config/config_manipulator.hpp"
-
-//extern const struct scanvideo_pio_program video_24mhz_composable;
-
-//static struct mutex frame_logic_mutex;
-
-//static void frame_update_logic();
-//static void render_scanline(struct scanvideo_scanline_buffer* dest, int core);
+#include "processor/command_processor.hpp"
+#include "processor/human_interface.hpp"
 
 //static vga::Mode* global_mode;
-
-//static int y = 0; 
 
 //void __time_critical_func(render_loop)()
 //{
@@ -124,7 +103,6 @@
 
 int main() 
 {
-//    set_sys_clock_khz(250000, true);
     //stdio_init_all();
  
     //static vga::Mode mode(vga);
@@ -145,5 +123,14 @@ int main()
         //processor.process(byte);
 //    }
     printf("Initializing msgpu\n");
+    msgpu::initialize_board();
+    msgpu::initialize_signal_generator();
+
+    while (true)
+    {
+
+    }
+
+    msgpu::deinitialize_signal_generator();
 } 
 

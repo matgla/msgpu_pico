@@ -29,5 +29,6 @@ target_link_libraries(msgpu_arch
     PRIVATE 
         msgpu_interface
         sfml-graphics
+        pthread
 )
 

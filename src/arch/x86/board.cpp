@@ -16,17 +16,54 @@
 
 #include "board.hpp"
 
+#include <SFML/Graphics.hpp>
+
+#include <thread>
+#include <memory>
+
 namespace msgpu 
 {
+
+namespace 
+{
+std::unique_ptr<std::thread> rendering_thread;
+
+void render_loop()
+{
+    sf::RenderWindow window(sf::VideoMode(800, 600), "MSGPU");
+
+    while (window.isOpen())
+    {
+        sf::Event ev; 
+        while (window.pollEvent(ev))
+        {
+            if (ev.type == sf::Event::Closed)
+            {
+                window.close();
+            }
+        }
+
+        window.clear();
+        window.display();
+    }
+}
+
+}
 
 void initialize_board()
 {
 
+    rendering_thread.reset(new std::thread(&render_loop));
 }
 
 void initialize_signal_generator()
 {
+    
+}
 
+void deinitialize_signal_generator()
+{
+    rendering_thread->join();
 }
 
 } // namespace msgpu 
