@@ -21,18 +21,23 @@ target_sources(msgpu_modes
         ${CMAKE_CURRENT_SOURCE_DIR}/buffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/colors.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mode_base.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mode_types.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/types.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/text_mode.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/80x30_16.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/40x30_16.hpp
 
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/mode_base.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/modes.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mode_types.cpp
 )
 
 target_link_libraries(msgpu_modes
-    PRIVATE msgpu_video_ram
-    PRIVATE msgui msgpu_generator
+    PUBLIC 
+        msgui 
+        msgpu_arch
+        msgpu_generator
 )
 
 target_compile_options(msgpu_modes PUBLIC
@@ -41,4 +46,7 @@ target_compile_options(msgpu_modes PUBLIC
     $<$<CONFIG:RELEASE>:-Os>
 )
 
-target_include_directories(msgpu_modes PUBLIC ${PROJECT_SOURCE_DIR}/source)
+target_include_directories(msgpu_modes 
+    PUBLIC 
+        ${PROJECT_SOURCE_DIR}/src
+)

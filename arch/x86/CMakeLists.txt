@@ -14,29 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-find_package(msgui REQUIRED)
+message (STATUS "Configuring simulation")
 
-add_executable(msgpu) 
+add_subdirectory(generator)
 
-target_sources(msgpu 
+add_library(msgpu_arch STATIC)
+
+target_sources(msgpu_arch 
     PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
 )
 
-target_compile_options(msgpu
+find_package(SFML 2 REQUIRED graphics) 
+
+target_link_libraries(msgpu_arch 
     PRIVATE 
-    #        $<$<COMPILE_LANGUAGE:CXX>:-Werror -Wall -Wextra -Wpedantic>
-        $<$<CONFIG:DEBUG>:-Og -g>
-        $<$<CONFIG:RELEASE>:-Os>
+        msgpu_interface
+        sfml-graphics
+        pthread
 )
 
-add_subdirectory(modes)
-add_subdirectory(processor)
-
-target_link_libraries(msgpu 
-    PRIVATE 
-        msgpu_interface 
-        msgpu_arch 
-        msgpu_processor
+target_include_directories(msgpu_arch 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

@@ -50,7 +50,7 @@ private:
     };
     char buffer_[100];
     std::string_view to_parse_;
-    int position_;
+    std::size_t position_;
     vga::Mode* mode_;
     bool escape_code_ = false;
     bool cursor_move_ = false;

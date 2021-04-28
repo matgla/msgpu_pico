@@ -16,6 +16,9 @@
 
 #pragma once 
 
+#include <cstdint>
+#include <span>
+
 namespace msgpu 
 {
 
@@ -23,6 +26,10 @@ void initialize_board();
 
 void initialize_signal_generator();
 void deinitialize_signal_generator();
+
+void fill_scanline(std::span<uint32_t> buffer, std::size_t line);
+
+uint8_t read_byte();
 
 } // namespace msgpu  
 

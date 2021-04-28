@@ -29,8 +29,7 @@
 #include "modes/types.hpp"
 #include "modes/buffer.hpp"
 
-#include <pico/sync.h>
-#include <pico/time.h>
+#include "config.hpp"
 
 namespace vga
 {

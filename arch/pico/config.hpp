@@ -14,36 +14,4 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "board.hpp"
-
-#include <pico/scanvideo.h>
-#include <pico/scanvideo/composable_scanline.h>
-
-#include <pico/multicore.h>
-#include <pico/stdlib.h>
-#include <pico/sync.h>
-
-#include <hardware/clocks.h>
-
-extern const struct scanvideo_pio_program video_24mhz_composable;
-
-static struct mutex frame_logic_mutex;
-static struct semaphore video_setup_complete;
-
-namespace msgpu 
-{
-
-void initialize_board()
-{
-    set_sys_clock_khz(250000, true);
-    stdio_init_all();
-}
-
-void initialize_signal_generator()
-{
-    mutex_init(&frame_logic_mutex);
-    sem_init(&video_setup_complete);
-    multicore_launch_core1(core1_func);
-}
-
-} // namespace msgpu 
+#pragma once 

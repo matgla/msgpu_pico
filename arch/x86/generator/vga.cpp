@@ -1,4 +1,4 @@
-// This file is part of msgput project.
+// This file is part of msgpu project.
 // Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,25 +14,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "modes/mode_types.hpp"
+#include "generator/vga.hpp"
 
-namespace vga::modes 
+#include "board.hpp"
+
+#include <algorithm>
+#include <cstring>
+
+namespace vga 
 {
 
-std::string_view to_string(Modes mode)
+Vga::Vga(modes::Modes mode) 
 {
-    switch (mode)
-    {
-        case Modes::Text_80x30_16: return "Text_80x30_16color";
-        case Modes::Text_40x30_16: return "Text_40x30_16color";
-        case Modes::Text_40x30_12bit: return "Text_40x30_12bit";
-        case Modes::Graphic_640x480_16: return "Graphic_640x480_16color";
-        case Modes::Graphic_320x240_16: return "Graphic_320x240_16color";
-        case Modes::Graphic_320x240_12bit: return "Graphic_320x240_12bit";
-
-    }
-    return "Unknown";
+   
 }
 
-} // namespace vga::modes
+void Vga::change_mode(modes::Modes mode)
+{
+}
+
+void Vga::setup()
+{
+
+}
+
+std::size_t Vga::fill_scanline_buffer(std::span<uint32_t> line, 
+    std::span<const uint16_t> scanline_buffer)
+{
+    std::transform(scanline_buffer.begin(), scanline_buffer.end(), line.begin(), [](uint16_t color) {
+        return color; // TODO: transform?
+    });
+    return 0;
+}
+
+Vga& get_vga()
+{
+    static Vga vga(modes::Modes::Text_80x30_16);
+    return vga;
+}
+
+} // namespace vga
 

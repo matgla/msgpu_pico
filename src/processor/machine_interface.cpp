@@ -74,6 +74,12 @@ void MachineInterface::process(uint8_t byte)
                 send_info();
             }
         } break;
+        case State::receiving_command:
+        {
+        } break; 
+        case State::processing_command:
+        {
+        } break; 
     }
 }
 

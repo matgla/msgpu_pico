@@ -1,4 +1,4 @@
-// This file is part of msgput project.
+// This file is part of msgpu project.
 // Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
@@ -16,55 +16,38 @@
 
 #include "board.hpp"
 
-#include <SFML/Graphics.hpp>
+#include <pico/scanvideo.h>
+#include <pico/scanvideo/composable_scanline.h>
 
-#include <thread>
-#include <memory>
+#include <pico/multicore.h>
+#include <pico/stdlib.h>
+#include <pico/sync.h>
+
+#include <hardware/clocks.h>
+
+extern const struct scanvideo_pio_program video_24mhz_composable;
+
+static struct mutex frame_logic_mutex;
+static struct semaphore video_setup_complete;
 
 namespace msgpu 
 {
 
-namespace 
-{
-std::unique_ptr<std::thread> rendering_thread;
-
-void render_loop()
-{
-    sf::RenderWindow window(sf::VideoMode(800, 600), "MSGPU");
-
-    while (window.isOpen())
-    {
-        sf::Event ev; 
-        while (window.pollEvent(ev))
-        {
-            if (ev.type == sf::Event::Closed)
-            {
-                window.close();
-            }
-        }
-
-        window.clear();
-        window.display();
-    }
-}
-
-}
-
 void initialize_board()
 {
+    set_sys_clock_khz(250000, true);
+    stdio_init_all();
+}
 
-    rendering_thread.reset(new std::thread(&render_loop));
+void core1_func()
+{
 }
 
 void initialize_signal_generator()
 {
-    
-}
-
-void deinitialize_signal_generator()
-{
-    rendering_thread->join();
+    mutex_init(&frame_logic_mutex);
+    sem_init(&video_setup_complete, 0, 1);
+    multicore_launch_core1(core1_func);
 }
 
 } // namespace msgpu 
-

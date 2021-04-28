@@ -118,27 +118,27 @@ void HumanInterface::mode()
     {
         case 1: 
         {
-            mode_->switch_to(vga::Modes::Text_80x30_16);
+            mode_->switch_to(vga::modes::Modes::Text_80x30_16);
         } break;
         case 2: 
         {
-            mode_->switch_to(vga::Modes::Text_40x30_16);
+            mode_->switch_to(vga::modes::Modes::Text_40x30_16);
         } break;
         case 3: 
         {
-            mode_->switch_to(vga::Modes::Text_40x30_12bit);
+            mode_->switch_to(vga::modes::Modes::Text_40x30_12bit);
         } break;
         case 10: 
         {
-            mode_->switch_to(vga::Modes::Graphic_640x480_16);
+            mode_->switch_to(vga::modes::Modes::Graphic_640x480_16);
         } break;
         case 11: 
         {
-            mode_->switch_to(vga::Modes::Graphic_320x240_16);
+            mode_->switch_to(vga::modes::Modes::Graphic_320x240_16);
         } break;
         case 12: 
         {
-            mode_->switch_to(vga::Modes::Graphic_320x240_12bit);
+            mode_->switch_to(vga::modes::Modes::Graphic_320x240_12bit);
         } break;
     }
 }

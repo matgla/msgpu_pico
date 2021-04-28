@@ -1,4 +1,4 @@
-# This file is part of MSGPU project.
+# This file is part of msgpu project.
 # Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,21 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-message (STATUS "Configuring simulation")
+import datetime
+import dill 
 
-add_library(msgpu_arch STATIC)
+class PythonFileGenerator:
+    def __init__(self, filename):
+        self.filename = filename 
+        
+    def get_output_filename(self):
+        return self.filename.stem + ".py"
 
-target_sources(msgpu_arch 
-    PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
-)
+    def generate(self, parsed_types, output_path, includes, raw_types):
+        #with open(output_path, "wb") as output:
+        print (raw_types)
+class PythonGenerator:
+    def __init__(self):
+        pass
 
-find_package(SFML 2 REQUIRED graphics) 
+    def get_output_directory(self):
+        return "py"
 
-target_link_libraries(msgpu_arch 
-    PRIVATE 
-        msgpu_interface
-        sfml-graphics
-        pthread
-)
+    def create_generator_for(self, filename):
+        return PythonFileGenerator(filename)
 
+    def generate_library_artifacts(self):
+        pass

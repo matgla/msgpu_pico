@@ -31,9 +31,9 @@ target_sources(msgpu_processor
 target_link_libraries(msgpu_processor 
     PRIVATE 
         msgpu_modes 
-        msgui
     PUBLIC 
         msgpu_messages
+        msgui
 )
 
 target_compile_options(msgpu_processor 

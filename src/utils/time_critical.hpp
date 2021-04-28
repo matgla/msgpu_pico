@@ -14,31 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "modes/mode_base.hpp"
+#pragma once 
 
-#include "generator/vga.hpp"
-
-namespace vga::modes 
-{
-
-void vga_change_mode(const Modes mode)
-{
-
-    switch (mode) 
-    {
-        case Modes::Text_40x30_12bit:
-        case Modes::Text_40x30_16:
-        {
-            get_vga().change_mode(&vga_mode_320x240_60);
-        } break;
-        case Modes::Text_80x30_16:
-        {
-            get_vga().change_mode(&vga_mode_640x480_60);
-        }
-    }
-
-    get_vga().setup();
-}
-
-} // namespace vga::modes
-
+#ifdef USE_SIMULATION 
+    #define __time_critical_func(name) name
+#else 
+    #include <pico/sync.h>
+#endif 

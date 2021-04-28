@@ -48,12 +48,13 @@ endif ()
 
 
 execute_process(
-    COMMAND ${generator_venv}/bin/python3 ${PROJECT_SOURCE_DIR}/scripts/message_generator.py 
+    COMMAND ${generator_venv}/bin/python3 ${PROJECT_SOURCE_DIR}/scripts/message_generator/generate.py 
     --input ${PROJECT_SOURCE_DIR}/messages 
     --enable-cpp 
+    --enable-python
     --output-dir ${PROJECT_BINARY_DIR}/messages
     COMMAND_ECHO STDOUT 
-COMMAND_ERROR_IS_FATAL ANY
+    COMMAND_ERROR_IS_FATAL ANY
 )
 
 

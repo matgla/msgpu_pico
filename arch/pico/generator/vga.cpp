@@ -28,7 +28,26 @@
 namespace vga
 {
 
+const scanvideo_mode_t* convert_mode(const modes::Modes mode)
+{
+    switch (mode) 
+    {
+        case Modes::Text_40x30_12bit:
+        case Modes::Text_40x30_16:
+        {
+            return &vga_mode_320x240_60;
+        } break;
+        case Modes::Text_80x30_16:
+        {
+            return &vga_mode_640x480_60;
+        }
+    }
+    return &vga_mode_640x480_60;
+}
+
+
 Vga::Vga(modes::Modes mode)
+    : mode_(convert_mode(mode))
 {
     scanvideo_setup(mode_);
     scanvideo_timing_enable(true);
@@ -36,49 +55,22 @@ Vga::Vga(modes::Modes mode)
 
 void Vga::setup()
 {
-  //  return; 
- //   scanvideo_timing_enable(false);
- //   dma_channel_unclaim(0);
-    //dma_set_irq0_channel_mask_enabled(1, false);
-    //dma_channel_unclaim(0);
-//    pio_clear_instruction_memory(pio0);
     uint32_t mask = save_and_disable_interrupts();
-    //printf("VGA setup\n");
     scanvideo_change_mode(mode_);
-    //printf("VGA mode selected\n");
 
     scanvideo_timing_enable(true);
-    //printf("VGA setup done\n");
     restore_interrupts(mask);
 }
 
-void Vga::change_mode(const scanvideo_mode_t* mode)
+void Vga::change_mode(modes::Modes mode)
 {
-    mode_ = mode;
-}
-
-bool Vga::is_vsync() const
-{
-    return false;
-}
-
-bool Vga::render() const
-{
-    return false;
-}
-
-void Vga::render(bool enable)
-{
-}
-
-std::size_t Vga::get_width() const
-{
-    return mode_->width;
+    mode_ = convert_mode(mode);
+    setup();
 }
 
 Vga& get_vga() 
 {
-    static Vga vga(&vga_mode_640x480_60);
+    static Vga vga(modes::Modes::Text_80x30_16);
     return vga;
 }
 

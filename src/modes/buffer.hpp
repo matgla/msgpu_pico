@@ -21,6 +21,8 @@
 
 #include <array>
 
+#include "config.hpp"
+
 namespace vga 
 {
 namespace modes 

@@ -16,13 +16,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string_view>
-
-#include "generator/timings.hpp"
+#include <span> 
 
 #include "modes/mode_types.hpp"
-#include <pico/scanvideo.h>
-#include <pico/scanvideo/composable_scanline.h>
+
+#include "config.hpp"
 
 namespace vga
 {
@@ -35,11 +35,10 @@ public:
     void change_mode(modes::Modes mode);
 
     void setup();
-    bool is_vsync() const;
-    bool render() const;
-    void render(bool enable);
 
-    std::size_t get_width() const;
+    static std::size_t __time_critical_func(fill_scanline_buffer)(
+        std::span<uint32_t> line, std::span<const uint16_t> scanline_buffer);
+
 };
 
 Vga& get_vga();

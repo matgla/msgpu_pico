@@ -49,16 +49,14 @@ struct BufferTypeGeneratorImpl<Configuration, false>
     using type = std::array<std::array<uint16_t, Configuration::resolution_width>, Configuration::resolution_width>;
 };
 
-void vga_change_mode(const Modes mode);
-
 template <typename Configuration> 
 class ModeBase 
 {
 public:
     ModeBase()
     {
-        vga_change_mode(Configuration::mode);
-   }
+        get_vga().change_mode(Configuration::mode);
+    }
 
    
     void base_render()
@@ -66,36 +64,14 @@ public:
 
     }
 
-    std::size_t __time_critical_func(fill_scanline_buffer)(std::span<uint32_t> line, const uint16_t* scanline_buffer)
-    {
-        static uint32_t postamble[] = {
-            0x0000u | (COMPOSABLE_EOL_ALIGN << 16)
-        };
-
-        line[0] = 4;
-        line[1] = host_safe_hw_ptr(line.data() + 8);
-        line[2] = (Configuration::resolution_width - 4) / 2;
-        line[3] = host_safe_hw_ptr(scanline_buffer + 4);
-        line[4] = count_of(postamble);
-        line[5] = host_safe_hw_ptr(postamble);
-        line[6] = 0;
-        line[7] = 0;
-
-        line[8] = (scanline_buffer[0] << 16u) | COMPOSABLE_RAW_RUN;
-        line[9] = (scanline_buffer[1] << 16u) | 0;
-        line[10] = (COMPOSABLE_RAW_RUN << 16u) | scanline_buffer[2]; 
-        line[11] = ((Configuration::resolution_width - 5) << 16u) | scanline_buffer[3];
-        return 8;
-    }
-
-    void set_pixel(const msgui::Position position, const Configuration::Color color)
+    void set_pixel(const msgui::Position position, const typename Configuration::Color color)
     {
         this->framebuffer_[position.y][position.x] = color;
     }
 
 
 protected:
-    using BufferType = BufferTypeGenerator<Configuration>::type;
+    using BufferType = typename BufferTypeGenerator<Configuration>::type;
     BufferType framebuffer_;
 };
 
@@ -133,14 +109,14 @@ public:
  
     }
 
-     std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
+    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
     {
         const uint16_t* current_line = this->line_buffer_[line_number % this->line_buffer_size];
         std::size_t next_line_id = (line_number + 1) % this->line_buffer_size; 
 
         copy_line_to_buffer(line_number + 1, next_line_id);  
 
-        return this->fill_scanline_buffer(line, current_line);
+        return vga::Vga::fill_scanline_buffer(line, std::span<const uint16_t>(current_line, Configuration::resolution_width));
     }
 
     void __time_critical_func(base_render)() 
@@ -157,11 +133,11 @@ template <typename Configuration>
 class NonBufferedModeBase : public ModeBase<Configuration>
 {
 public: 
-     std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
+    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
     {
         const uint16_t* current_line = this->framebuffer_[line_number].data();
 
-        return this->fill_scanline_buffer(line, current_line);
+        return vga::Vga::fill_scanline_buffer(line, std::span<const uint16_t>(current_line, Configuration::resolution_width));
     }
 
     void clear() 
@@ -172,7 +148,7 @@ public:
         }
     }
 
-    void set_pixel(const msgui::Position position, const Configuration::Color color)
+    void set_pixel(const msgui::Position position, const typename Configuration::Color color)
     {
         this->framebuffer_[position.y][position.x] = color;
     }
