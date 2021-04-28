@@ -15,27 +15,37 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
-import dill 
 
 class PythonFileGenerator:
     def __init__(self, filename):
-        self.filename = filename 
-        
-    def get_output_filename(self):
-        return self.filename.stem + ".py"
+        self.filename = filename
 
-    def generate(self, parsed_types, output_path, includes, raw_types):
-        #with open(output_path, "wb") as output:
-        print (raw_types)
+
+
 class PythonGenerator:
     def __init__(self):
-        pass
+        self.generated = []
 
     def get_output_directory(self):
         return "py"
 
     def create_generator_for(self, filename):
-        return PythonFileGenerator(filename)
+        return self 
+
+    def get_output_filename(self):
+        return ""#self.filename.stem + ".py"
+
+    def generate(self, parsed_types, output_path, includes, raw_types):
+        self.generated.append({
+            "path": output_path,
+            "includes": includes, 
+            "code": raw_types
+        })
+
+
+    def resolve_includes(self):
+        for generated in self.generated:
+            print (generated)
 
     def generate_library_artifacts(self):
-        pass
+        self.resolve_includes()
