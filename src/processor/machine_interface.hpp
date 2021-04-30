@@ -17,8 +17,13 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 
 #include "messages/messages.hpp"
+
+#include "modes/modes.hpp"
+
+#include "messages/header.hpp"
 
 namespace processor 
 {
@@ -26,22 +31,32 @@ namespace processor
 class MachineInterface
 {
 public:
-    MachineInterface();
+    using WriteCallback = void(*)(std::span<uint8_t>);
+    MachineInterface(vga::Mode* mode, WriteCallback write_callback);
 
     void process(uint8_t byte);
 
 private:
+
+    void send_info();
+    void process_message(); 
+
     enum class State : uint8_t 
     {
-        waiting_for_id,
-        receiving_command, 
-        processing_command
+        receive_header,
+        receive_payload 
     };
 
     State state_;
     char buffer_[255];
+    std::size_t buffer_counter_;
     std::size_t size_to_get_;
     Messages message_id_;
+    WriteCallback write_;
+    vga::Mode* mode_;
+
+    char header_buffer_[sizeof(Header)];
+    Header header_;
 };
 
 } // namespace processor

@@ -19,9 +19,10 @@
 namespace processor
 {
 
-CommandProcessor::CommandProcessor(vga::Mode& mode)
+CommandProcessor::CommandProcessor(vga::Mode& mode, WriteCallback write_callback)
     : mode_(mode)
-    , interface_(MachineInterface())
+    , write_(write_callback)
+    , interface_(MachineInterface(&mode_, write_callback))
 {
 
 }
@@ -30,11 +31,11 @@ void CommandProcessor::change()
 {
     if (std::holds_alternative<MachineInterface>(interface_))
     {
-        interface_ = HumanInterface(mode_);
+        interface_ = HumanInterface(mode_, write_);
     }
     else
     {
-        interface_ = MachineInterface();
+        interface_ = MachineInterface(&mode_, write_);
     }
 }
 

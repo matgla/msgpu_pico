@@ -41,5 +41,7 @@ class CppUtils:
 
 #pragma once
 
+#include <cstdint>
+
 """.format(year = datetime.datetime.now().year)
 

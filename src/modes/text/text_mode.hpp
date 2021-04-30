@@ -42,6 +42,8 @@ template <typename Configuration, template <typename> typename Base>
 class TextModeBase : public Base<Configuration>
 {
 public:
+    using ConfigurationType = Configuration;
+
     TextModeBase(Vga& vga)
         : cursor_(0, 0)
         , foreground_(Configuration::Color::white)

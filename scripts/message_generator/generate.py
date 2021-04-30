@@ -58,20 +58,6 @@ def get_includes(file):
             return includes_list.split(",") 
     return []
 
-def generate_messages_list(file):
-    generate_header(file) 
-    file.write("#include <cstdint>\n\n")
-
-    file.write("enum class Messages : uint8_t\n")
-    file.write("{\n")
-    i = 0
-    for message in generated_messages:
-        file.write("    " + message + " = " + str(i))
-        i = i + 1
-        if message != generated_messages[-1]:
-            file.write(",\n")
-    file.write("\n};\n") 
-
 print("Searching messages under: ", args.input)
 
 generators = []
@@ -83,7 +69,7 @@ if args.cpp:
 
 if args.python:
     print("-- enabled python")
-    generators.append(PythonGenerator())
+    generators.append(PythonGenerator(args.output))
 
 for path in pathlib.Path(args.input).rglob("*.th"):
     original_sources.append(str(path)) 

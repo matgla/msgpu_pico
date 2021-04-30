@@ -66,6 +66,12 @@ public:
     using Text_40x30_12bit_8x16 = modes::text::TextMode<
         modes::text::Text_40x30_12bit<msgui::fonts::Font8x16>>;
 
+    using ModeTypes = std::tuple< 
+        Text_80x30_16_8x16,
+        Text_40x30_16_8x16,
+        Text_40x30_12bit_8x16
+    >; 
+
     void clear();
     void switch_to(const vga::modes::Modes mode);
     void __time_critical_func(render)();

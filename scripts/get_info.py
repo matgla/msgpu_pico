@@ -4,9 +4,7 @@ import serial
 
 import argparse 
 import pathlib
-import struct 
-import ctypes
-import construct
+import sys 
 
 from dissect import cstruct
 
@@ -16,38 +14,54 @@ argparser.add_argument("--interface", help="Path to directory with interface")
 argparser.add_argument("--serial", help="MSGPU serial port", required=True)
 args = argparser.parse_args()
 
-# ser = serial.Serial(args.serial, 115200)
-# ser.write([1])
+sys.path.append(args.interface) 
 
-# print("Getting info")
-# id = ser.read(1)
-# print("Message id: ", id)
+from messages.info_resp import InfoResp
+from messages.info_req import InfoReq 
+from messages.messages import Messages 
+from messages.write_text import WriteText
+from messages.change_mode import ChangeMode 
+from messages.header import Header
+from messages.mode import Mode
 
-cparser = cstruct.cstruct()
-cparser.load(""" 
-    #define MAX_MODES 16 
-   
-    typedef uint8 uint8_t;
-    typedef uint16 uint16_t;
+ser = serial.Serial(args.serial, 115200)
 
-    typedef struct {
-        uint8_t uses_color_palette : 1;
-        uint8_t mode : 1;
-        uint8 id : 6;
-        uint16 resolution_width;
-        uint16 resolution_height;
-        uint16 color_depth;
-    } mode_info;
+def send_message(message):
+    header = Header() 
+    header.id = getattr(Messages, message._type.name)
+    payload = message.dumps()
+    header.size = len(payload) 
 
-    typedef struct {
-        uint8 version_major;
-        uint8 version_minor;
-        mode_info modes[MAX_MODES];
-    } info_resp;
-""")
+    print (header.dumps())
+    ser.write(header.dumps())
+    if len(payload):
+        ser.write(payload)
 
-message_size = len(cparser.info_resp)
-print("message size: ", message_size)
-#payload = ser.read(message_size)
-#message = cparser.info_resp(payload)
-#print (message)
+def get_type(id):
+    for field in vars(Messages):
+        if getattr(Messages, field) == id:
+            return field
+
+def get_message():
+    payload = ser.read(len(Header))
+    header = Header(payload)
+
+    payload = ser.read(header.size) 
+    return globals()[get_type(header.id)](payload)
+
+send_message(InfoReq())
+info_message = get_message()
+
+for mode in info_message.modes:
+    if mode.used == 1:
+        if mode.mode == Mode.Text: 
+            mode_text = "text" 
+        else: 
+            mode_text = "graphic"
+        print (mode.id, ":", mode_text, str(mode.resolution_width) + "x" + str(mode.resolution_height) + ", color depth:",
+                mode.color_depth, ", uses palette:", mode.uses_color_palette) 
+
+change_mode = ChangeMode()
+change_mode.mode = 2
+send_message(change_mode)
+

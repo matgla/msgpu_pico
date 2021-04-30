@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <array>
+#include <cstdint>
 #include <cstddef>
 
 #include "modes/mode_types.hpp"

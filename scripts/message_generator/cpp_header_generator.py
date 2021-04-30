@@ -80,7 +80,7 @@ class CppHeaderGenerator:
 
 
         s = """ 
-struct {name}
+struct __attribute__((packed, aligned(1))) {name}
 {{
 """.format(name = obj.name)
         s = s + "".join(fields)

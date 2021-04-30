@@ -46,8 +46,7 @@ int main()
    
     msgpu::initialize_signal_generator();
     
-    processor::CommandProcessor processor(mode);
-    processor.change();
+    processor::CommandProcessor processor(mode, &msgpu::write_bytes);
 
     while (true)
     {

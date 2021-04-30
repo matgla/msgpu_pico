@@ -1,0 +1,4 @@
+struct ChangeMode 
+{
+    uint8 mode;
+};

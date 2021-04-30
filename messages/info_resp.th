@@ -1,12 +1,12 @@
-/* include: <stdint.h>,"mode.th" */
+/* include: "mode.th" */
 
 #define MAX_MODES 16
 
-struct info_resp
+struct InfoResp 
 {
     uint8 version_major;
     uint8 version_minor;
-    mode_info modes[MAX_MODES];
+    ModeInfo modes[MAX_MODES];
 };
 
 

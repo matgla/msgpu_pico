@@ -111,5 +111,10 @@ uint8_t read_byte()
     return byte;
 }
 
+void write_bytes(std::span<uint8_t> data)
+{
+    write(serial_port_id, data.data(), data.size());
+}
+
 } // namespace msgpu 
 

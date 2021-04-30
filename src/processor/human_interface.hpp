@@ -28,7 +28,8 @@ namespace processor
 class HumanInterface
 {
 public:
-    HumanInterface(vga::Mode& mode);
+    using WriteCallback = void(*)(std::span<uint8_t>);
+    HumanInterface(vga::Mode& mode, WriteCallback write_callback);
 
     void process(uint8_t byte);
 
@@ -48,6 +49,7 @@ private:
         waiting_for_command, 
         writing
     };
+
     char buffer_[100];
     std::string_view to_parse_;
     std::size_t position_;
@@ -55,6 +57,7 @@ private:
     bool escape_code_ = false;
     bool cursor_move_ = false;
     State state_;
+    WriteCallback write_;
 };
 
 } // namespace processor

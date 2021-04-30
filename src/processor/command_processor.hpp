@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <string_view>
 #include <variant>
+#include <span> 
 
 #include "processor/human_interface.hpp"
 #include "processor/machine_interface.hpp"
@@ -30,7 +31,8 @@ namespace processor
 class CommandProcessor
 {
 public:
-    CommandProcessor(vga::Mode& mode);
+    using WriteCallback = void(*)(std::span<uint8_t>);
+    CommandProcessor(vga::Mode& mode, WriteCallback callback);
 
     void change();
 
@@ -38,6 +40,7 @@ public:
 
 private:
     vga::Mode& mode_;
+    WriteCallback write_;
     std::variant<MachineInterface, HumanInterface> interface_;
 };
 

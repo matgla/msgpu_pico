@@ -30,10 +30,11 @@
 
 namespace processor 
 {
-HumanInterface::HumanInterface(vga::Mode& mode)
+HumanInterface::HumanInterface(vga::Mode& mode, WriteCallback write_callback)
     : position_(0)
     , mode_(&mode)
     , state_(State::waiting_for_command)
+    , write_(write_callback)
 {
     printf("\n> ");
 }
