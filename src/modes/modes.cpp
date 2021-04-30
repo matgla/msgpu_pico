@@ -42,6 +42,7 @@ void Mode::switch_to(const vga::modes::Modes mode)
         }
         case modes::Modes::Text_40x30_12bit:
         {
+            printf("Switch to 40x30 12bit\n");
             mode_.emplace<Text_40x30_12bit_8x16>(vga::get_vga());
         }
     }

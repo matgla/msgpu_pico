@@ -1,6 +1,5 @@
 // This file is part of MS GPU project.
-// Copyright (C) 2020 Mateusz Stadnik
-//
+// Copyright (C) 2020 Mateusz Stadnik 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -106,12 +105,8 @@ void MachineInterface::send_info()
         .size = sizeof(InfoResp)
     };
     
-    printf("Header size %d\n", header.size);
     auto header_span = std::span<uint8_t>(reinterpret_cast<uint8_t*>(&header), sizeof(header));
-    for (char c : header_span) 
-    {
-        printf("Byte: %d\n", c);
-    }
+    
     write_(header_span);
     write_(std::span<uint8_t>(reinterpret_cast<uint8_t*>(&resp), sizeof(resp)));
 }
@@ -132,7 +127,7 @@ void MachineInterface::process(uint8_t byte)
         case State::receive_header:
         {
             header_buffer_[buffer_counter_] = byte;  
-            if (buffer_counter_ == 3) 
+            if (buffer_counter_ == sizeof(Header) - 1)
             {
                 std::memcpy(&header_, header_buffer_, sizeof(Header));
                 printf("Got message header {id: %d, size: %d}\n", header_.id, header_.size);
@@ -154,11 +149,8 @@ void MachineInterface::process(uint8_t byte)
         case State::receive_payload:
         {
             buffer_[buffer_counter_] = byte;
-            if (buffer_counter_ < header_.size)
-            {
-                ++buffer_counter_;
-            }
-            else 
+            ++buffer_counter_;
+            if (buffer_counter_ >= header_.size)
             {
                 buffer_counter_ = 0;
                 process_message();

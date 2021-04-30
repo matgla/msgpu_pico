@@ -3,6 +3,7 @@
 import argparse 
 import tkinter as tk 
 from tkinter import ttk 
+
 import serial 
 
 parser = argparse.ArgumentParser(description="Script to testing msgpu with GUI")
