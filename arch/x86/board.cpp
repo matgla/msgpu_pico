@@ -35,6 +35,9 @@ static std::unique_ptr<std::thread> rendering_thread;
 static termios old_tio; 
 static int serial_port_id;
 
+static uint16_t resolution_width = 640;
+static uint16_t resolution_height = 480;
+
 void render_loop()
 {
     sf::RenderWindow window(sf::VideoMode(800, 600), "MSGPU");
@@ -42,7 +45,7 @@ void render_loop()
     sf::Texture screen_texture;
     sf::Sprite screen_sprite;
     
-    screen.create(640, 480, sf::Color::Blue);
+    screen.create(640, 480, sf::Color::Black);
     screen_texture.loadFromImage(screen);
 
     screen_sprite.setTexture(screen_texture);
@@ -58,14 +61,22 @@ void render_loop()
         }
 
         window.clear();
-        for (std::size_t line = 0; line < 480; ++line)
+        for (std::size_t line = 0; line < resolution_height ; ++line)
         {
             uint32_t line_buffer_[640]; 
             fill_scanline(line_buffer_, line);
-            for (int pixel = 0; pixel < 640; ++pixel)
+            for (int pixel = 0; pixel < resolution_width; ++pixel)
             {
-                if (line_buffer_[pixel] != 0)
-                screen.setPixel(pixel, line, sf::Color::White);
+                uint8_t r = (line_buffer_[pixel] >> 8) & 0xf;
+                uint8_t g = (line_buffer_[pixel] >> 4) & 0xf;
+                uint8_t b = (line_buffer_[pixel] & 0xf);
+                
+                r = r * (256/16 + 1);
+                g = g * (256/16 + 1);
+                b = b * (256/16 + 1);
+
+                sf::Color color(r, g, b);
+                screen.setPixel(pixel, line, color);
             }
         }
         screen_texture.loadFromImage(screen);
@@ -114,6 +125,12 @@ uint8_t read_byte()
 void write_bytes(std::span<uint8_t> data)
 {
     write(serial_port_id, data.data(), data.size());
+}
+
+void set_resolution(uint16_t width, uint16_t height)
+{
+    resolution_width = width;
+    resolution_height = height;
 }
 
 } // namespace msgpu 

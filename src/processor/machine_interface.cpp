@@ -154,7 +154,7 @@ void MachineInterface::process(uint8_t byte)
             {
                 buffer_counter_ = 0;
                 process_message();
-                state_ = State::receive_payload;
+                state_ = State::receive_header;
             }
         } break;
     }
@@ -175,7 +175,7 @@ void MachineInterface::process_message()
             auto* change_mode = reinterpret_cast<ChangeMode*>(buffer_);
             printf("Change mode to: %d\n", change_mode->mode);
             mode_->switch_to(static_cast<vga::modes::Modes>(change_mode->mode));
-        }
+        } break;
         default: 
         {
         }

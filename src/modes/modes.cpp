@@ -19,6 +19,7 @@
 #include <any>
 
 #include "generator/vga.hpp"
+#include "board.hpp"
 
 namespace vga
 {
@@ -34,17 +35,19 @@ void Mode::switch_to(const vga::modes::Modes mode)
     {
         case modes::Modes::Text_80x30_16:
         {
+            msgpu::set_resolution(Text_40x30_16_8x16::ConfigurationType::resolution_width, Text_40x30_16_8x16::ConfigurationType::resolution_height);
             mode_.emplace<Text_80x30_16_8x16>(vga::get_vga());
         } break;
         case modes::Modes::Text_40x30_16:
         {
+            msgpu::set_resolution(Text_40x30_16_8x16::ConfigurationType::resolution_width, Text_40x30_16_8x16::ConfigurationType::resolution_height);
             mode_.emplace<Text_40x30_16_8x16>(vga::get_vga());
-        }
+        } break;
         case modes::Modes::Text_40x30_12bit:
         {
-            printf("Switch to 40x30 12bit\n");
+            msgpu::set_resolution(Text_40x30_12bit_8x16::ConfigurationType::resolution_width, Text_40x30_12bit_8x16::ConfigurationType::resolution_height);
             mode_.emplace<Text_40x30_12bit_8x16>(vga::get_vga());
-        }
+        } break;
     }
 }
 

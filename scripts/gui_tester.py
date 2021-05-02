@@ -6,12 +6,20 @@ from tkinter import ttk
 
 import serial 
 
+from dissect import cstruct
+import sys 
+
 parser = argparse.ArgumentParser(description="Script to testing msgpu with GUI")
 
 parser.add_argument("--serial", dest="serial", action="store", 
         help="Serial port device", required=True)
+parser.add_argument("--interface", action="store", 
+        help="Path to messages interface", required=True)
 
 args, rest = parser.parse_known_args() 
+sys.path.append(args.interface)
+
+from messages.write_text import WriteText
 
 ser = serial.Serial(args.serial, 115200)
 
