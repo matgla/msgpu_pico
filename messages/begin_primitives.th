@@ -1,0 +1,12 @@
+enum PrimitiveType : uint8 {
+    none,
+    triangle,
+    square, 
+    point,
+    line
+};
+
+struct BeginPrimitives 
+{
+    uint8 type;
+};

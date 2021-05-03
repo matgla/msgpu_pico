@@ -38,6 +38,7 @@ target_link_libraries(msgpu_modes
         msgui 
         msgpu_arch
         msgpu_generator
+        msgpu_messages
 )
 
 target_compile_options(msgpu_modes PUBLIC

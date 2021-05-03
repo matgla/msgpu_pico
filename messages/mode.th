@@ -1,3 +1,4 @@
+/* not_message: ModeInfo,Mode */
 
 enum Mode
 {

@@ -1,0 +1,6 @@
+struct WriteVertex
+{
+    float x;
+    float y;
+    float z;
+};

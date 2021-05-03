@@ -23,7 +23,13 @@
 #include "messages/header.hpp"
 #include "messages/info_resp.hpp"
 #include "messages/change_mode.hpp"
-
+#include "messages/set_pixel.hpp"
+#include "messages/draw_line.hpp" 
+#include "messages/info_req.hpp" 
+#include "messages/clear_screen.hpp"
+#include "messages/begin_primitives.hpp"
+#include "messages/end_primitives.hpp"
+#include "messages/write_vertex.hpp"
 #include "messages/messages.hpp"
 
 #include "modes/mode_types.hpp"
@@ -118,6 +124,14 @@ MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback
     , write_(write_callback)
     , mode_(mode)
 {
+    handlers_[ChangeMode::id] = &MachineInterface::change_mode; 
+    handlers_[InfoReq::id] = &MachineInterface::send_info;
+    handlers_[SetPixel::id] = &MachineInterface::set_pixel;
+    handlers_[DrawLine::id] = &MachineInterface::draw_line;
+    handlers_[ClearScreen::id] = &MachineInterface::clear_screen;
+    handlers_[BeginPrimitives::id] = &MachineInterface::begin_primitives;
+    handlers_[EndPrimitives::id] = &MachineInterface::end_primitives;
+    handlers_[WriteVertex::id] = &MachineInterface::write_vertex;
 }
 
 void MachineInterface::process(uint8_t byte)
@@ -130,7 +144,6 @@ void MachineInterface::process(uint8_t byte)
             if (buffer_counter_ == sizeof(Header) - 1)
             {
                 std::memcpy(&header_, header_buffer_, sizeof(Header));
-                printf("Got message header {id: %d, size: %d}\n", header_.id, header_.size);
                 buffer_counter_ = 0;
                 if (header_.size != 0)
                 {
@@ -160,26 +173,60 @@ void MachineInterface::process(uint8_t byte)
     }
 }
 
+template <typename Message>
+Message& cast_to(void* memory)
+{
+    return *static_cast<Message*>(memory);
+}
+
 void MachineInterface::process_message()
 {
-    Messages msg = static_cast<Messages>(header_.id);
-    printf("Process message: %d\n", header_.id);
-    switch (msg)
+    HandlerType handler = handlers_[header_.id];
+    if (handler != nullptr)
     {
-        case Messages::InfoReq: 
-        {
-            send_info();
-        } break;
-        case Messages::ChangeMode:
-        {
-            auto* change_mode = reinterpret_cast<ChangeMode*>(buffer_);
-            printf("Change mode to: %d\n", change_mode->mode);
-            mode_->switch_to(static_cast<vga::modes::Modes>(change_mode->mode));
-        } break;
-        default: 
-        {
-        }
+        (this->*handler)();
     }
+} 
+
+void MachineInterface::change_mode()
+{
+    auto& change_mode = cast_to<ChangeMode>(buffer_);
+    printf("Change mode to: %d\n", change_mode.mode);
+    mode_->switch_to(static_cast<vga::modes::Modes>(change_mode.mode));
+}
+
+void MachineInterface::set_pixel()
+{
+    auto& set_pixel = cast_to<SetPixel>(buffer_);
+    mode_->set_pixel(set_pixel.x, set_pixel.y, set_pixel.color);
+}
+
+void MachineInterface::draw_line() 
+{
+    auto& line = cast_to<DrawLine>(buffer_);
+    mode_->draw_line(line.x1, line.y1, line.x2, line.y2);
+}
+
+void MachineInterface::clear_screen()
+{
+    mode_->clear();
+}
+
+void MachineInterface::begin_primitives()
+{
+    auto& primitive = cast_to<BeginPrimitives>(buffer_);
+    mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
+}
+
+void MachineInterface::end_primitives()
+{
+    mode_->end_primitives();
+}
+
+void MachineInterface::write_vertex()
+{
+    auto& vertex = cast_to<WriteVertex>(buffer_);
+    mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 
 } // namespace processor 

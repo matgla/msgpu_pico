@@ -31,6 +31,7 @@ Mode::Mode()
 
 void Mode::switch_to(const vga::modes::Modes mode)
 {
+    clear();
     switch(mode)
     {
         case modes::Modes::Text_80x30_16:
@@ -47,6 +48,11 @@ void Mode::switch_to(const vga::modes::Modes mode)
         {
             msgpu::set_resolution(Text_40x30_12bit_8x16::ConfigurationType::resolution_width, Text_40x30_12bit_8x16::ConfigurationType::resolution_height);
             mode_.emplace<Text_40x30_12bit_8x16>(vga::get_vga());
+        } break;
+        case modes::Modes::Graphic_320x240_12bit:
+        {
+            msgpu::set_resolution(Graphic_320x240_12bit::ConfigurationType::resolution_width, Graphic_320x240_12bit::ConfigurationType::resolution_height);
+            mode_.emplace<Graphic_320x240_12bit>();
         } break;
     }
 }
@@ -154,12 +160,55 @@ void Mode::set_color(int foreground, int background)
     }, mode_);
 }
 
-std::span<uint16_t> Mode::get_line(std::size_t line) 
+void Mode::set_pixel(int x, int y, uint16_t color)
 {
-    return std::visit([line](auto&& mode) -> std::span<uint16_t> {
-        return mode.get_line(line);
+    std::visit([x, y, color](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.set_pixel(x, y, color);
+        }
     }, mode_);
 }
 
+void Mode::draw_line(int x1, int y1, int x2, int y2)
+{
+    std::visit([x1, y1, x2, y2](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.draw_line(x1, y1, x2, y2);
+        }
+    }, mode_);
+}
+
+void Mode::begin_primitives(PrimitiveType type)
+{
+    std::visit([type](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.start_primitives(type);
+        }
+    }, mode_);
+
+}
+
+void Mode::end_primitives()
+{
+    std::visit([](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.end_primitives();
+        }
+    }, mode_);
+}
+
+void Mode::write_vertex(float x, float y, float z)
+{
+    std::visit([x, y, z](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.write_vertex(x, y, z);
+        }
+    }, mode_);
+}
 
 } // namespace vga

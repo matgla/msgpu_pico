@@ -75,13 +75,12 @@ target_include_directories(msgpu_messages
 
         file.write("enum class Messages : uint8_t\n")
         file.write("{\n")
-        i = 0
-        generated_messages = [] 
+       
+        generated_messages = []
         for generator in self.generators:
             generated_messages.extend(generator.get_messages())
         for message in generated_messages:
-            file.write("    " + message + " = " + str(i))
-            i = i + 1
+            file.write("    " + message["name"] + " = " + str(message["id"]))
             if message != generated_messages[-1]:
                 file.write(",\n")
         file.write("\n};\n") 

@@ -16,11 +16,16 @@
 
 from cpp_utils import CppUtils
 
+from utils import is_message
+
 class CppHeaderGenerator:
+
+    id_counter = 0
+
     def __init__(self, filename):
         self.filename = filename
         self.generated_messages = []
-         
+
     def get_messages(self):
         return self.generated_messages
 
@@ -36,16 +41,27 @@ class CppHeaderGenerator:
     def convert_type(self, t):
     # extended type
         if not hasattr(t, "name"):
+            name = t.type.name 
+        else: 
+            name = t.name
+       
+        
+        if name == "uint8":
+            return "uint8_t"
+        if name == "uint16":
+            return "uint16_t"
+        if name == "uint32":
+            return "uint32_t"
+        if name == "float":
+            return "float"
+        if name == "double":
+            return "double"
+        if name == "void":
+            return "void"
+
+        if not hasattr(t, "name"):
             return t.type.name 
 
-        if t.name == "uint8":
-            return "uint8_t"
-        if t.name == "uint16":
-            return "uint16_t"
-        if t.name == "uint32":
-            return "uint32_t"
-        if t.name == "void":
-            return "void"
 
         raise RuntimeError("Conversion not known for: " + t.name)
 
@@ -54,7 +70,7 @@ class CppHeaderGenerator:
             self.output.write("#include " + self.convert_include(include) + "\n")
         self.output.write("\n")
 
-    def generate_structure(self, obj):
+    def generate_structure(self, obj, is_msg):
         fields = [] 
         for key, value in obj.lookup.items():
             if value.bits:
@@ -84,7 +100,11 @@ struct __attribute__((packed, aligned(1))) {name}
 {{
 """.format(name = obj.name)
         s = s + "".join(fields)
-        s = s + """
+        if is_msg:
+            s = s + """
+    constexpr static uint8_t id = {id};
+""".format(id = CppHeaderGenerator.id_counter)
+        s = s + """ 
 }};
 """.format() 
 
@@ -111,7 +131,7 @@ struct __attribute__((packed, aligned(1))) {name}
         self.output.write(s)
 
 
-    def generate(self, items, output_path, includes, raw_types):
+    def generate(self, items, output_path, includes, original_file):
         with open(output_path, "w") as output:
             self.output = output 
             self.includes = includes 
@@ -123,6 +143,9 @@ struct __attribute__((packed, aligned(1))) {name}
                 if hasattr(v, "values"):
                     self.generate_enum(v)
                 if hasattr(v, "lookup"):
-                    self.generate_structure(v)
-                    self.generated_messages.append(key)
+                    is_msg = is_message(original_file, key)
+                    self.generate_structure(v, is_msg)
+                    if is_msg:
+                        self.generated_messages.append({"name": key, "id": CppHeaderGenerator.id_counter})
+                        CppHeaderGenerator.id_counter = CppHeaderGenerator.id_counter + 1
 

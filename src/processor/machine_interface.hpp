@@ -16,8 +16,11 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <span>
+
+#include <eul/function.hpp>
 
 #include "messages/messages.hpp"
 
@@ -38,8 +41,23 @@ public:
 
 private:
 
-    void send_info();
     void process_message(); 
+
+    typedef void(MachineInterface::*HandlerType)();
+
+    void send_info();
+    void change_mode();
+
+    void set_pixel();
+    void draw_line();
+
+    void clear_screen();
+
+    // 3d GPU API 
+    
+    void begin_primitives();
+    void end_primitives();
+    void write_vertex();
 
     enum class State : uint8_t 
     {
@@ -57,6 +75,9 @@ private:
 
     char header_buffer_[sizeof(Header)];
     Header header_;
+
+    std::array<HandlerType, 255> handlers_;
+
 };
 
 } // namespace processor

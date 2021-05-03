@@ -16,6 +16,7 @@
 
 #pragma once 
 
+#include <cstdio>
 #include <span>
 
 #include <msgui/Position.hpp>
@@ -142,6 +143,7 @@ public:
 
     void clear() 
     {
+        printf("Clearing lines\n");
         for (auto& line : this->framebuffer_)
         {
             line.fill(0);
@@ -150,7 +152,17 @@ public:
 
     void set_pixel(const msgui::Position position, const typename Configuration::Color color)
     {
-        this->framebuffer_[position.y][position.x] = color;
+        if (position.x < 0 || position.x >= Configuration::resolution_width)
+        {
+            return;
+        }
+
+        if (position.y < 0 || position.y >= Configuration::resolution_height)
+        {
+            return;
+        }
+
+        this->framebuffer_[position.y][position.x] = 0xfff;//color;
     }
 
 

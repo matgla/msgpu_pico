@@ -50,7 +50,7 @@ public:
         , background_(Configuration::Color::black)
     {
         clear();  
-        render_box();
+       // render_box();
     }
 
 
@@ -150,14 +150,6 @@ public:
     }
     // BUFFER MANAGEMENT
     
-    std::span<uint16_t> get_line(const std::size_t line) const
-    {
-        return std::span<uint16_t>();
-    }
-
-    // RENDERING
-    //
-
     void clear() 
     {
         cursor_ = {0, 0};

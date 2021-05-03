@@ -23,7 +23,12 @@
 #include "modes/text/40x30_16.hpp"
 #include "modes/text/40x30_12bit.hpp"
 
+#include "modes/graphic/graphic_mode.hpp"
+#include "modes/graphic/320x240_12bit.hpp"
+
 #include <msgui/fonts/Font8x16.hpp>
+
+#include "messages/begin_primitives.hpp"
 
 namespace vga
 {
@@ -40,11 +45,6 @@ public:
     std::size_t fill_scanline(std::span<uint32_t> line, std::size_t line_number)
     {
         return 0;
-    }
-
-    std::span<uint16_t> get_line(std::size_t line)
-    {
-        return std::span<uint16_t>{};
     }
 
     void clear()
@@ -66,10 +66,14 @@ public:
     using Text_40x30_12bit_8x16 = modes::text::TextMode<
         modes::text::Text_40x30_12bit<msgui::fonts::Font8x16>>;
 
+    using Graphic_320x240_12bit = modes::graphic::GraphicMode<
+        modes::graphic::Graphic_320x240_12bit>;
+
     using ModeTypes = std::tuple< 
         Text_80x30_16_8x16,
         Text_40x30_16_8x16,
-        Text_40x30_12bit_8x16
+        Text_40x30_12bit_8x16,
+        Graphic_320x240_12bit
     >; 
 
     void clear();
@@ -78,24 +82,29 @@ public:
     void write(char c);
     void move_cursor(int row, int column);
     void set_cursor(int row, int column);
-    void set_cursor_row(int row);
-    void set_cursor_column(int column);
+    void set_cursor_row(int row); void set_cursor_column(int column);
     void set_foreground_color(int foreground);
     void set_background_color(int background);
     void set_color(int foreground, int background);
     std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number);
-    std::span<uint16_t> get_line(std::size_t line);
-    
+    void set_pixel(int x, int y, uint16_t color);
+    void draw_line(int x1, int y1, int x2, int y2);
+
+    // 3d api 
+    void begin_primitives(PrimitiveType type);
+    void end_primitives();
+    void write_vertex(float x, float y, float z);
+
     using VariantType = std::variant<
         None, 
         Text_80x30_16_8x16,
         Text_40x30_16_8x16,
-        Text_40x30_12bit_8x16
+        Text_40x30_12bit_8x16,
+        Graphic_320x240_12bit
     >;
 private:
 
     VariantType mode_;
-   // Text_80x30_16_5x7 test_mode_;
 };
 
 } // namespace vga
