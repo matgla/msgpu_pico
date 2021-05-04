@@ -1,0 +1,8 @@
+struct SetPerspective
+{
+    float view_angle;
+    float aspect;
+    float z_near;
+    float z_far;
+};
+

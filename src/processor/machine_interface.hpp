@@ -58,6 +58,7 @@ private:
     void begin_primitives();
     void end_primitives();
     void write_vertex();
+    void set_perspective();
 
     enum class State : uint8_t 
     {
