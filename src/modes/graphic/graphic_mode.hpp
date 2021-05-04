@@ -18,6 +18,9 @@
 
 #include <cmath>
 
+#include <eul/math/matrix.hpp>
+#include <eul/math/vector.hpp>
+
 #include "modes/mode_base.hpp"
 
 #include "modes/types.hpp"
@@ -137,7 +140,7 @@ public:
     {
         const int expected_vertexes = get_vertex_count_for(primitive_type);
         
-        vertex_buffer[primitive_vertex_counter] = {.x = x + 1, .y = y + 1, .z = z + 1};
+        vertex_buffer[primitive_vertex_counter] = {x, y, z, 1};
 
         ++primitive_vertex_counter;
         printf("Write vertex: %f %f %f\n", x, y, z);
@@ -149,20 +152,68 @@ public:
         }
     }
 
-    struct Vertex3
+    void set_perspective(float angle, float aspect, float z_far, float z_near)
     {
-        float x;
-        float y;
-        float z;
-    };
-protected:
+        const float theta = angle / 2.0f;
+        const float F = 1.0f / (tanf(theta / 180.0f * 3.14f)); 
+        const float a = aspect; 
+        const float q = z_far / (z_far - z_near);
 
+        projection_ = {
+            { a * F,    0,           0, 0 },
+            {     0,    F,           0, 0 },
+            {     0,    0,           q, 1 },
+            {     0,    0, -1 * z_near * q, 0}
+        };
+
+        printf("Projection matrix setted\n");
+
+        for (std::size_t i = 0; i < projection_.rows(); ++i)
+        {
+            for (std::size_t j = 0; j < projection_.columns(); ++j)
+            {
+                printf("%f, ", projection_[i][j]);
+            }
+            printf("\n");
+        }
+
+
+    }
+
+
+protected:
+    using Vector4 = eul::math::vector<float, 4>;
     void draw_primitive()
     {
         const int vertexes = get_vertex_count_for(primitive_type);
+    
+
         for (int i = 0; i < vertexes; ++i)
         {
-            set_pixel(vertex_buffer[i].x * 50, vertex_buffer[i].y * 50, 0xfff);
+            Vector4 cartesian_vector = vertex_buffer[i] * projection_;
+    
+
+            float x = cartesian_vector[0];
+            float y = cartesian_vector[1];
+            if (cartesian_vector[3] != 0)
+            {
+                x /= cartesian_vector[3];
+                y /= cartesian_vector[3];
+            }
+            
+
+
+            x += 1.0f;
+            y += 1.0f; 
+
+            printf ("x: %f, y: %f\n", x, y);
+
+            x *= 0.5f * Configuration::resolution_width;
+            y *= 0.5f * Configuration::resolution_height;
+
+            printf("Setting pixel: %f %f\n", x, y);
+
+            set_pixel(x, y, 0xfff);
         }
     }
 
@@ -179,9 +230,12 @@ protected:
         return 0;
     }
 
+    using Matrix_4x4 = eul::math::matrix<float, 4, 4>;
+    
     PrimitiveType primitive_type;
     int primitive_vertex_counter;
-    std::array<Vertex3, 4> vertex_buffer;
+    std::array<Vector4, 4> vertex_buffer;
+    Matrix_4x4 projection_; 
 };
 
 template <typename Configuration>

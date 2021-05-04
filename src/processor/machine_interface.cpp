@@ -31,6 +31,7 @@
 #include "messages/end_primitives.hpp"
 #include "messages/write_vertex.hpp"
 #include "messages/messages.hpp"
+#include "messages/set_perspective.hpp"
 
 #include "modes/mode_types.hpp"
 
@@ -132,6 +133,7 @@ MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback
     handlers_[BeginPrimitives::id] = &MachineInterface::begin_primitives;
     handlers_[EndPrimitives::id] = &MachineInterface::end_primitives;
     handlers_[WriteVertex::id] = &MachineInterface::write_vertex;
+    handlers_[SetPerspective::id] = &MachineInterface::set_perspective;
 }
 
 void MachineInterface::process(uint8_t byte)
@@ -186,6 +188,10 @@ void MachineInterface::process_message()
     {
         (this->*handler)();
     }
+    else 
+    {
+        printf("Unsupported message id: %d\n", header_.id);
+    }
 } 
 
 void MachineInterface::change_mode()
@@ -227,6 +233,12 @@ void MachineInterface::write_vertex()
 {
     auto& vertex = cast_to<WriteVertex>(buffer_);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
+}
+
+void MachineInterface::set_perspective()
+{
+    auto& perspective = cast_to<SetPerspective>(buffer_);
+    mode_->set_perspective(perspective.view_angle, perspective.aspect, perspective.z_far, perspective.z_near);
 }
 
 } // namespace processor 

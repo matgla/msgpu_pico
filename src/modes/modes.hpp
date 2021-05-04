@@ -4,8 +4,7 @@
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
+// (at your option) any later version.  
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -17,6 +16,8 @@
 
 #include <variant>
 #include <span>
+
+#include <eul/math/matrix.hpp>
 
 #include "modes/text/text_mode.hpp"
 #include "modes/text/80x30_16.hpp"
@@ -95,6 +96,8 @@ public:
     void end_primitives();
     void write_vertex(float x, float y, float z);
 
+    void set_perspective(float angle, float aspect, float z_far, float z_near);
+
     using VariantType = std::variant<
         None, 
         Text_80x30_16_8x16,
@@ -103,7 +106,7 @@ public:
         Graphic_320x240_12bit
     >;
 private:
-
+    
     VariantType mode_;
 };
 

@@ -211,4 +211,14 @@ void Mode::write_vertex(float x, float y, float z)
     }, mode_);
 }
 
+void Mode::set_perspective(float angle, float aspect, float z_far, float z_near)
+{
+    std::visit([angle, aspect, z_far, z_near](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.set_perspective(angle, aspect, z_far, z_near);
+        }
+    }, mode_);
+
+}
 } // namespace vga
