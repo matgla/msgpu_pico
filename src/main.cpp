@@ -31,9 +31,14 @@ static vga::Mode mode;
 namespace msgpu 
 {
 
-void fill_scanline(std::span<uint32_t> buffer, std::size_t line)
+std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
 {
-    mode.fill_scanline(buffer, line);
+    return mode.fill_scanline(buffer, line);
+}
+
+void frame_update()
+{
+    mode.render();
 }
 
 } // namespace msgpu

@@ -16,6 +16,9 @@
 
 #include "board.hpp"
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <pico/scanvideo.h>
 #include <pico/scanvideo/composable_scanline.h>
 
@@ -39,15 +42,72 @@ void initialize_board()
     stdio_init_all();
 }
 
+void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int core)
+{
+    int l = scanvideo_scanline_number(dest->scanline_id);
+
+    std::size_t size = fill_scanline(std::span<uint32_t>(dest->data, dest->data_max), l);
+
+    dest->data_used = size;
+    dest->status = SCANLINE_OK;
+}
+
+void __time_critical_func(render_loop)()
+{
+    static uint32_t last_frame_num = 0;
+    int core_num = get_core_num();
+
+    while (true) 
+    {
+        scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(true);
+
+        mutex_enter_blocking(&frame_logic_mutex);
+
+        uint32_t frame_num = scanvideo_frame_number(scanline_buffer->scanline_id);
+
+        if (frame_num != last_frame_num)
+        {
+            last_frame_num = frame_num;
+            msgpu::frame_update();
+        }
+        mutex_exit(&frame_logic_mutex);
+
+        render_scanline(scanline_buffer, core_num);
+        scanvideo_end_scanline_generation(scanline_buffer);
+    }
+}
+
 void core1_func()
 {
+    sem_acquire_blocking(&video_setup_complete);
+
+    render_loop();
 }
+
+
 
 void initialize_signal_generator()
 {
     mutex_init(&frame_logic_mutex);
     sem_init(&video_setup_complete, 0, 1);
     multicore_launch_core1(core1_func);
+    sem_release(&video_setup_complete);
+}
+
+void set_resolution(uint16_t width, uint16_t height)
+{
+}
+
+uint8_t read_byte()
+{
+    uint8_t byte;
+    read(STDIN_FILENO, &byte, sizeof(byte));
+    return byte;
+}
+
+void write_bytes(std::span<uint8_t> bytes)
+{
+    write(STDOUT_FILENO, bytes.data(), bytes.size());
 }
 
 } // namespace msgpu 

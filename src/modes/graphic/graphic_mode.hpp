@@ -128,6 +128,7 @@ public:
     {
         primitive_type = type; 
         primitive_vertex_counter = 0;
+        theta += 0.1;
     }
 
     void end_primitives()
@@ -143,10 +144,8 @@ public:
         vertex_buffer[primitive_vertex_counter] = {x, y, z, 1};
 
         ++primitive_vertex_counter;
-        printf("Write vertex: %f %f %f\n", x, y, z);
         if (primitive_vertex_counter >= expected_vertexes)
         {
-            printf("Write primitve\n");
             draw_primitive();   
             primitive_vertex_counter = 0;
         }
@@ -182,15 +181,39 @@ public:
 
 
 protected:
+    inline static float theta = 0.0f;
     using Vector4 = eul::math::vector<float, 4>;
     void draw_primitive()
     {
         const int vertexes = get_vertex_count_for(primitive_type);
-    
+  
+        // For now only Triangle supported 
 
+          Matrix_4x4 rotate_x = {
+            {1,          0,           0, 0},
+            {0, cos(theta), -sin(theta), 0},
+            {0, sin(theta),  cos(theta), 0},
+            {0,          0,           0, 1} 
+        };
+
+        Matrix_4x4 rotate_z = {
+            { cos(theta), -sin(theta), 0, 0},
+            { sin(theta), cos(theta) , 0, 0},
+            {          0,          0 , 1, 0},
+            {          0,          0 , 0, 1}
+        };
+
+        int prev_x, prev_y, first_x, first_y;
         for (int i = 0; i < vertexes; ++i)
         {
-            Vector4 cartesian_vector = vertex_buffer[i] * projection_;
+            Vector4 translated = vertex_buffer[i];
+            
+            translated = translated * rotate_x;
+            translated = translated * rotate_z; 
+
+            translated[2] += 3.0f;
+
+            Vector4 cartesian_vector = translated * projection_;
     
 
             float x = cartesian_vector[0];
@@ -201,19 +224,35 @@ protected:
                 y /= cartesian_vector[3];
             }
             
-
-
             x += 1.0f;
             y += 1.0f; 
 
-            printf ("x: %f, y: %f\n", x, y);
 
-            x *= 0.5f * Configuration::resolution_width;
-            y *= 0.5f * Configuration::resolution_height;
+            x *= 0.5f * (Configuration::resolution_width - 1);
+            y *= 0.5f * (Configuration::resolution_height - 1);
 
-            printf("Setting pixel: %f %f\n", x, y);
+            //printf("Setting pixel: %f %f\n", x, y);
+            
+            //set_pixel(Configuration::resolution_width - x, Configuration::resolution_height - y, 0xfff);
+            if (i == 0)
+            {
+                prev_x = x;
+                prev_y = y;
+                first_x = x;
+                first_y = y;
+            }
+            else 
+            {
+                draw_line(prev_x, prev_y, x, y);
+ 
+                prev_x = x;
+                prev_y = y;
+            }
 
-            set_pixel(x, y, 0xfff);
+            if (i == 2)
+            {
+                draw_line(x, y, first_x, first_y);
+            }
         }
     }
 

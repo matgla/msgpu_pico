@@ -23,7 +23,8 @@ target_sources(msgpu_generator
 
 target_link_libraries(msgpu_generator
     PRIVATE 
-        msgui 
+        msgui
+    PUBLIC
         msgpu_generator_interface 
 )
 

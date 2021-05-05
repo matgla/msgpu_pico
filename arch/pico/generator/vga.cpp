@@ -20,24 +20,33 @@
 #include <cstdio> 
 
 #include <pico/scanvideo.h>
+#include <pico/scanvideo/composable_scanline.h>
+
 #include <hardware/dma.h>
 #include <hardware/sync.h>
 
 #include "memory/video_ram.hpp"
 
+#include "board.hpp"
+
 namespace vga
 {
+
+namespace 
+{
+static const scanvideo_mode_t* mode_;
+}
 
 const scanvideo_mode_t* convert_mode(const modes::Modes mode)
 {
     switch (mode) 
     {
-        case Modes::Text_40x30_12bit:
-        case Modes::Text_40x30_16:
+        case modes::Modes::Text_40x30_12bit:
+        case modes::Modes::Text_40x30_16:
         {
             return &vga_mode_320x240_60;
         } break;
-        case Modes::Text_80x30_16:
+        case modes::Modes::Text_80x30_16:
         {
             return &vga_mode_640x480_60;
         }
@@ -47,8 +56,8 @@ const scanvideo_mode_t* convert_mode(const modes::Modes mode)
 
 
 Vga::Vga(modes::Modes mode)
-    : mode_(convert_mode(mode))
 {
+    mode_ = convert_mode(mode);
     scanvideo_setup(mode_);
     scanvideo_timing_enable(true);
 }
@@ -66,6 +75,30 @@ void Vga::change_mode(modes::Modes mode)
 {
     mode_ = convert_mode(mode);
     setup();
+}
+
+std::size_t Vga::fill_scanline_buffer(std::span<uint32_t> line, std::span<const uint16_t> scanline_buffer)
+{
+    const uint16_t* current_line = scanline_buffer.data();
+
+    static uint32_t postamble[] = {
+        0x0000u | (COMPOSABLE_EOL_ALIGN << 16)
+    };
+
+    line[0] = 4;
+    line[1] = host_safe_hw_ptr(line.data() + 8);
+    line[2] = (mode_->width - 4) / 2;
+    line[3] = host_safe_hw_ptr(current_line + 4);
+    line[4] = count_of(postamble);
+    line[5] = host_safe_hw_ptr(postamble);
+    line[6] = 0;
+    line[7] = 0;
+
+    line[8] = (current_line[0] << 16u) | COMPOSABLE_RAW_RUN;
+    line[9] = (current_line[1] << 16u) | 0;
+    line[10] = (COMPOSABLE_RAW_RUN << 16u) | current_line[2]; 
+    line[11] = ((mode_->width - 5) << 16u) | current_line[3];
+    return 8;
 }
 
 Vga& get_vga() 

@@ -27,7 +27,9 @@ void initialize_board();
 void initialize_signal_generator();
 void deinitialize_signal_generator();
 
-void fill_scanline(std::span<uint32_t> buffer, std::size_t line);
+std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line);
+
+void frame_update();
 
 uint8_t read_byte();
 void write_bytes(std::span<uint8_t> byte);

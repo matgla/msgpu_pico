@@ -143,7 +143,6 @@ public:
 
     void clear() 
     {
-        printf("Clearing lines\n");
         for (auto& line : this->framebuffer_)
         {
             line.fill(0);

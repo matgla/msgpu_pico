@@ -41,6 +41,13 @@ target_link_libraries(msgpu_arch
         msgpu_interface
 )
 
+target_include_directories(msgpu_arch 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_subdirectory(generator)
+
 #find_package(msgui REQUIRED)
 
 #add_subdirectory(config)
