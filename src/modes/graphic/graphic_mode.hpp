@@ -27,8 +27,12 @@
 
 #include "messages/begin_primitives.hpp"
 
+#include <pico/stdlib.h>
+
 namespace vga::modes::graphic 
 {
+
+static inline uint32_t clear_time = 0;
 
 template <typename Configuration, template <typename> typename Base>
 class GraphicModeBase : public Base<Configuration>
@@ -37,6 +41,7 @@ public:
 
     void clear() 
     {
+        clear_time = to_ms_since_boot(get_absolute_time());
         Base<Configuration>::clear();
     }
 
@@ -49,7 +54,7 @@ public:
         Base<Configuration>::set_pixel({.x = x, .y = y}, static_cast<typename Configuration::Color>(color));
     }
 
-    void draw_line(int x1, int y1, int x2, int y2)
+    void __time_critical_func(draw_line)(int x1, int y1, int x2, int y2)
     {
         int d, dx, dy, ai, bi, xi, yi;
         int x = x1, y = y1;
@@ -137,7 +142,7 @@ public:
     }
 
 
-    void write_vertex(float x, float y, float z)
+    void __time_critical_func(write_vertex)(float x, float y, float z)
     {
         const int expected_vertexes = get_vertex_count_for(primitive_type);
         
@@ -146,7 +151,13 @@ public:
         ++primitive_vertex_counter;
         if (primitive_vertex_counter >= expected_vertexes)
         {
+            static uint32_t s = 0;
             draw_primitive();   
+        
+            const uint32_t f = to_ms_since_boot(get_absolute_time());
+            printf("Between draw %d\n", (f - s));
+            s = to_ms_since_boot(get_absolute_time());     
+            printf("P drawn and took %d ms.\n", (f - clear_time));
             primitive_vertex_counter = 0;
         }
     }
@@ -165,16 +176,16 @@ public:
             {     0,    0, -1 * z_near * q, 0}
         };
 
-        printf("Projection matrix setted\n");
+        //printf("Projection matrix setted\n");
 
-        for (std::size_t i = 0; i < projection_.rows(); ++i)
-        {
-            for (std::size_t j = 0; j < projection_.columns(); ++j)
-            {
-                printf("%f, ", projection_[i][j]);
-            }
-            printf("\n");
-        }
+        //for (std::size_t i = 0; i < projection_.rows(); ++i)
+        //{
+        //    for (std::size_t j = 0; j < projection_.columns(); ++j)
+        //    {
+        //        printf("%f, ", projection_[i][j]);
+        //    }
+        //    printf("\n");
+        //}
 
 
     }
@@ -183,13 +194,13 @@ public:
 protected:
     inline static float theta = 0.0f;
     using Vector4 = eul::math::vector<float, 4>;
-    void draw_primitive()
+    void __time_critical_func(draw_primitive)()
     {
         const int vertexes = get_vertex_count_for(primitive_type);
   
         // For now only Triangle supported 
 
-          Matrix_4x4 rotate_x = {
+        Matrix_4x4 rotate_x = {
             {1,          0,           0, 0},
             {0, cos(theta), -sin(theta), 0},
             {0, sin(theta),  cos(theta), 0},
@@ -256,7 +267,7 @@ protected:
         }
     }
 
-    int get_vertex_count_for(PrimitiveType type)
+    int __time_critical_func(get_vertex_count_for)(PrimitiveType type)
     {
         switch (type)
         {

@@ -50,6 +50,11 @@ const scanvideo_mode_t* convert_mode(const modes::Modes mode)
         {
             return &vga_mode_640x480_60;
         }
+        case modes::Modes::Graphic_320x240_16:
+        case modes::Modes::Graphic_320x240_12bit:
+        {
+            return &vga_mode_320x240_60;
+        }
     }
     return &vga_mode_640x480_60;
 }
@@ -103,8 +108,14 @@ std::size_t Vga::fill_scanline_buffer(std::span<uint32_t> line, std::span<const 
 
 Vga& get_vga() 
 {
-    static Vga vga(modes::Modes::Text_80x30_16);
+    static Vga vga(modes::Modes::Graphic_320x240_12bit);
     return vga;
 }
 
 } // namespace vga
+void start_vga()
+{
+    vga::get_vga().setup();
+}
+
+

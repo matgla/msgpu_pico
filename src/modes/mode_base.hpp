@@ -26,6 +26,8 @@
 #include "modes/buffer.hpp"
 #include "modes/mode_types.hpp"
 
+#include "board.hpp"
+
 namespace vga::modes 
 {
 
@@ -67,7 +69,9 @@ public:
 
     void set_pixel(const msgui::Position position, const typename Configuration::Color color)
     {
+        msgpu::block_display();
         this->framebuffer_[position.y][position.x] = color;
+        msgpu::unblock_display();
     }
 
 
@@ -134,14 +138,42 @@ template <typename Configuration>
 class NonBufferedModeBase : public ModeBase<Configuration>
 {
 public: 
+    void __time_critical_func(copy_line_to_buffer)(std::size_t line_number, std::size_t next_line_id)
+    {
+        if (line_number < Configuration::resolution_height)
+        {
+            const auto& line = this->framebuffer_[line_number];
+            auto& line_buffer = this->line_buffer_[next_line_id];
+            memcpy(&line_buffer, &line, line.size() * sizeof(uint16_t));
+        }
+ 
+    }
+
     std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
     {
+ //       const uint16_t* current_line = this->line_buffer_[line_number % this->line_buffer_size];
+ //       std::size_t next_line_id = (line_number + 1) % this->line_buffer_size; 
+
+ //       copy_line_to_buffer(line_number + 1, next_line_id);  
+
+ //       return vga::Vga::fill_scanline_buffer(line, std::span<const uint16_t>(current_line, Configuration::resolution_width));
+ 
+        if (line_number >= Configuration::resolution_height)
+        {
+            return 0;
+        }
         const uint16_t* current_line = this->framebuffer_[line_number].data();
 
         return vga::Vga::fill_scanline_buffer(line, std::span<const uint16_t>(current_line, Configuration::resolution_width));
     }
 
-    void clear() 
+    void __time_critical_func(base_render)() 
+    {
+        copy_line_to_buffer(0, 0);
+    }
+
+
+    void __time_critical_func(clear)() 
     {
         for (auto& line : this->framebuffer_)
         {
@@ -149,7 +181,7 @@ public:
         }
     }
 
-    void set_pixel(const msgui::Position position, const typename Configuration::Color color)
+    void __time_critical_func(set_pixel)(const msgui::Position position, const typename Configuration::Color color)
     {
         if (position.x < 0 || position.x >= Configuration::resolution_width)
         {
@@ -164,7 +196,8 @@ public:
         this->framebuffer_[position.y][position.x] = 0xfff;//color;
     }
 
-
+    constexpr static std::size_t line_buffer_size = 5;
+    uint16_t line_buffer_[line_buffer_size][Configuration::resolution_width];
 };
 
 } // namespace vga::modes

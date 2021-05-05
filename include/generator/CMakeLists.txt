@@ -23,7 +23,7 @@ target_sources(msgpu_generator_interface
 
 target_compile_options(msgpu_generator_interface INTERFACE 
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
-    $<$<CONFIG:DEBUG>:-Og -g>
+    $<$<CONFIG:DEBUG>:-Og -g -fvar-tracking -fvar-tracking-assignments>
     $<$<CONFIG:RELEASE>:-Os>
 )
 

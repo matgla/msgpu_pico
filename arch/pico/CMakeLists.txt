@@ -48,6 +48,13 @@ target_include_directories(msgpu_arch
 
 add_subdirectory(generator)
 
+target_compile_options(msgpu_arch PUBLIC
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
+    $<$<CONFIG:DEBUG>:-Og -g -fvar-tracking -fvar-tracking-assignments>
+    $<$<CONFIG:RELEASE>:-Os>
+)
+
+
 #find_package(msgui REQUIRED)
 
 #add_subdirectory(config)
@@ -73,14 +80,5 @@ add_subdirectory(generator)
 #        msgpu_video_ram
 #        msgpu_disk
 #        msgpu_config
-#)
-
-#pico_enable_stdio_usb(msgpu 1)
-#pico_enable_stdio_uart(msgpu 0)
-
-#pico_add_extra_outputs(msgpu)
-
-#pico_set_linker_script(msgpu 
-#    ${PROJECT_SOURCE_DIR}/linker_script.ld 
 #)
 

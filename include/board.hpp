@@ -36,5 +36,9 @@ void write_bytes(std::span<uint8_t> byte);
 
 void set_resolution(uint16_t width, uint16_t height);
 
+void block_display();
+void unblock_display();
+
 } // namespace msgpu  
 
+void start_vga();

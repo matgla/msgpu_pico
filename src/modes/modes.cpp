@@ -26,7 +26,7 @@ namespace vga
 
 Mode::Mode()
 {
-    mode_.emplace<Text_80x30_16_8x16>(vga::get_vga());
+    mode_.emplace<Graphic_320x240_12bit>();
 }
 
 void Mode::switch_to(const vga::modes::Modes mode)

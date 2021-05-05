@@ -41,8 +41,8 @@ target_compile_options(msgpu_processor
         $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
         $<$<CONFIG:DEBUG>:-Og -g>
         $<$<CONFIG:RELEASE>:-Os>
-    PRIVATE 
-        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wpedantic -Werror>
+        #PRIVATE 
+    #    $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wpedantic -Werror>
 )
 
 target_include_directories(msgpu_processor

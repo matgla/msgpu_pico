@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <cstdio>
+
 #include <pico/scanvideo.h>
 #include <pico/scanvideo/composable_scanline.h>
 
@@ -70,9 +72,10 @@ void __time_critical_func(render_loop)()
             last_frame_num = frame_num;
             msgpu::frame_update();
         }
-        mutex_exit(&frame_logic_mutex);
 
         render_scanline(scanline_buffer, core_num);
+        mutex_exit(&frame_logic_mutex);
+        
         scanvideo_end_scanline_generation(scanline_buffer);
     }
 }
@@ -84,18 +87,29 @@ void core1_func()
     render_loop();
 }
 
+void block_display()
+{
+    mutex_enter_blocking(&frame_logic_mutex);
+}
 
+void unblock_display()
+{
+    mutex_exit(&frame_logic_mutex);
+}
 
 void initialize_signal_generator()
 {
     mutex_init(&frame_logic_mutex);
     sem_init(&video_setup_complete, 0, 1);
     multicore_launch_core1(core1_func);
+    start_vga();
+
     sem_release(&video_setup_complete);
 }
 
 void set_resolution(uint16_t width, uint16_t height)
 {
+
 }
 
 uint8_t read_byte()

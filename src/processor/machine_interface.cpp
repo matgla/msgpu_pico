@@ -35,6 +35,8 @@
 
 #include "modes/mode_types.hpp"
 
+#include <pico/stdlib.h>
+
 namespace processor 
 {
 
@@ -56,7 +58,6 @@ struct fill_modes_impl
 {
     static void fill(InfoResp* info)
     {
-        printf("%d\n", id);
         fill_data<type, id>(info);
         fill_modes_impl<id + 1, types...>::fill(info);
     }
@@ -68,7 +69,6 @@ struct fill_modes_impl<id, type>
     static void fill(InfoResp* info)
     {
         fill_data<type, id>(info);
-        printf("%d\n", id);
     }
 };
 
@@ -183,6 +183,9 @@ Message& cast_to(void* memory)
 
 void MachineInterface::process_message()
 {
+    static uint32_t prev = 0;   
+    uint32_t n = to_ms_since_boot(get_absolute_time());
+    printf("Between message: %d ms\n", (n-prev));
     HandlerType handler = handlers_[header_.id];
     if (handler != nullptr)
     {
@@ -192,12 +195,13 @@ void MachineInterface::process_message()
     {
         printf("Unsupported message id: %d\n", header_.id);
     }
+    prev =  to_ms_since_boot(get_absolute_time());
+
 } 
 
 void MachineInterface::change_mode()
 {
     auto& change_mode = cast_to<ChangeMode>(buffer_);
-    printf("Change mode to: %d\n", change_mode.mode);
     mode_->switch_to(static_cast<vga::modes::Modes>(change_mode.mode));
 }
 
@@ -220,18 +224,21 @@ void MachineInterface::clear_screen()
 
 void MachineInterface::begin_primitives()
 {
+    printf("BeginPrimitives\n");
     auto& primitive = cast_to<BeginPrimitives>(buffer_);
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
 void MachineInterface::end_primitives()
 {
+    printf("End primitive\n");
     mode_->end_primitives();
 }
 
 void MachineInterface::write_vertex()
 {
     auto& vertex = cast_to<WriteVertex>(buffer_);
+    printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 

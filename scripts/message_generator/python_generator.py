@@ -16,6 +16,8 @@
 
 import datetime
 
+from utils import is_message
+
 class PythonFileGenerator:
     def __init__(self, filename):
         self.filename = filename
@@ -88,8 +90,10 @@ class PythonGenerator:
             i = 0
             generated_messages = []
             for generated in self.generators:
-                generated_messages.extend(generated.get_messages()) 
-
+                msgs = generated.get_messages() 
+                for msg in msgs:
+                    if is_message(generated.get()["code"], msg):
+                        generated_messages.append(msg)
             for message in generated_messages:
                 file.write("    " + message + " = " + str(i) + "\n")
                 i = i + 1

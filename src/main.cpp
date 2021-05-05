@@ -26,6 +26,15 @@
 
 #include "board.hpp"
 
+#include "messages/begin_primitives.hpp"
+#include "messages/header.hpp"
+#include "messages/end_primitives.hpp"
+#include "messages/clear_screen.hpp"
+#include "messages/write_vertex.hpp"
+#include "messages/set_perspective.hpp"
+
+#include <pico/stdlib.h>
+
 static vga::Mode mode; 
 
 namespace msgpu 
@@ -44,21 +53,105 @@ void frame_update()
 } // namespace msgpu
 
 
+struct Vertex
+{
+    float x;
+    float y;
+    float z;
+};
+
+struct Triangle 
+{
+    Vertex v[3];
+};
+
+struct Mesh 
+{
+    Triangle triangles[12]; 
+};
+
+const Mesh mesh {
+    .triangles = {
+        {{ {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f} }},
+        {{ {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f} }},
+        {{ {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f} }},
+        {{ {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f} }},
+        {{ {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f} }},
+        {{ {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f} }},
+        {{ {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f} }},
+        {{ {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }},
+        {{ {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f} }},
+        {{ {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f} }},
+        {{ {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} }},
+        {{ {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} }},
+    }
+};
+
+template <typename T, typename C>
+void write_msg(T& msg, C& c)
+{
+    Header header;
+    header.id = T::id;
+    header.size = sizeof(T);
+
+    uint8_t* bytes = reinterpret_cast<uint8_t*>(&header);
+    for (std::size_t i = 0; i < sizeof(Header); ++i)
+    {
+        c.process(bytes[i]);
+    }
+
+    bytes = reinterpret_cast<uint8_t*>(&msg);
+    for (std::size_t i = 0; i < header.size; ++i)
+    {
+
+        c.process(bytes[i]);
+    }
+}
+
 int main() 
 {
-    printf("Initializing msgpu\n");
     msgpu::initialize_board();
-   
+ 
     msgpu::initialize_signal_generator();
     
     processor::CommandProcessor processor(mode, &msgpu::write_bytes);
 
+    SetPerspective p;
+    p.aspect = 1.0;
+    p.view_angle = 90;
+    p.z_far = 1000.0;
+    p.z_near = 1.0;
+
+    write_msg(p, processor);
     while (true)
     {
-        uint8_t byte = msgpu::read_byte(); 
-        processor.process(byte);
+//        uint8_t byte = msgpu::read_byte(); 
+        ClearScreen clr;
+        write_msg(clr, processor);
+        BeginPrimitives b;
+        b.type = PrimitiveType::triangle;
+        write_msg(b, processor);
+
+
+        for (int i = 0; i < 12; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                WriteVertex v; 
+                v.x = mesh.triangles[i].v[j].x;
+                v.y = mesh.triangles[i].v[j].y;
+                v.z = mesh.triangles[i].v[j].z;
+
+                write_msg(v, processor);
+            }
+        }
+        
+        EndPrimitives e;
+        write_msg(e, processor);
+        sleep_ms(2000);
     }
 
     msgpu::deinitialize_signal_generator();
 } 
+
 

@@ -45,13 +45,13 @@ def get_type(id):
 def get_message():
     payload = ser.read(len(Header))
     header = Header(payload)
-
+    print("Header id: ", header.id)
     payload = ser.read(header.size) 
     return globals()[get_type(header.id)](payload)
 
 send_message(InfoReq())
+print ("Send info request")
 info_message = get_message()
-
 for mode in info_message.modes:
     if mode.used == 1:
         if mode.mode == Mode.Text: 
@@ -62,6 +62,6 @@ for mode in info_message.modes:
                 mode.color_depth, ", uses palette:", mode.uses_color_palette) 
 
 change_mode = ChangeMode()
-change_mode.mode = 2
+change_mode.mode = 12 
 send_message(change_mode)
 

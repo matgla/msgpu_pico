@@ -35,3 +35,11 @@ target_include_directories(msgpu_generator
         $<TARGET_PROPERTY:pico_scanvideo_dpi,INTERFACE_INCLUDE_DIRECTORIES>
 
 )
+
+target_compile_options(msgpu_generator PUBLIC
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
+    $<$<CONFIG:DEBUG>:-Og -g>
+    $<$<CONFIG:RELEASE>:-Os>
+)
+
+
