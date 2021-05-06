@@ -27,7 +27,7 @@
 
 #include "messages/begin_primitives.hpp"
 
-#include <pico/stdlib.h>
+#include "board.hpp"
 
 namespace vga::modes::graphic 
 {
@@ -41,17 +41,24 @@ public:
 
     void clear() 
     {
-        clear_time = to_ms_since_boot(get_absolute_time());
+        clear_time = msgpu::get_millis(); 
         Base<Configuration>::clear();
     }
 
     void render() 
     {
+        Base<Configuration>::base_render();
     }
 
     void set_pixel(int x, int y, uint16_t color) 
     {
-        Base<Configuration>::set_pixel({.x = x, .y = y}, static_cast<typename Configuration::Color>(color));
+        typename Configuration::Color c = Configuration::Color::black;
+        if (color != 0 )
+        {
+            c = Configuration::Color::white;
+        }
+
+        Base<Configuration>::set_pixel({.x = x, .y = y}, static_cast<typename Configuration::Color>(c));
     }
 
     void __time_critical_func(draw_line)(int x1, int y1, int x2, int y2)
@@ -81,7 +88,7 @@ public:
             dy = y1 - y2;
         }
     
-        uint16_t color = 0xfff;
+        uint16_t color = Configuration::Color::white;
         set_pixel(x, y, color);
         
         if (dx > dy)
@@ -133,7 +140,11 @@ public:
     {
         primitive_type = type; 
         primitive_vertex_counter = 0;
-        theta += 0.1;
+        theta += 0.01;
+        if (theta > 6.28)
+        {
+            theta = 0;
+        }
     }
 
     void end_primitives()
@@ -154,10 +165,10 @@ public:
             static uint32_t s = 0;
             draw_primitive();   
         
-            const uint32_t f = to_ms_since_boot(get_absolute_time());
-            printf("Between draw %d\n", (f - s));
-            s = to_ms_since_boot(get_absolute_time());     
-            printf("P drawn and took %d ms.\n", (f - clear_time));
+            const uint32_t f = msgpu::get_millis();
+            //printf("Between draw %d\n", (f - s));
+            s = msgpu::get_millis(); 
+            //printf("P drawn and took %d ms.\n", (f - clear_time));
             primitive_vertex_counter = 0;
         }
     }
@@ -289,13 +300,15 @@ protected:
 };
 
 template <typename Configuration>
-class PaletteGraphicMode : public GraphicModeBase<Configuration, BufferedModeBase>
+class PaletteGraphicMode : public GraphicModeBase<Configuration, DoubleBufferedPaletteBase>
 {
-
+public:
+    using type = vga::modes::Graphic;
+    using ConfigurationType = Configuration;
 };
 
 template <typename Configuration>
-class GraphicMode : public GraphicModeBase<Configuration, NonBufferedModeBase>
+class GraphicMode : public GraphicModeBase<Configuration, SingleBufferedRawBase>
 {
 public:
     using type = vga::modes::Graphic;

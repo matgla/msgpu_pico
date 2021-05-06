@@ -221,4 +221,16 @@ void Mode::set_perspective(float angle, float aspect, float z_far, float z_near)
     }, mode_);
 
 }
+
+void Mode::swap_buffer() 
+{
+    std::visit([](auto&& mode) {
+        if constexpr (std::decay_t<decltype(mode)>::ConfigurationType::double_buffered)
+        {
+            mode.swap_buffers();
+        }
+    }, mode_);
+}
+
+
 } // namespace vga

@@ -32,8 +32,7 @@
 #include "messages/clear_screen.hpp"
 #include "messages/write_vertex.hpp"
 #include "messages/set_perspective.hpp"
-
-#include <pico/stdlib.h>
+#include "messages/swap_buffer.hpp"
 
 static vga::Mode mode; 
 
@@ -114,7 +113,7 @@ int main()
  
     msgpu::initialize_signal_generator();
     
-    processor::CommandProcessor processor(mode, &msgpu::write_bytes);
+    static processor::CommandProcessor processor(mode, &msgpu::write_bytes);
 
     SetPerspective p;
     p.aspect = 1.0;
@@ -125,10 +124,10 @@ int main()
     write_msg(p, processor);
     while (true)
     {
-//        uint8_t byte = msgpu::read_byte(); 
-        ClearScreen clr;
+        uint32_t start_ms = msgpu::get_millis();
+        ClearScreen clr{};
         write_msg(clr, processor);
-        BeginPrimitives b;
+        BeginPrimitives b{};
         b.type = PrimitiveType::triangle;
         write_msg(b, processor);
 
@@ -137,7 +136,7 @@ int main()
         {
             for (int j = 0; j < 3; ++j)
             {
-                WriteVertex v; 
+                WriteVertex v{}; 
                 v.x = mesh.triangles[i].v[j].x;
                 v.y = mesh.triangles[i].v[j].y;
                 v.z = mesh.triangles[i].v[j].z;
@@ -146,9 +145,15 @@ int main()
             }
         }
         
-        EndPrimitives e;
+        EndPrimitives e{};
         write_msg(e, processor);
-        sleep_ms(2000);
+        SwapBuffer s{};
+        write_msg(s, processor);
+        uint32_t end_ms = msgpu::get_millis();
+
+        uint32_t diff = end_ms - start_ms; 
+        if (diff < 20)
+        msgpu::sleep_ms(20 - diff);
     }
 
     msgpu::deinitialize_signal_generator();

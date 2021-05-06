@@ -21,7 +21,10 @@ add_subdirectory(generator)
 add_library(msgpu_arch STATIC)
 
 target_sources(msgpu_arch 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
     PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/sync.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
 )
 

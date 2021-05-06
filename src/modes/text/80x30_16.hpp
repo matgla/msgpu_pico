@@ -40,7 +40,8 @@ struct Text_80x30_16color
     constexpr static std::size_t resolution_width = 640;
     constexpr static std::size_t resolution_height = 480;
     constexpr static bool uses_color_palette = true;
-
+    constexpr static bool double_buffered = false;
+ 
     enum Color : ColorType {
         black = 0x0, 
         blue = 0x1,

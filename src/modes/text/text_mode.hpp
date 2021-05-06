@@ -249,10 +249,10 @@ protected:
 };
 
 template <typename Configuration>
-class PaletteTextMode : public TextModeBase<Configuration, BufferedModeBase>
+class PaletteTextMode : public TextModeBase<Configuration, SingleBufferedPaletteBase>
 {
 public:
-    PaletteTextMode(vga::Vga& vga) : TextModeBase<Configuration, BufferedModeBase>(vga)
+    PaletteTextMode(vga::Vga& vga) : TextModeBase<Configuration, SingleBufferedPaletteBase>(vga)
     {
     }
 
@@ -277,7 +277,7 @@ public:
 };
 
 template <typename Configuration>
-class TextMode : public TextModeBase<Configuration, NonBufferedModeBase>
+class TextMode : public TextModeBase<Configuration, SingleBufferedRawBase>
 {
 public:
     using type = Text;

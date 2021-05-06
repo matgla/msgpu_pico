@@ -36,8 +36,8 @@ void write_bytes(std::span<uint8_t> byte);
 
 void set_resolution(uint16_t width, uint16_t height);
 
-void block_display();
-void unblock_display();
+uint32_t get_millis();
+void sleep_ms(uint32_t time);
 
 } // namespace msgpu  
 

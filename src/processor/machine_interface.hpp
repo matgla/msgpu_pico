@@ -51,6 +51,7 @@ private:
     void set_pixel();
     void draw_line();
 
+    void swap_buffers();
     void clear_screen();
 
     // 3d GPU API 
@@ -59,6 +60,7 @@ private:
     void end_primitives();
     void write_vertex();
     void set_perspective();
+
 
     enum class State : uint8_t 
     {

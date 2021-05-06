@@ -208,6 +208,10 @@ public:
     {
         buf.fill(0);
     }
+    void fill(T d)
+    {
+        buf.fill(d);
+    }
 private:
     DataType buf;
 };
@@ -224,6 +228,12 @@ public:
         return buffer_[index];
     }
 
+    const LineType& __time_critical_func(operator[])(const std::size_t index) const
+    {
+        return buffer_[index];
+    }
+
+
     void clear()
     {
         for (auto& line : buffer_)
@@ -231,6 +241,27 @@ public:
             line.clear();
         }
     }
+
+    LineType* begin() 
+    {
+        return &buffer_[0];
+    }
+
+    LineType* end()
+    {
+        return  &buffer_[height];
+    }
+
+    const LineType* begin() const 
+    {
+        return &buffer_[0];
+    }
+
+    const LineType* end() const
+    {
+        return  &buffer_[height];
+    }
+
 
     constexpr static std::size_t size() 
     {

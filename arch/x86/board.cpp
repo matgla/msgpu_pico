@@ -59,8 +59,8 @@ void render_loop()
                 window.close();
             }
         }
-
         window.clear();
+        msgpu::frame_update();
         for (std::size_t line = 0; line < resolution_height ; ++line)
         {
             uint32_t line_buffer_[640]; 
@@ -129,8 +129,19 @@ void write_bytes(std::span<uint8_t> data)
 
 void set_resolution(uint16_t width, uint16_t height)
 {
+    printf("Setting resolution to: %d %d\n", width, height);
     resolution_width = width;
     resolution_height = height;
+}
+
+void sleep_ms(uint32_t time)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(time));
+}
+
+uint32_t get_millis()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 } // namespace msgpu 

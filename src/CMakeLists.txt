@@ -25,7 +25,7 @@ target_sources(msgpu
 
 target_compile_options(msgpu
     PRIVATE 
-    #        $<$<COMPILE_LANGUAGE:CXX>:-Werror -Wall -Wextra -Wpedantic>
+    # $<$<COMPILE_LANGUAGE:CXX>:-Werror -Wall -Wextra -Wpedantic>
         $<$<CONFIG:DEBUG>:-Og -g>
         $<$<CONFIG:RELEASE>:-Os>
 )

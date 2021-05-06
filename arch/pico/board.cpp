@@ -38,6 +38,9 @@ static struct semaphore video_setup_complete;
 namespace msgpu 
 {
 
+static uint32_t res_width = 320;
+static uint32_t res_height = 240;
+
 void initialize_board()
 {
     set_sys_clock_khz(250000, true);
@@ -56,7 +59,6 @@ void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int 
 
 void __time_critical_func(render_loop)()
 {
-    static uint32_t last_frame_num = 0;
     int core_num = get_core_num();
 
     while (true) 
@@ -67,11 +69,14 @@ void __time_critical_func(render_loop)()
 
         uint32_t frame_num = scanvideo_frame_number(scanline_buffer->scanline_id);
 
-        if (frame_num != last_frame_num)
+        static uint32_t line = 0;
+
+        if (line == res_height)
         {
-            last_frame_num = frame_num;
-            msgpu::frame_update();
+            frame_update();
+            line = 0; 
         }
+        ++line;
 
         render_scanline(scanline_buffer, core_num);
         mutex_exit(&frame_logic_mutex);
@@ -109,7 +114,8 @@ void initialize_signal_generator()
 
 void set_resolution(uint16_t width, uint16_t height)
 {
-
+    res_width = width;
+    res_height = height;
 }
 
 uint8_t read_byte()
@@ -122,6 +128,16 @@ uint8_t read_byte()
 void write_bytes(std::span<uint8_t> bytes)
 {
     write(STDOUT_FILENO, bytes.data(), bytes.size());
+}
+
+uint32_t get_millis()
+{
+    return to_ms_since_boot(get_absolute_time());
+}
+
+void sleep_ms(uint32_t t)
+{
+    ::sleep_ms(t);
 }
 
 } // namespace msgpu 

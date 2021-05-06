@@ -32,10 +32,10 @@
 #include "messages/write_vertex.hpp"
 #include "messages/messages.hpp"
 #include "messages/set_perspective.hpp"
-
+#include "messages/swap_buffer.hpp"
 #include "modes/mode_types.hpp"
 
-#include <pico/stdlib.h>
+#include "board.hpp"
 
 namespace processor 
 {
@@ -134,6 +134,7 @@ MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback
     handlers_[EndPrimitives::id] = &MachineInterface::end_primitives;
     handlers_[WriteVertex::id] = &MachineInterface::write_vertex;
     handlers_[SetPerspective::id] = &MachineInterface::set_perspective;
+    handlers_[SwapBuffer::id] = &MachineInterface::swap_buffers;
 }
 
 void MachineInterface::process(uint8_t byte)
@@ -184,8 +185,8 @@ Message& cast_to(void* memory)
 void MachineInterface::process_message()
 {
     static uint32_t prev = 0;   
-    uint32_t n = to_ms_since_boot(get_absolute_time());
-    printf("Between message: %d ms\n", (n-prev));
+    uint32_t n = msgpu::get_millis(); 
+    //printf("Between message: %d ms\n", (n-prev));
     HandlerType handler = handlers_[header_.id];
     if (handler != nullptr)
     {
@@ -195,7 +196,7 @@ void MachineInterface::process_message()
     {
         printf("Unsupported message id: %d\n", header_.id);
     }
-    prev =  to_ms_since_boot(get_absolute_time());
+    prev = msgpu::get_millis(); 
 
 } 
 
@@ -217,6 +218,11 @@ void MachineInterface::draw_line()
     mode_->draw_line(line.x1, line.y1, line.x2, line.y2);
 }
 
+void MachineInterface::swap_buffers()
+{
+    mode_->swap_buffer();
+}
+
 void MachineInterface::clear_screen()
 {
     mode_->clear();
@@ -224,21 +230,21 @@ void MachineInterface::clear_screen()
 
 void MachineInterface::begin_primitives()
 {
-    printf("BeginPrimitives\n");
+    //printf("BeginPrimitives\n");
     auto& primitive = cast_to<BeginPrimitives>(buffer_);
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
 void MachineInterface::end_primitives()
 {
-    printf("End primitive\n");
+    //printf("End primitive\n");
     mode_->end_primitives();
 }
 
 void MachineInterface::write_vertex()
 {
     auto& vertex = cast_to<WriteVertex>(buffer_);
-    printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
+    //printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 

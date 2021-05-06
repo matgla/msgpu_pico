@@ -14,45 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "generator/vga.hpp"
+#pragma once 
 
-#include "board.hpp"
+#include <mutex>
 
-#include <algorithm>
-#include <cstring>
+using mutex_t = std::mutex;
 
-namespace vga 
-{
+void mutex_init(mutex_t* m);
 
-Vga::Vga(modes::Modes mode) 
-{
-   
-}
+void mutex_enter_blocking(mutex_t* m);
 
-void Vga::change_mode(modes::Modes mode)
-{
-}
-
-void Vga::setup()
-{
-
-}
-
-std::size_t Vga::fill_scanline_buffer(std::span<uint32_t> line, 
-    std::span<const uint16_t> scanline_buffer)
-{
-    std::transform(scanline_buffer.begin(), scanline_buffer.end(), line.begin(), [](uint16_t color) {
-        return color; // TODO: transform?
-    });
-    return 0;
-}
-
-Vga& get_vga()
-{
-    static Vga vga(modes::Modes::Graphic_320x240_12bit);
-    msgpu::set_resolution(320, 240);
-    return vga;
-}
-
-} // namespace vga
+void mutex_exit(mutex_t* m);
 

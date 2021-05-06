@@ -33,8 +33,24 @@ if (NOT virtualenv_file_stamp)
         COMMAND_ERROR_IS_FATAL ANY 
     )
 
+    if (EXISTS ${generator_venv}/bin/pip)
+        set (pip_exec ${generator_venv}/bin/pip) 
+    elseif (EXISTS ${generator_venv}/Scripts/pip.exe)
+        set (pip_exec ${generator_venv}/Scripts/pip.exe) 
+    else ()
+        message (FATAL_ERROR "Can't find pip under: ${generator_venv}")
+    endif ()
+
+    if(EXISTS ${generator_venv}/bin/python)
+        set (python_exec ${generator_venv}/bin/python) 
+    elseif (EXISTS ${generator_venv}/Scripts/python.exe)
+        set (python_exec ${generator_venv}/Scripts/python.exe) 
+    else ()
+        message (FATAL_ERROR "Can't find python under: ${generator_venv}")
+    endif ()
+
     execute_process(
-        COMMAND ${generator_venv}/bin/pip install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt --upgrade -q -q -q 
+        COMMAND ${pip_exec} install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt --upgrade -q -q -q 
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMAND_ERROR_IS_FATAL ANY 
     )
@@ -42,13 +58,13 @@ if (NOT virtualenv_file_stamp)
     execute_process(
         COMMAND cmake -E touch ${CMAKE_CURRENT_BINARY_DIR}/venv.stamp 
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND_ERROR_IS_FATAL ANY
+        COMMAND_ERROR_IS_FATAL ANY 
     )
+
 endif ()
 
-
-execute_process(
-    COMMAND ${generator_venv}/bin/python3 ${PROJECT_SOURCE_DIR}/scripts/message_generator/generate.py 
+execute_process( 
+    COMMAND ${python_exec} ${PROJECT_SOURCE_DIR}/scripts/message_generator/generate.py 
     --input ${PROJECT_SOURCE_DIR}/messages 
     --enable-cpp 
     --enable-python

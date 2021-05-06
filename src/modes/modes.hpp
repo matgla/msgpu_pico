@@ -34,17 +34,25 @@
 namespace vga
 {
 
+class ConfigurationNone 
+{
+public:
+    constexpr static bool double_buffered = false;
+};
 
 class None
 {
 public:
     using type = void;
+    using ConfigurationType = ConfigurationNone;
     void render()
     {
     }
 
     std::size_t fill_scanline(std::span<uint32_t> line, std::size_t line_number)
     {
+        static_cast<void>(line);
+        static_cast<void>(line_number);
         return 0;
     }
 
@@ -67,7 +75,7 @@ public:
     using Text_40x30_12bit_8x16 = modes::text::TextMode<
         modes::text::Text_40x30_12bit<msgui::fonts::Font8x16>>;
 
-    using Graphic_320x240_12bit = modes::graphic::GraphicMode<
+    using Graphic_320x240_12bit = modes::graphic::PaletteGraphicMode<
         modes::graphic::Graphic_320x240_12bit>;
 
     using ModeTypes = std::tuple< 
@@ -91,6 +99,7 @@ public:
     void set_pixel(int x, int y, uint16_t color);
     void draw_line(int x1, int y1, int x2, int y2);
 
+    void swap_buffer();
     // 3d api 
     void begin_primitives(PrimitiveType type);
     void end_primitives();
@@ -105,6 +114,7 @@ public:
         Text_40x30_12bit_8x16,
         Graphic_320x240_12bit
     >;
+
 private:
     
     VariantType mode_;
