@@ -115,45 +115,51 @@ int main()
     
     static processor::CommandProcessor processor(mode, &msgpu::write_bytes);
 
-    SetPerspective p;
-    p.aspect = 1.0;
-    p.view_angle = 90;
-    p.z_far = 1000.0;
-    p.z_near = 1.0;
+//    SetPerspective p;
+//    p.aspect = 1.0;
+//    p.view_angle = 90;
+//    p.z_far = 1000.0;
+//    p.z_near = 1.0;
 
-    write_msg(p, processor);
+//    write_msg(p, processor);
+    uint8_t d[] = {'h', 'e', 'j'};
+    msgpu::write_bytes(d);
+
+    printf("A strumien\n");
     while (true)
     {
-        uint32_t start_ms = msgpu::get_millis();
-        ClearScreen clr{};
-        write_msg(clr, processor);
-        BeginPrimitives b{};
-        b.type = PrimitiveType::triangle;
-        write_msg(b, processor);
+        uint8_t byte = msgpu::read_byte();
+        processor.process(byte);
+//        uint32_t start_ms = msgpu::get_millis();
+//        ClearScreen clr{};
+//        write_msg(clr, processor);
+//        BeginPrimitives b{};
+//        b.type = PrimitiveType::triangle;
+//        write_msg(b, processor);
 
 
-        for (int i = 0; i < 12; ++i)
-        {
-            for (int j = 0; j < 3; ++j)
-            {
-                WriteVertex v{}; 
-                v.x = mesh.triangles[i].v[j].x;
-                v.y = mesh.triangles[i].v[j].y;
-                v.z = mesh.triangles[i].v[j].z;
+//        for (int i = 0; i < 12; ++i)
+//        {
+//            for (int j = 0; j < 3; ++j)
+//            {
+//                WriteVertex v{}; 
+//                v.x = mesh.triangles[i].v[j].x;
+//                v.y = mesh.triangles[i].v[j].y;
+//                v.z = mesh.triangles[i].v[j].z;
 
-                write_msg(v, processor);
-            }
-        }
+//                write_msg(v, processor);
+//            }
+//        }
         
-        EndPrimitives e{};
-        write_msg(e, processor);
-        SwapBuffer s{};
-        write_msg(s, processor);
-        uint32_t end_ms = msgpu::get_millis();
+//        EndPrimitives e{};
+//        write_msg(e, processor);
+//        SwapBuffer s{};
+//        write_msg(s, processor);
+//        uint32_t end_ms = msgpu::get_millis();
 
-        uint32_t diff = end_ms - start_ms; 
-        if (diff < 20)
-        msgpu::sleep_ms(20 - diff);
+//        uint32_t diff = end_ms - start_ms; 
+//        if (diff < 20)
+//        msgpu::sleep_ms(20 - diff);
     }
 
     msgpu::deinitialize_signal_generator();

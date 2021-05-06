@@ -45,6 +45,9 @@ void initialize_board()
 {
     set_sys_clock_khz(250000, true);
     stdio_init_all();
+    uart_init(uart0, 115200);
+    gpio_set_function(16, GPIO_FUNC_UART);
+    gpio_set_function(17, GPIO_FUNC_UART);
 }
 
 void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int core)
@@ -120,14 +123,19 @@ void set_resolution(uint16_t width, uint16_t height)
 
 uint8_t read_byte()
 {
-    uint8_t byte;
-    read(STDIN_FILENO, &byte, sizeof(byte));
-    return byte;
+    return uart_getc(uart0);
+//    uint8_t byte;
+//    read(STDIN_FILENO, &byte, sizeof(byte));
+//    return byte;
 }
 
 void write_bytes(std::span<uint8_t> bytes)
 {
-    write(STDOUT_FILENO, bytes.data(), bytes.size());
+    for (const auto b : bytes)
+    {
+        uart_putc_raw(uart0, b);
+    }
+//    write(STDOUT_FILENO, bytes.data(), bytes.size());
 }
 
 uint32_t get_millis()

@@ -150,6 +150,7 @@ void MachineInterface::process(uint8_t byte)
                 buffer_counter_ = 0;
                 if (header_.size != 0)
                 {
+                    printf("Received header %d, size %d\n", header_.id, header_.size);
                     state_ = State::receive_payload;
                 }
                 else 
@@ -220,6 +221,7 @@ void MachineInterface::draw_line()
 
 void MachineInterface::swap_buffers()
 {
+    printf("Swap buffer\n");
     mode_->swap_buffer();
 }
 
@@ -230,21 +232,21 @@ void MachineInterface::clear_screen()
 
 void MachineInterface::begin_primitives()
 {
-    //printf("BeginPrimitives\n");
+    printf("BeginPrimitives\n");
     auto& primitive = cast_to<BeginPrimitives>(buffer_);
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
 void MachineInterface::end_primitives()
 {
-    //printf("End primitive\n");
+    printf("End primitive\n");
     mode_->end_primitives();
 }
 
 void MachineInterface::write_vertex()
 {
     auto& vertex = cast_to<WriteVertex>(buffer_);
-    //printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
+    printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 

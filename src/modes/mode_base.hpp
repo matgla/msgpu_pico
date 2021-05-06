@@ -127,6 +127,7 @@ public:
     void clear()
     {
         mutex_enter_blocking(&mutex_);
+        printf("Clear %d\n", write_buffer_id_);
         for (auto& line : get_writable_frame())
         {
             line.fill(0);
@@ -142,6 +143,8 @@ public:
             std::size_t c = read_buffer_id_;
             read_buffer_id_ = write_buffer_id_;
             write_buffer_id_ = c;
+
+            printf("Reading from %d\n", this->read_buffer_id_);
             swap_buffers_ = false; 
         }
         mutex_exit(&mutex_);
@@ -158,7 +161,6 @@ public:
         {
             return;
         }
-
         this->framebuffer_[write_buffer_id_][position.y][position.x] = color;
     }
 
@@ -178,6 +180,7 @@ public:
 
     const BufferType& get_readable_frame() const 
     {
+
         return framebuffer_[read_buffer_id_];
     }
 

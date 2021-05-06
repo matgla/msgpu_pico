@@ -253,7 +253,7 @@ protected:
             x *= 0.5f * (Configuration::resolution_width - 1);
             y *= 0.5f * (Configuration::resolution_height - 1);
 
-            //printf("Setting pixel: %f %f\n", x, y);
+            printf("Setting pixel: %f %f\n", x, y);
             
             //set_pixel(Configuration::resolution_width - x, Configuration::resolution_height - y, 0xfff);
             if (i == 0)
