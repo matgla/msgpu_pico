@@ -34,6 +34,8 @@
 #include "messages/set_perspective.hpp"
 #include "messages/swap_buffer.hpp"
 
+#include "qspi.hpp"
+
 static vga::Mode mode; 
 
 namespace msgpu 
@@ -126,10 +128,39 @@ int main()
     msgpu::write_bytes(d);
 
     printf("A strumien\n");
+    uint8_t buf_in[8];
+    Qspi::init();
     while (true)
     {
-        uint8_t byte = msgpu::read_byte();
-        processor.process(byte);
+        uint8_t buf_out[8] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8 };
+        Qspi::read8_write8_blocking(buf_in, buf_out);
+        
+        buf_out[0] = 0xa;
+        buf_out[1] = 0xb;
+        printf("Data: ");
+
+        for (uint8_t b : buf_in)
+        {
+            printf("%d, ", b);
+        }
+        
+        printf("\nSending write/read not in parallel\n");
+ 
+        Qspi::spi_write8(buf_out);
+        Qspi::spi_read8(buf_in);
+        printf("Data: ");
+        for (uint8_t b : buf_in)
+        {
+            printf("%d, ", b);
+        }
+        printf("\n");
+
+        printf ("Switch to QSPI\n");
+        Qspi::switch_to(Qspi::Mode::QSPI_write);
+
+        msgpu::sleep_ms(1000);
+//        uint8_t byte = msgpu::read_byte();
+//        processor.process(byte);
 //        uint32_t start_ms = msgpu::get_millis();
 //        ClearScreen clr{};
 //        write_msg(clr, processor);

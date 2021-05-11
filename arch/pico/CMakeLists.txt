@@ -30,6 +30,7 @@ add_library(msgpu_arch STATIC)
 target_sources(msgpu_arch 
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/qspi.cpp
 )
 
 target_link_libraries(msgpu_arch 
@@ -47,6 +48,19 @@ target_include_directories(msgpu_arch
 )
 
 add_subdirectory(generator)
+add_subdirectory(qspi) 
+
+target_link_libraries(msgpu_arch 
+    PUBLIC 
+        pico_stdlib
+        pico_scanvideo
+        pico_scanvideo_dpi
+        pico_multicore
+        msgpu_interface
+    PRIVATE
+        msgpu_arch_pico_qspi
+)
+
 
 target_compile_options(msgpu_arch PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>

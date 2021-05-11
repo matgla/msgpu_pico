@@ -20,6 +20,7 @@ add_library(msgpu_interface INTERFACE)
 
 target_sources(msgpu_interface INTERFACE 
     ${CMAKE_CURRENT_SOURCE_DIR}/board.hpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/qspi.hpp
 )
 
 target_include_directories(msgpu_interface
