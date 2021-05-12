@@ -18,7 +18,12 @@
 
 #include <cstdio>
 
-void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_qspi_inst* qspi, const uint8_t* src, uint8_t* dst, std::size_t len)
+void __time_critical_func(pio_spi_write8_read8_blocking)(
+    const pio_qspi_inst* qspi, 
+    const uint8_t* src, 
+    uint8_t* dst, 
+    std::size_t len
+)
 {
     std::size_t tx_remain = len, rx_remain = len; 
     io_rw_8* txfifo = (io_rw_8*)&qspi->pio->txf[qspi->sm];
@@ -39,26 +44,39 @@ void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_qspi_inst* qs
     }
 }
 
-void __time_critical_func(pio_spi_read8_blocking)(const pio_qspi_inst* qspi, uint8_t* dst, std::size_t len) 
+void __time_critical_func(pio_spi_read8_blocking)(
+    const pio_qspi_inst* qspi, 
+    uint8_t* dst, 
+    std::size_t len
+) 
 {
-    std::size_t rx_remain = len; 
+    std::size_t tx_remain = len, rx_remain = len; 
+    io_rw_8* txfifo = (io_rw_8*)&qspi->pio->txf[qspi->sm];
     io_rw_8* rxfifo = (io_rw_8*) &qspi->pio->rxf[qspi->sm];
 
-    while (rx_remain)
+    while (tx_remain || rx_remain)
     {
+        if (tx_remain && !pio_sm_is_tx_fifo_full(qspi->pio, qspi->sm)) 
+        {
+            *txfifo = 0;
+            --tx_remain;
+        }
         if (rx_remain && !pio_sm_is_rx_fifo_empty(qspi->pio, qspi->sm)) 
         {
             *dst++ = *rxfifo;
             --rx_remain;
         }
     }
-
 }
 
-void __time_critical_func(pio_spi_write8_blocking)(const pio_qspi_inst* qspi, const uint8_t* src, std::size_t len)
+void __time_critical_func(pio_spi_write8_blocking)(
+    const pio_qspi_inst* qspi, 
+    const uint8_t* src, 
+    std::size_t len
+)
 {
     std::size_t tx_remain = len, rx_remain = len; 
-    io_rw_8* txfifo = (io_rw_8*)&qspi->pio->txf[qspi->sm];
+    io_rw_8* txfifo = (io_rw_8*) &qspi->pio->txf[qspi->sm];
     io_rw_8* rxfifo = (io_rw_8*) &qspi->pio->rxf[qspi->sm];
 
     while (tx_remain || rx_remain)
@@ -76,7 +94,11 @@ void __time_critical_func(pio_spi_write8_blocking)(const pio_qspi_inst* qspi, co
     }
 }
 
-void __time_critical_func(pio_qspi_read8_blocking)(const pio_qspi_inst* qspi, uint8_t* dst, std::size_t len) 
+void __time_critical_func(pio_qspi_read8_blocking)(
+    const pio_qspi_inst* qspi, 
+    uint8_t* dst, 
+    std::size_t len
+) 
 {
     std::size_t rx_remain = len; 
     io_rw_8* rxfifo = (io_rw_8*) &qspi->pio->rxf[qspi->sm];
@@ -92,9 +114,12 @@ void __time_critical_func(pio_qspi_read8_blocking)(const pio_qspi_inst* qspi, ui
 
 }
 
-void __time_critical_func(pio_qspi_write8_blocking)(const pio_qspi_inst* qspi, const uint8_t* src, std::size_t len)
+void __time_critical_func(pio_qspi_write8_blocking)(
+    const pio_qspi_inst* qspi, 
+    const uint8_t* src, 
+    std::size_t len
+)
 {
-    printf("Write\n");
     std::size_t tx_remain = len; 
     volatile io_rw_8* txfifo = (volatile io_rw_8*)&qspi->pio->txf[qspi->sm];
     while (tx_remain)
@@ -105,22 +130,4 @@ void __time_critical_func(pio_qspi_write8_blocking)(const pio_qspi_inst* qspi, c
             --tx_remain;
         }
     }
-//    //io_rw_8* rxfifo = (io_rw_8*) &qspi->pio->rxf[qspi->sm];
-
-//    while (tx_remain)
-//    {
-//        if (tx_remain && !pio_sm_is_tx_fifo_full(qspi->pio, qspi->sm)) 
-//        {
-//            *txfifo = *src++;
-//            --tx_remain;
-//        }
-//      //  if (rx_remain && !pio_sm_is_rx_fifo_empty(qspi->pio, qspi->sm)) 
-//      //  {
-//      //      static_cast<void>(*rxfifo);
-//      //      --rx_remain;
-//      //  }
-//    }
-}  
-
-
-
+}

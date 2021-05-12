@@ -1,7 +1,8 @@
 /* not_message:Header */
 struct Header {
-    uint16 id;
+    uint8 id;
     uint16 size;
+    uint8 crc;
 };
 
 

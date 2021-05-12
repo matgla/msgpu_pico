@@ -86,27 +86,12 @@ void Qspi::switch_to(Mode m)
                 0,
                 pin_sck,
                 pin_mosi,
-                pin_miso,
-                pin_io2, 
-                pin_io3
+                pin_miso
             );
 
         } break;
         case Mode::QSPI_write: 
-        case Mode::QSPI_read:
         {
-            printf("Setup READ\n");
-//            pio_qspi_init_qspi_read(
-//                qspi.pio, qspi.sm,
-//                qspi_read_prog_offs,
-//                8, 
-//                clkdiv,
-//                false, 
-//                false, 
-//                pin_sck,
-//                pin_mosi
-//            );
-
             printf("Setup write\n");
             pio_qspi_init_qspi_write(
                 qspi.pio, qspi.sm,
@@ -118,21 +103,20 @@ void Qspi::switch_to(Mode m)
                 pin_sck,
                 pin_mosi
             );
-           //     pio_qspi_init(qspi.pio, 
-           //     qspi.sm, 
-           //     cpha0_prog_offs,
-           //     8, 
-           //     clkdiv, 
-           //     0, 
-           //     0,
-           //     pin_sck,
-           //     pin_mosi,
-           //     pin_miso,
-           //     pin_io2, 
-           //     pin_io3
-           // );
-
- 
+        } break;
+        case Mode::QSPI_read:
+        {
+            printf("Setup read\n");
+            pio_qspi_init_qspi_read(
+                qspi.pio, qspi.sm,
+                qspi_read_prog_offs,
+                8, 
+                clkdiv,
+                false, 
+                false, 
+                pin_sck,
+                pin_mosi
+            );
         } break;
     }
 }

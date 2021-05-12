@@ -18,6 +18,8 @@
 #include <cstring>
 #include <cstdio> 
 
+#include <eul/crc/crc.hpp>
+
 #include <unistd.h>
 
 #include "messages/header.hpp"
@@ -111,6 +113,8 @@ void MachineInterface::send_info()
         .id = static_cast<uint8_t>(Messages::InfoResp),
         .size = sizeof(InfoResp)
     };
+
+    header.crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&header), 3);
     
     auto header_span = std::span<uint8_t>(reinterpret_cast<uint8_t*>(&header), sizeof(header));
     
@@ -151,6 +155,12 @@ void MachineInterface::process(uint8_t byte)
                 if (header_.size != 0)
                 {
                     printf("Received header %d, size %d\n", header_.id, header_.size);
+
+                    uint8_t crc = calculate_crc8(std::span<const uint8_t>(header_buffer_, 3));
+                    if (crc != header_.crc)
+                    {
+                        printf("CRC validation failed\n");
+                    }
                     state_ = State::receive_payload;
                 }
                 else 

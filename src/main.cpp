@@ -117,103 +117,10 @@ int main()
     
     static processor::CommandProcessor processor(mode, &msgpu::write_bytes);
 
-//    SetPerspective p;
-//    p.aspect = 1.0;
-//    p.view_angle = 90;
-//    p.z_far = 1000.0;
-//    p.z_near = 1.0;
-
-//    write_msg(p, processor);
-    uint8_t d[] = {'h', 'e', 'j'};
-    msgpu::write_bytes(d);
-
-    printf("============================\n\n\n");
-    uint8_t buf_in[8];
-    Qspi::init();
-    Qspi::switch_to(Qspi::Mode::QSPI_write);
-    //Qspi::switch_to(Qspi::Mode::SPI);
-    printf("QSPI test\n");
-    uint8_t buf_out[8] = {0xaa, 0xbb, 0xcd, 0xff, 0x5, 0x6, 0x7, 0x8 };
     while (true)
     {
-        //Qspi::switch_to(Qspi::Mode::SPI);
-        //Qspi::read8_write8_blocking(buf_in, buf_out);
-        Qspi::qspi_write8(buf_out);
-        
-        //buf_out[0] = 0xa;
-       // buf_out[1] = 0xb;
-        printf("Data: ");
-
-        for (uint8_t b : buf_in)
-        {
-            printf("%d, ", b);
-        }
-        printf("\n");
-        
-     //   printf("\nSending write/read not in parallel\n");
- 
-    //    Qspi::spi_write8(buf_out);
-
-//        Qspi::spi_read8(buf_in);
-//        printf("Data: ");
-//        for (uint8_t b : buf_in)
-//        {
-//            printf("%d, ", b);
-//        }
-//        printf("\n");
-
-//        printf ("Switch to QSPI\n");
-//        Qspi::switch_to(Qspi::Mode::QSPI_write);
-
-//        buf_out[2] = 0xde;
-//        buf_out[3] = 0xbe;
-
-//        printf("Write QSPI\n");
-//        Qspi::qspi_write8(buf_out);
-//        printf("Read QSPI\n");
-//        Qspi::qspi_read8(buf_in);
-
-//        printf("Data qspi: ");
-//        for (uint8_t b : buf_in)
-//        {
-//            printf("%d, ", b);
-//        }
-//        printf("\n");
-
- 
-        msgpu::sleep_ms(1000);
-//        uint8_t byte = msgpu::read_byte();
-//        processor.process(byte);
-//        uint32_t start_ms = msgpu::get_millis();
-//        ClearScreen clr{};
-//        write_msg(clr, processor);
-//        BeginPrimitives b{};
-//        b.type = PrimitiveType::triangle;
-//        write_msg(b, processor);
-
-
-//        for (int i = 0; i < 12; ++i)
-//        {
-//            for (int j = 0; j < 3; ++j)
-//            {
-//                WriteVertex v{}; 
-//                v.x = mesh.triangles[i].v[j].x;
-//                v.y = mesh.triangles[i].v[j].y;
-//                v.z = mesh.triangles[i].v[j].z;
-
-//                write_msg(v, processor);
-//            }
-//        }
-        
-//        EndPrimitives e{};
-//        write_msg(e, processor);
-//        SwapBuffer s{};
-//        write_msg(s, processor);
-//        uint32_t end_ms = msgpu::get_millis();
-
-//        uint32_t diff = end_ms - start_ms; 
-//        if (diff < 20)
-//        msgpu::sleep_ms(20 - diff);
+        uint8_t byte = msgpu::read_byte();
+        processor.process(byte);
     }
 
     msgpu::deinitialize_signal_generator();

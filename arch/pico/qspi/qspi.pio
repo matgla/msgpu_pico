@@ -32,7 +32,8 @@
 
 .program qspi_read 
 .side_set 1 
-    in pins, 4 side 0
+    nop        side 0
+    in pins, 4 side 1
 
 
 % c-sdk {
@@ -48,9 +49,8 @@ static inline void pio_qspi_init(PIO pio,
     bool cpol, 
     uint32_t pin_sck,
     uint32_t pin_mosi, 
-    uint32_t pin_miso,
-    uint32_t pin_io2,
-    uint32_t pin_io3) 
+    uint32_t pin_miso
+) 
 {
     pio_sm_config c = cpha ? spi_cpha1_program_get_default_config(prog_offs) :
     spi_cpha0_program_get_default_config(prog_offs);
