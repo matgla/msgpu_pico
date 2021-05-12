@@ -130,14 +130,18 @@ int main()
     printf("============================\n\n\n");
     uint8_t buf_in[8];
     Qspi::init();
+    Qspi::switch_to(Qspi::Mode::QSPI_write);
+    //Qspi::switch_to(Qspi::Mode::SPI);
+    printf("QSPI test\n");
+    uint8_t buf_out[8] = {0xaa, 0xbb, 0xcd, 0xff, 0x5, 0x6, 0x7, 0x8 };
     while (true)
     {
         //Qspi::switch_to(Qspi::Mode::SPI);
-        uint8_t buf_out[8] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8 };
-        Qspi::spi_write8(buf_out);
+        //Qspi::read8_write8_blocking(buf_in, buf_out);
+        Qspi::qspi_write8(buf_out);
         
-        buf_out[0] = 0xa;
-        buf_out[1] = 0xb;
+        //buf_out[0] = 0xa;
+       // buf_out[1] = 0xb;
         printf("Data: ");
 
         for (uint8_t b : buf_in)

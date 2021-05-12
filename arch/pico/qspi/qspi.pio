@@ -27,7 +27,8 @@
 
 .program qspi_write
 .side_set 1 
-    out pins, 4 side 0 [1]
+    out pins, 4 side 0 
+    nop         side 1
 
 .program qspi_read 
 .side_set 1 
@@ -70,8 +71,6 @@ static inline void pio_qspi_init(PIO pio,
     pio_gpio_init(pio, pin_mosi);
     pio_gpio_init(pio, pin_miso);
     pio_gpio_init(pio, pin_sck);
-    pio_gpio_init(pio, pin_io2);
-    pio_gpio_init(pio, pin_io3);
 
     gpio_set_outover(pin_sck, cpol ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
 
@@ -144,28 +143,28 @@ static inline void pio_qspi_init_qspi_write(
     uint32_t pin_io_base
 )
 {
-    pio_sm_config c = qspi_write_program_get_default_config(prog_offs);
+    pio_gpio_init(pio, pin_sck);
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        pio_gpio_init(pio, pin_io_base + i);
+    }
 
-    sm_config_set_sideset_pins(&c, pin_sck);
-
-    sm_config_set_out_shift(&c, false, true, n_bits);
-    sm_config_set_clkdiv(&c, clkdiv);
-
-    pio_sm_set_pins_with_mask(pio, sm, 0, 
-        (1u << pin_sck) 
-        | (1u << (pin_io_base + 0))
-        | (1u << (pin_io_base + 1))
-        | (1u << (pin_io_base + 2))
-        | (1u << (pin_io_base + 3))
-    );
-
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
     pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base, 4, true);
 
-    pio_gpio_init(pio, pin_sck);
-    pio_gpio_init(pio, pin_io_base + 0);
-    pio_gpio_init(pio, pin_io_base + 1);
-    pio_gpio_init(pio, pin_io_base + 2);
-    pio_gpio_init(pio, pin_io_base + 3);
+    pio_sm_config c = qspi_write_program_get_default_config(prog_offs);
+
+    sm_config_set_out_pins(&c, pin_io_base, 4);
+    sm_config_set_sideset_pins(&c, pin_sck);
+    sm_config_set_out_shift(&c, false, true, n_bits);
+    
+    sm_config_set_clkdiv(&c, clkdiv);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+   
+//    pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
+//    pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base, 1, true);
+//    pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base + 1, 1, true);
+
 
     gpio_set_outover(pin_sck, cpol ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
 
