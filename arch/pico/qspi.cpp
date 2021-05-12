@@ -23,21 +23,34 @@
 
 constexpr uint32_t pin_sck = 18;
 constexpr uint32_t pin_mosi = 19;
-constexpr uint32_t pin_miso = 19; // for testing purposes this is loopback
-constexpr uint32_t pin_io2 = 20;
-constexpr uint32_t pin_io3 = 20;
+constexpr uint32_t pin_miso = 20; // for testing purposes this is loopback
+constexpr uint32_t pin_io2 = 21;
+constexpr uint32_t pin_io3 = 22;
 
 static pio_qspi_inst qspi = {
     .pio = pio1,
     .sm = 0
 };
 
+static pio_qspi_inst qspi2 = {
+    .pio = pio1,
+    .sm = 1 
+};
+
+static uint32_t cpha0_prog_offs;
+static uint32_t cpha1_prog_offs;
+static uint32_t qspi_write_prog_offs;
+static uint32_t qspi_read_prog_offs;
+float clkdiv = 100.0f;
+
 void Qspi::init() 
 {
-    float clkdiv = 31.25f;
 
-    uint32_t cpha0_prog_offs = pio_add_program(qspi.pio, &qspi_cpha0_program);
-    uint32_t cpha1_prog_offs = pio_add_program(qspi.pio, &qspi_cpha1_program);
+    cpha0_prog_offs = pio_add_program(qspi.pio, &spi_cpha0_program);
+    cpha1_prog_offs = pio_add_program(qspi.pio, &spi_cpha1_program);
+    
+    qspi_write_prog_offs = pio_add_program(qspi.pio, &qspi_write_program);
+    qspi_read_prog_offs = pio_add_program(qspi.pio, &qspi_read_program);
 
     pio_qspi_init(qspi.pio, qspi.sm, 
         cpha0_prog_offs,
@@ -64,15 +77,48 @@ void Qspi::switch_to(Mode m)
     {
         case Mode::SPI: 
         {
+            pio_qspi_init(qspi.pio, 
+                qspi.sm, 
+                cpha0_prog_offs,
+                8, 
+                clkdiv, 
+                0, 
+                0,
+                pin_sck,
+                pin_mosi,
+                pin_miso,
+                pin_io2, 
+                pin_io3
+            );
+
         } break;
         case Mode::QSPI_write: 
-        {
-        } break;
         case Mode::QSPI_read:
         {
+            printf("Setup READ\n");
             pio_qspi_init_qspi_read(
+                qspi.pio, qspi.sm,
+                qspi_read_prog_offs,
+                8, 
+                clkdiv,
+                false, 
+                false, 
+                pin_sck,
+                pin_mosi
+            );
 
-                    );
+            printf("Setup write\n");
+            pio_qspi_init_qspi_write(
+                qspi2.pio, qspi2.sm,
+                qspi_write_prog_offs,
+                8, 
+                clkdiv,
+                false, 
+                false, 
+                pin_sck,
+                pin_mosi
+            );
+ 
         } break;
     }
 }
@@ -103,7 +149,7 @@ int Qspi::qspi_read8(DataType write_buffer)
 
 int Qspi::qspi_write8(ConstDataType read_buffer)
 {
-    pio_qspi_write8_blocking(&qspi, read_buffer.data(), read_buffer.size());
+    pio_qspi_write8_blocking(&qspi2, read_buffer.data(), read_buffer.size());
     return read_buffer.size();
 }
 

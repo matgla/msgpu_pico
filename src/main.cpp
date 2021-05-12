@@ -127,13 +127,14 @@ int main()
     uint8_t d[] = {'h', 'e', 'j'};
     msgpu::write_bytes(d);
 
-    printf("A strumien\n");
+    printf("============================\n\n\n");
     uint8_t buf_in[8];
     Qspi::init();
     while (true)
     {
+        //Qspi::switch_to(Qspi::Mode::SPI);
         uint8_t buf_out[8] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8 };
-        Qspi::read8_write8_blocking(buf_in, buf_out);
+        Qspi::spi_write8(buf_out);
         
         buf_out[0] = 0xa;
         buf_out[1] = 0xb;
@@ -143,21 +144,39 @@ int main()
         {
             printf("%d, ", b);
         }
-        
-        printf("\nSending write/read not in parallel\n");
- 
-        Qspi::spi_write8(buf_out);
-        Qspi::spi_read8(buf_in);
-        printf("Data: ");
-        for (uint8_t b : buf_in)
-        {
-            printf("%d, ", b);
-        }
         printf("\n");
+        
+     //   printf("\nSending write/read not in parallel\n");
+ 
+    //    Qspi::spi_write8(buf_out);
 
-        printf ("Switch to QSPI\n");
-        Qspi::switch_to(Qspi::Mode::QSPI_write);
+//        Qspi::spi_read8(buf_in);
+//        printf("Data: ");
+//        for (uint8_t b : buf_in)
+//        {
+//            printf("%d, ", b);
+//        }
+//        printf("\n");
 
+//        printf ("Switch to QSPI\n");
+//        Qspi::switch_to(Qspi::Mode::QSPI_write);
+
+//        buf_out[2] = 0xde;
+//        buf_out[3] = 0xbe;
+
+//        printf("Write QSPI\n");
+//        Qspi::qspi_write8(buf_out);
+//        printf("Read QSPI\n");
+//        Qspi::qspi_read8(buf_in);
+
+//        printf("Data qspi: ");
+//        for (uint8_t b : buf_in)
+//        {
+//            printf("%d, ", b);
+//        }
+//        printf("\n");
+
+ 
         msgpu::sleep_ms(1000);
 //        uint8_t byte = msgpu::read_byte();
 //        processor.process(byte);
