@@ -12,8 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.  
 #include <cstdio> 
 #include <cstring> 
 
@@ -54,73 +53,23 @@ void frame_update()
 } // namespace msgpu
 
 
-struct Vertex
-{
-    float x;
-    float y;
-    float z;
-};
-
-struct Triangle 
-{
-    Vertex v[3];
-};
-
-struct Mesh 
-{
-    Triangle triangles[12]; 
-};
-
-const Mesh mesh {
-    .triangles = {
-        {{ {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f} }},
-        {{ {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f} }},
-        {{ {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f} }},
-        {{ {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f} }},
-        {{ {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f} }},
-        {{ {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f} }},
-        {{ {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f} }},
-        {{ {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }},
-        {{ {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f} }},
-        {{ {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f} }},
-        {{ {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} }},
-        {{ {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} }},
-    }
-};
-
-template <typename T, typename C>
-void write_msg(T& msg, C& c)
-{
-    Header header;
-    header.id = T::id;
-    header.size = sizeof(T);
-
-    uint8_t* bytes = reinterpret_cast<uint8_t*>(&header);
-    for (std::size_t i = 0; i < sizeof(Header); ++i)
-    {
-        c.process(bytes[i]);
-    }
-
-    bytes = reinterpret_cast<uint8_t*>(&msg);
-    for (std::size_t i = 0; i < header.size; ++i)
-    {
-
-        c.process(bytes[i]);
-    }
-}
-
 int main() 
 {
     msgpu::initialize_board();
  
     msgpu::initialize_signal_generator();
     
-    static processor::CommandProcessor processor(mode, &msgpu::write_bytes);
+    processor::CommandProcessor processor(mode, &msgpu::write_bytes);
+    msgpu::set_usart_handler([&processor]{
+        processor.dma_run();
+    });
 
+    processor.dma_run();
     while (true)
     {
-        uint8_t byte = msgpu::read_byte();
-        processor.process(byte);
+        processor.process_data();
+       // uint8_t byte = msgpu::read_byte();
+       // processor.process(byte);
     }
 
     msgpu::deinitialize_signal_generator();

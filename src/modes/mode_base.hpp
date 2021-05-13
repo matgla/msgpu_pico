@@ -127,7 +127,6 @@ public:
     void clear()
     {
         mutex_enter_blocking(&mutex_);
-        printf("Clear %d\n", write_buffer_id_);
         for (auto& line : get_writable_frame())
         {
             line.fill(0);
@@ -144,7 +143,6 @@ public:
             read_buffer_id_ = write_buffer_id_;
             write_buffer_id_ = c;
 
-            printf("Reading from %d\n", this->read_buffer_id_);
             swap_buffers_ = false; 
         }
         mutex_exit(&mutex_);

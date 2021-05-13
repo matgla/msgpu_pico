@@ -67,10 +67,11 @@ void Mode::render()
 
 std::size_t Mode::fill_scanline(std::span<uint32_t> line, std::size_t line_number)
 {
-//    return test_mode_.fill_scanline(line, line_number);
-    return std::visit([line, line_number](auto&& mode) ->std::size_t {
-        return mode.fill_scanline(line, line_number);
-    }, mode_);
+    return 0;
+    //    return test_mode_.fill_scanline(line, line_number);
+    //return std::visit([line, line_number](auto&& mode) ->std::size_t {
+    //    return mode.fill_scanline(line, line_number);
+    //}, mode_);
 }
 
 void Mode::write(char c)

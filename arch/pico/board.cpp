@@ -29,6 +29,11 @@
 #include <pico/sync.h>
 
 #include <hardware/clocks.h>
+#include <hardware/regs/intctrl.h>
+#include <hardware/structs/uart.h>
+#include <hardware/dma.h>
+#include <hardware/irq.h>
+#include <eul/container/static_deque.hpp>
 
 extern const struct scanvideo_pio_program video_24mhz_composable;
 
@@ -40,14 +45,155 @@ namespace msgpu
 
 static uint32_t res_width = 320;
 static uint32_t res_height = 240;
+static eul::container::static_deque<uint8_t, 255> buffer;
+
+void on_uart_rx() 
+{
+    while (uart_is_readable(uart0)) 
+    {
+        buffer.push_back(uart_getc(uart0));
+        //.uart_putc(uart0, uart_getc(uart0));
+    }
+}
+
+const char word0[] = "Transferring data ";
+const char word1[] = "one ";
+const char word2[] = "at ";
+const char word3[] = "a time!\n";
+
+const struct {uint32_t len; const char* data;} control_blocks[] = {
+    {count_of(word0) - 1, word0},
+    {count_of(word1) - 1, word1},
+    {count_of(word2) - 1, word2},
+    {count_of(word3) - 1, word3},
+    {0, NULL}
+};
+
+void initialize_uart()
+{
+    stdio_init_all();
+    uart_init(uart0, 115200);
+    uart_set_hw_flow(uart0, false, false);
+
+    gpio_set_function(16, GPIO_FUNC_UART);
+    gpio_set_function(17, GPIO_FUNC_UART);
+}
+
+static int dma_channel;
+
+UsartHandler usart_dma_handler;
+
+void set_usart_dma_buffer(uint8_t* buffer, bool trigger)
+{
+    dma_channel_set_write_addr(dma_channel, buffer, trigger);  
+}
+
+void set_usart_dma_transfer_count(std::size_t size, bool trigger)
+{
+    dma_channel_set_trans_count(dma_channel, size, trigger);
+}
+
+void set_usart_handler(const UsartHandler& handler)
+{
+    usart_dma_handler = handler;
+}
+
+void dma_handler()
+{
+    dma_hw->ints0 = 1 << dma_channel;
+    if (usart_dma_handler)
+    {
+        usart_dma_handler();
+    }
+ //   if (got_header)
+ //   {
+ //       printf("Got header\n");
+ //       got_header = false;
+ //       printf("Data to get: %d\n", dst[0]);
+ //       dma_channel_set_write_addr(dma_channel, dst, false);
+ //       dma_channel_set_trans_count(dma_channel, dst[0], true);
+ //   }
+ //   else 
+ //   {
+ //       printf("Got payload: %s\n", dst);
+ //       dma_channel_set_write_addr(dma_channel, dst, false);
+ //       dma_channel_set_trans_count(dma_channel, 4, true);
+ //       got_header = true;
+ //   }
+
+    
+}
+
+void dma_test()
+{
+    dma_channel = dma_claim_unused_channel(true);
+
+    dma_channel_config c = dma_channel_get_default_config(dma_channel);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_dreq(&c, DREQ_UART0_RX);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+
+    dma_channel_set_irq1_enabled(dma_channel, true);
+    irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);  
+    irq_set_enabled(DMA_IRQ_1, true);
+
+    dma_channel_configure( 
+        dma_channel, 
+        &c, 
+        nullptr, 
+        &uart_get_hw(uart0)->dr, 
+        4,
+        false 
+    );
+
+    printf("Waiting for data\n");
+}
 
 void initialize_board()
 {
     set_sys_clock_khz(250000, true);
-    stdio_init_all();
-    uart_init(uart0, 115200);
-    gpio_set_function(16, GPIO_FUNC_UART);
-    gpio_set_function(17, GPIO_FUNC_UART);
+    initialize_uart();
+
+    dma_test();
+
+
+//    int ctrl_chan = dma_claim_unused_channel(true);
+//    int data_chan = dma_claim_unused_channel(true);
+
+//    dma_channel_config c = dma_channel_get_default_config(ctrl_chan);
+//    channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+//    channel_config_set_read_increment(&c, true);
+//    channel_config_set_write_increment(&c, true);
+//    channel_config_set_ring(&c, true, 3);
+
+//    dma_channel_configure(
+//        ctrl_chan,
+//        &c, 
+//        &dma_hw->ch[data_chan].al3_transfer_count,
+//        &control_blocks[0],
+//        2,
+//        false 
+//    );
+
+//    c = dma_channel_get_default_config(data_chan);
+//    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+//    channel_config_set_dreq(&c, DREQ_UART0_TX + 2 * uart_get_index(uart0));
+//    channel_config_set_chain_to(&c, ctrl_chan);
+//    channel_config_set_irq_quiet(&c, true);
+//    dma_channel_configure( 
+//        data_chan,
+//        &c,
+//        &uart_get_hw(uart0)->dr, 
+//        NULL,
+//        0,
+//        false
+//    );
+//    dma_start_channel_mask(1u << ctrl_chan);
+//    while (!(dma_hw->intr & 1u << data_chan))
+//        tight_loop_contents();
+//    dma_hw->ints0 = 1u << data_chan;
+    printf("Board initialized\n");
 }
 
 void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int core)
@@ -124,9 +270,12 @@ void set_resolution(uint16_t width, uint16_t height)
 uint8_t read_byte()
 {
     return uart_getc(uart0);
-//    uint8_t byte;
-//    read(STDIN_FILENO, &byte, sizeof(byte));
-//    return byte;
+    //while (buffer.empty())
+    //{
+    //}
+    //uint8_t b = buffer.front();
+    //b.pop_front();
+    //return b;
 }
 
 void write_bytes(std::span<uint8_t> bytes)

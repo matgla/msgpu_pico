@@ -31,8 +31,9 @@ public:
     using WriteCallback = void(*)(std::span<uint8_t>);
     HumanInterface(vga::Mode& mode, WriteCallback write_callback);
 
+    void process_data();
     void process(uint8_t byte);
-
+    void dma_run();
 private:
     void process_write(uint8_t byte);
     void process_command();

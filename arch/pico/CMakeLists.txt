@@ -57,6 +57,8 @@ target_link_libraries(msgpu_arch
         pico_scanvideo_dpi
         pico_multicore
         msgpu_interface
+
+        eul
     PRIVATE
         msgpu_arch_pico_qspi
 )

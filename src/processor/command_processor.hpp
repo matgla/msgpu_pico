@@ -35,9 +35,9 @@ public:
     CommandProcessor(vga::Mode& mode, WriteCallback callback);
 
     void change();
-
+    void process_data();
     void process(uint8_t byte);
-
+    void dma_run();
 private:
     vga::Mode& mode_;
     WriteCallback write_;

@@ -75,7 +75,7 @@ public:
     using Text_40x30_12bit_8x16 = modes::text::TextMode<
         modes::text::Text_40x30_12bit<msgui::fonts::Font8x16>>;
 
-    using Graphic_320x240_12bit = modes::graphic::PaletteGraphicMode<
+    using Graphic_320x240_12bit = modes::graphic::GraphicMode<
         modes::graphic::Graphic_320x240_12bit>;
 
     using ModeTypes = std::tuple< 

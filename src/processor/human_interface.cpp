@@ -144,6 +144,16 @@ void HumanInterface::mode()
     }
 }
 
+void HumanInterface::dma_run() 
+{
+
+}
+
+void HumanInterface::process_data()
+{
+
+}
+
 void HumanInterface::process(uint8_t byte)
 {
     ::write(STDOUT_FILENO, &byte, sizeof(byte));

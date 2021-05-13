@@ -38,7 +38,8 @@ public:
     MachineInterface(vga::Mode* mode, WriteCallback write_callback);
 
     void process(uint8_t byte);
-
+    void process_data();
+    void dma_run();
 private:
 
     void process_message(); 
@@ -64,22 +65,26 @@ private:
 
     enum class State : uint8_t 
     {
+        init,
         receive_header,
-        receive_payload 
+        receive_payload,
+        receive_crc
     };
 
     State state_;
-    char buffer_[255];
+    bool got_data_;
+    uint8_t buffer_[255];
     std::size_t buffer_counter_;
     std::size_t size_to_get_;
+    uint8_t message_crc_;
     Messages message_id_;
     WriteCallback write_;
     vga::Mode* mode_;
 
-    char header_buffer_[sizeof(Header)];
+    uint8_t header_buffer_[sizeof(Header)];
     Header header_;
 
-    std::array<HandlerType, 255> handlers_;
+    std::array<HandlerType, 64> handlers_;
 
 };
 

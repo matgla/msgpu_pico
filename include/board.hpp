@@ -19,6 +19,8 @@
 #include <cstdint>
 #include <span>
 
+#include <eul/function.hpp>
+
 namespace msgpu 
 {
 
@@ -38,6 +40,12 @@ void set_resolution(uint16_t width, uint16_t height);
 
 uint32_t get_millis();
 void sleep_ms(uint32_t time);
+
+using UsartHandler = eul::function<void(), sizeof(void*)>;
+
+void set_usart_dma_buffer(uint8_t* buffer, bool trigger);
+void set_usart_dma_transfer_count(std::size_t size, bool trigger);
+void set_usart_handler(const UsartHandler& handler);
 
 } // namespace msgpu  
 

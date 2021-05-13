@@ -39,10 +39,25 @@ void CommandProcessor::change()
     }
 }
 
+void CommandProcessor::process_data() 
+{
+    std::visit([](auto&& arg) {
+        arg.process_data();
+    }, interface_);
+
+}
+
 void CommandProcessor::process(uint8_t data)
 {
     std::visit([data](auto&& arg) {
         arg.process(data);
+    }, interface_);
+}
+
+void CommandProcessor::dma_run()
+{
+    std::visit([](auto&& arg) {
+        arg.dma_run();
     }, interface_);
 }
 
