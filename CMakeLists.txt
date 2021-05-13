@@ -54,7 +54,7 @@ endif ()
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 20)
 
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/scripts/message_generator.py)
+#set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/scripts/message_generator.py)
 
 add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=12
     -DPICO_SCANVIDEO_DPI_PIXEL_GSHIFT=4
@@ -66,10 +66,8 @@ add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=12
     -DPICO_SCANVIDEO_MAX_SCANLINE_BUFFER_WORDS=20
     -DPICO_SCANVIDEO_PLANE1_VARIABLE_FRAGMENT_DMA=1
 )
-
-add_subdirectory(scripts)
+find_package(msgpu_interface)
 add_subdirectory(arch)
-add_subdirectory(${PROJECT_BINARY_DIR}/messages/cpp)
 
 add_subdirectory(include)
 add_subdirectory(src)

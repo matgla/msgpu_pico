@@ -26,7 +26,7 @@
 
 #include "modes/graphic/graphic_mode.hpp"
 #include "modes/graphic/320x240_12bit.hpp"
-
+#include "modes/graphic/320x240_256.hpp"
 #include <msgui/fonts/Font8x16.hpp>
 
 #include "messages/begin_primitives.hpp"
@@ -78,11 +78,16 @@ public:
     using Graphic_320x240_12bit = modes::graphic::GraphicMode<
         modes::graphic::Graphic_320x240_12bit>;
 
+    using Graphic_320x240_256 = modes::graphic::PaletteGraphicMode<
+        modes::graphic::Graphic_320x240_256>;
+
+
     using ModeTypes = std::tuple< 
         Text_80x30_16_8x16,
         Text_40x30_16_8x16,
         Text_40x30_12bit_8x16,
-        Graphic_320x240_12bit
+        Graphic_320x240_12bit,
+        Graphic_320x240_256
     >; 
 
     void clear();
@@ -112,7 +117,8 @@ public:
         Text_80x30_16_8x16,
         Text_40x30_16_8x16,
         Text_40x30_12bit_8x16,
-        Graphic_320x240_12bit
+        Graphic_320x240_12bit,
+        Graphic_320x240_256
     >;
 
 private:

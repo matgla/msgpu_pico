@@ -26,7 +26,7 @@ namespace vga
 
 Mode::Mode()
 {
-    mode_.emplace<Graphic_320x240_12bit>();
+    mode_.emplace<Graphic_320x240_256>();
 }
 
 void Mode::switch_to(const vga::modes::Modes mode)
@@ -67,11 +67,9 @@ void Mode::render()
 
 std::size_t Mode::fill_scanline(std::span<uint32_t> line, std::size_t line_number)
 {
-    return 0;
-    //    return test_mode_.fill_scanline(line, line_number);
-    //return std::visit([line, line_number](auto&& mode) ->std::size_t {
-    //    return mode.fill_scanline(line, line_number);
-    //}, mode_);
+    return std::visit([line, line_number](auto&& mode) ->std::size_t {
+        return mode.fill_scanline(line, line_number);
+    }, mode_);
 }
 
 void Mode::write(char c)

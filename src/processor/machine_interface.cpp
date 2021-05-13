@@ -123,10 +123,7 @@ void MachineInterface::send_info()
 }
 
 MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback)
-    : got_data_(false)
-    , state_(State::init)
-    , buffer_counter_(0)
-    , size_to_get_(sizeof(Header))
+    : state_(State::init)
     , write_(write_callback)
     , mode_(mode)
 {
@@ -149,40 +146,42 @@ void MachineInterface::dma_run()
     {
         case State::init: 
         {
-       //     printf("Waiting for header\n");
-            msgpu::set_usart_dma_buffer(&header_buffer_[0], false);
+            msgpu::set_usart_dma_buffer(reinterpret_cast<uint8_t*>(&receive_.header), false);
             msgpu::set_usart_dma_transfer_count(sizeof(Header), true);
             state_ = State::receive_header;
         } break;
         case State::receive_header:
         {
-            std::memcpy(&header_, header_buffer_, sizeof(Header));
-            uint8_t crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&header_buffer_[0]), 3));
+            uint8_t crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&receive_.header), 3));
             //printf("Got header id: %d, size %d\n", header_.id, header_.size);
-            if (crc != header_.crc)
+            if (crc != receive_.header.crc)
             {
-                printf("CRC validation failed. Expected 0x%x, got: 0x%x\n", crc, header_.crc);
+                printf("CRC validation failed. Expected 0x%x, got: 0x%x\n", crc, receive_.header.crc);
                 state_ = State::init;
                 dma_run();
                 return;
             }
             else 
             {
-                if (header_.size == 0)
+                if (receive_.header.size == 0)
                 {
                   //  printf("Process message with header 0\n");
                     state_ = State::init;
-                    got_data_ = true; 
+                    buffer_.push_back(receive_);
+                    if (buffer_.size() != buffer_.max_size())
+                    {
+                        dma_run();
+                    }
                     return;
                 }
-                if (header_.size >= sizeof(buffer_))
+                if (receive_.header.size >= 255)
                 {
                     state_ = State::init;
                     dma_run();
                     return;
                 }
-                msgpu::set_usart_dma_buffer(buffer_, false);
-                msgpu::set_usart_dma_transfer_count(header_.size, true);
+                msgpu::set_usart_dma_buffer(receive_.payload.data(), false);
+                msgpu::set_usart_dma_transfer_count(receive_.header.size, true);
                 state_ = State::receive_payload;
             }
         } break;
@@ -194,28 +193,17 @@ void MachineInterface::dma_run()
         } break;
         case State::receive_crc:
         {
-            const uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(&buffer_[0], header_.size));
+            const uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(receive_.payload.data(), receive_.header.size));
             //printf("Got msg crc 0x%x\n", msg_crc);
             
 
             if (msg_crc != message_crc_)
             {
                 printf("CRC mismatch, received 0x%x, expected 0x%x. Dropping message\n", message_crc_, msg_crc);
-                printf("Data: ");
-                for (std::size_t i = 0; i < header_.size; ++i)
-                {
-                    printf("%d, ", buffer_[i]);
-                }
-                printf("\n");
             }
             else 
             {
-                //printf("Process message: %d\n", header_.id);
-                got_data_ = true;
-                state_ = State::init;
-                return;
-                // just indicate 
-                //        process_message();
+                buffer_.push_back(receive_);
             }
 
             state_ = State::init;
@@ -226,82 +214,20 @@ void MachineInterface::dma_run()
 
 void MachineInterface::process_data() 
 {
-    if (got_data_)
+    if (!buffer_.empty())
     {
+        bool rerun = false; 
+        if (buffer_.size() == buffer_.max_size())
+        {
+            rerun = true;
+        }
+
         process_message();
-        got_data_ = false;
-        dma_run();
+        if (rerun) dma_run();
     }
 }
 void MachineInterface::process(uint8_t byte)
 {
-    switch (state_)
-    {
-        case State::receive_header:
-        {
-            header_buffer_[buffer_counter_] = byte;  
-            if (buffer_counter_ == sizeof(Header) - 1)
-            {
-                std::memcpy(&header_, header_buffer_, sizeof(Header));
-                buffer_counter_ = 0;
-
-                uint8_t crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&header_buffer_[0]), 3));
-                if (crc != header_.crc)
-                {
-                    printf("CRC validation failed. Expected 0x%x, got: 0x%x\n", crc, header_.crc);
-                    return;
-                }
- 
-                if (header_.size != 0)
-                {
-                    printf("Received header %d, size %d\n", header_.id, header_.size);
-
-                    state_ = State::receive_payload;
-                }
-                else 
-                {
-                    process_message();
-                }
-            }
-            else 
-            {
-                ++buffer_counter_;
-            }
-        } break;
-        case State::receive_payload:
-        {
-            buffer_[buffer_counter_] = byte;
-            ++buffer_counter_;
-            if (buffer_counter_ >= header_.size)
-            {
-                buffer_counter_ = 0;
-                state_ = State::receive_crc;
-            }
-        } break;
-        case State::receive_crc: 
-        {
-            *(reinterpret_cast<uint8_t*>(&message_crc_) + buffer_counter_) = byte;
-            if (++buffer_counter_ >= 4)
-            {
-                const uint32_t msg_crc = calculate_crc32(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&buffer_[0]), header_.size));
-                printf("Got msg crc 0x%x\n", msg_crc);
-                
-                if (msg_crc != message_crc_)
-                {
-                    printf("CRC mismatch, received 0x%x, expected 0x%x. Dropping message\n", message_crc_, msg_crc);
-                }
-                else 
-                {
-                    printf("Process message: %d\n", header_.id);
-                    process_message();
-                }
-
-                buffer_counter_ = 0;
-                state_ = State::receive_header;
-            }
- 
-        } break;
-    }
 }
 
 template <typename Message>
@@ -314,35 +240,37 @@ void MachineInterface::process_message()
 {
     static uint32_t prev = 0;   
     uint32_t n = msgpu::get_millis(); 
-    //printf("Between message: %d ms\n", (n-prev));
-    HandlerType handler = handlers_[header_.id];
+    
+    auto& msg = buffer_.front();
+    HandlerType handler = handlers_[msg.header.id];
     if (handler != nullptr)
     {
         (this->*handler)();
     }
     else 
     {
-        printf("Unsupported message id: %d\n", header_.id);
+        printf("Unsupported message id: %d\n", msg.header.id);
     }
+    buffer_.pop_front();
     prev = msgpu::get_millis(); 
 
 } 
 
 void MachineInterface::change_mode()
 {
-    auto& change_mode = cast_to<ChangeMode>(buffer_);
+    auto& change_mode = cast_to<ChangeMode>(buffer_.front().payload.data());
     mode_->switch_to(static_cast<vga::modes::Modes>(change_mode.mode));
 }
 
 void MachineInterface::set_pixel()
 {
-    auto& set_pixel = cast_to<SetPixel>(buffer_);
+    auto& set_pixel = cast_to<SetPixel>(buffer_.front().payload.data());
     mode_->set_pixel(set_pixel.x, set_pixel.y, set_pixel.color);
 }
 
 void MachineInterface::draw_line() 
 {
-    auto& line = cast_to<DrawLine>(buffer_);
+    auto& line = cast_to<DrawLine>(buffer_.front().payload.data());
     mode_->draw_line(line.x1, line.y1, line.x2, line.y2);
 }
 
@@ -360,7 +288,7 @@ void MachineInterface::clear_screen()
 void MachineInterface::begin_primitives()
 {
     //printf("BeginPrimitives\n");
-    auto& primitive = cast_to<BeginPrimitives>(buffer_);
+    auto& primitive = cast_to<BeginPrimitives>(buffer_.front().payload.data());
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
@@ -372,14 +300,14 @@ void MachineInterface::end_primitives()
 
 void MachineInterface::write_vertex()
 {
-    auto& vertex = cast_to<WriteVertex>(buffer_);
+    auto& vertex = cast_to<WriteVertex>(buffer_.front().payload.data());
     //printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 
 void MachineInterface::set_perspective()
 {
-    auto& perspective = cast_to<SetPerspective>(buffer_);
+    auto& perspective = cast_to<SetPerspective>(buffer_.front().payload.data());
     mode_->set_perspective(perspective.view_angle, perspective.aspect, perspective.z_far, perspective.z_near);
 }
 

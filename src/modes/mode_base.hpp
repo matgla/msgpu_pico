@@ -247,19 +247,6 @@ template <typename Configuration, template <typename> typename Base>
 class RawModeBase : public Base<Configuration>
 {
 public: 
-    void __time_critical_func(copy_line_to_buffer)(std::size_t line_number, std::size_t next_line_id)
-    {
-        if (line_number < Configuration::resolution_height)
-        {
-            mutex_enter_blocking(&this->mutex_);
-            const auto& line = this->get_readable_frame()[line_number];
-            auto& line_buffer = this->line_buffer_[next_line_id];
-            mutex_exit(&this->mutex_);
-            memcpy(&line_buffer, line.data(), line.size() * sizeof(uint16_t));
-        }
- 
-    }
-
     std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
     {
         if (line_number >= Configuration::resolution_height)
@@ -275,7 +262,6 @@ public:
     void __time_critical_func(base_render)() 
     {
         Base<Configuration>::base_render();
-        copy_line_to_buffer(0, 0);
     }
 
 
@@ -300,9 +286,6 @@ public:
         this->get_writable_frame()[position.y][position.x] = 0xfff;//color;
         mutex_exit(&this->mutex_);
     }
-
-    constexpr static std::size_t line_buffer_size = 7;
-    uint16_t line_buffer_[line_buffer_size][Configuration::resolution_width];
 };
 
 template <typename Configuration>

@@ -28,8 +28,16 @@
 
 #include "messages/header.hpp"
 
+#include <eul/container/static_deque.hpp>
+
 namespace processor 
 {
+
+struct Message 
+{
+    Header header;
+    std::array<uint8_t, 255> payload;
+};
 
 class MachineInterface
 {
@@ -72,20 +80,13 @@ private:
     };
 
     State state_;
-    bool got_data_;
-    uint8_t buffer_[255];
-    std::size_t buffer_counter_;
-    std::size_t size_to_get_;
+    eul::container::static_deque<Message, 4> buffer_;
+    Message receive_;
     uint8_t message_crc_;
-    Messages message_id_;
     WriteCallback write_;
     vga::Mode* mode_;
 
-    uint8_t header_buffer_[sizeof(Header)];
-    Header header_;
-
     std::array<HandlerType, 64> handlers_;
-
 };
 
 } // namespace processor

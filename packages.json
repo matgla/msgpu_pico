@@ -25,6 +25,15 @@
 
         },
         {
+            "link": "https://github.com/matgla/msgpu_interface.git",
+            "type": "git",
+            "version": "v0.1",
+            "directory": "msgpu_interface",
+            "target": "msgpu_interface",
+            "options": {
+            }
+        },
+        {
             "name": "eul",
             "link": "https://github.com/matgla/EmbeddedUtilityLibraries.git",
             "type": "git",
