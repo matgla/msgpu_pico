@@ -38,6 +38,7 @@ target_link_libraries(msgpu
         msgpu_interface 
         msgpu_arch 
         msgpu_processor
+        msgpu_modes
 )
 
 if (NOT USE_SIMULATION)

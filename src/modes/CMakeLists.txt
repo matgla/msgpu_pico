@@ -39,6 +39,7 @@ target_link_libraries(msgpu_modes
         msgpu_arch
         msgpu_generator
         msgpu_messages
+        eul_math
 )
 
 target_compile_options(msgpu_modes PUBLIC

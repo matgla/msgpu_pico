@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <span>
 
-#include <eul/function.hpp>
+#include <eul/functional/function.hpp>
 
 #include "messages/messages.hpp"
 

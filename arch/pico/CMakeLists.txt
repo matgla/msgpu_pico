@@ -33,15 +33,6 @@ target_sources(msgpu_arch
         ${CMAKE_CURRENT_SOURCE_DIR}/qspi.cpp
 )
 
-target_link_libraries(msgpu_arch 
-    PUBLIC 
-        pico_stdlib
-        pico_scanvideo
-        pico_scanvideo_dpi
-        pico_multicore
-        msgpu_interface
-)
-
 target_include_directories(msgpu_arch 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -58,8 +49,9 @@ target_link_libraries(msgpu_arch
         pico_multicore
         msgpu_interface
 
-        eul
+        eul_functional 
     PRIVATE
+        eul_container
         msgpu_arch_pico_qspi
 )
 

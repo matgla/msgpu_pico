@@ -31,9 +31,14 @@ target_sources(msgpu_processor
 target_link_libraries(msgpu_processor 
     PRIVATE 
         msgpu_modes 
+        eul_mpl
+        eul_math
     PUBLIC 
         msgpu_messages
         msgui
+        eul_container
+        eul_functional
+        eul_crc
 )
 
 target_compile_options(msgpu_processor 

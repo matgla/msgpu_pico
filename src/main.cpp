@@ -61,13 +61,13 @@ int main()
     
     processor::CommandProcessor processor(mode, &msgpu::write_bytes);
     msgpu::set_usart_handler([&processor]{
-        processor.dma_run();
+        //processor.dma_run();
     });
 
-    processor.dma_run();
+   // processor.dma_run();
     while (true)
     {
-        processor.process_data();
+      //  processor.process_data();
        // uint8_t byte = msgpu::read_byte();
        // processor.process(byte);
     }

@@ -51,8 +51,8 @@ void on_uart_rx()
 {
     while (uart_is_readable(uart0)) 
     {
-        buffer.push_back(uart_getc(uart0));
-        //.uart_putc(uart0, uart_getc(uart0));
+        //buffer.push_back(uart_getc(uart0));
+        uart_putc(uart0, uart_getc(uart0));
     }
 }
 
@@ -73,10 +73,19 @@ void initialize_uart()
 {
     stdio_init_all();
     uart_init(uart0, 115200);
-    uart_set_hw_flow(uart0, false, false);
+    uart_set_hw_flow(uart0, true, true);
+    int UART_IRQ = UART0_IRQ;
 
+    // And set up and enable the interrupt handlers
+    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+    irq_set_enabled(UART_IRQ, true);
+    uart_set_fifo_enabled(uart0, false);
+    // Now enable the UART to send interrupts - RX only
+    uart_set_irq_enables(uart0, true, false);
     gpio_set_function(16, GPIO_FUNC_UART);
     gpio_set_function(17, GPIO_FUNC_UART);
+    gpio_set_function(18, GPIO_FUNC_UART);
+    gpio_set_function(19, GPIO_FUNC_UART);
 }
 
 static int dma_channel;
@@ -155,7 +164,7 @@ void initialize_board()
     set_sys_clock_khz(250000, true);
     initialize_uart();
 
-    dma_test();
+    // dma_test();
 
 
 //    int ctrl_chan = dma_claim_unused_channel(true);
