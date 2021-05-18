@@ -31,7 +31,7 @@ namespace processor
 class CommandProcessor
 {
 public:
-    using WriteCallback = void(*)(std::span<uint8_t>);
+    using WriteCallback = void(*)(std::span<const uint8_t>);
     CommandProcessor(vga::Mode& mode, WriteCallback callback);
 
     void change();

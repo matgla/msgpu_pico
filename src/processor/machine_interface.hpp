@@ -42,13 +42,16 @@ struct Message
 class MachineInterface
 {
 public:
-    using WriteCallback = void(*)(std::span<uint8_t>);
+    using WriteCallback = void(*)(std::span<const uint8_t>);
     MachineInterface(vga::Mode* mode, WriteCallback write_callback);
 
     void process(uint8_t byte);
     void process_data();
     void dma_run();
 private:
+    
+    template <typename T>
+    void send_message(const T& msg);
 
     void process_message(); 
 
@@ -80,12 +83,13 @@ private:
     };
 
     State state_;
-    eul::container::static_deque<Message, 4> buffer_;
+    static uint32_t data_[100];
+    eul::container::static_deque<Message, 20> buffer_;
     Message receive_;
     uint8_t message_crc_;
     WriteCallback write_;
     vga::Mode* mode_;
-
+    
     std::array<HandlerType, 64> handlers_;
 };
 

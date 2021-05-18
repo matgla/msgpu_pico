@@ -287,7 +287,7 @@ uint8_t read_byte()
     //return b;
 }
 
-void write_bytes(std::span<uint8_t> bytes)
+void write_bytes(std::span<const uint8_t> bytes)
 {
     for (const auto b : bytes)
     {
