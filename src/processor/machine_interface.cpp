@@ -22,6 +22,8 @@
 
 #include <unistd.h>
 
+#include "messages/ack.hpp"
+#include "messages/nack.hpp"
 #include "messages/header.hpp"
 #include "messages/info_resp.hpp"
 #include "messages/change_mode.hpp"
@@ -88,6 +90,37 @@ struct fill_modes<std::tuple<types...>>
     }
 };
 
+static uint32_t prev = 0;
+
+template <typename T>
+void MachineInterface::send_message(const T& msg)
+{
+  //  printf("%d\n", msgpu::get_millis() - prev);
+    Header header = {
+        .id = T::id,
+        .size = sizeof(T)
+    };
+
+    header.crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&header), 3));
+    
+    auto header_span = std::span<uint8_t>(reinterpret_cast<uint8_t*>(&header), sizeof(header));
+    
+    for (uint32_t b : header_span)
+    {
+        printf("%d, ", b);
+    }
+    printf("\n");
+    write_(header_span);
+    if (header.size >= 1) 
+    {
+        uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(T)));
+        write_(std::span<const uint8_t>(
+            reinterpret_cast<const uint8_t*>(&msg_crc), 
+            sizeof(msg_crc)));
+        write_(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(msg)));
+    }
+    prev = msgpu::get_millis();
+}
 
 void MachineInterface::send_info()
 {
@@ -109,17 +142,7 @@ void MachineInterface::send_info()
         .color_depth = 16 
     };
 
-    Header header = {
-        .id = static_cast<uint8_t>(Messages::InfoResp),
-        .size = sizeof(InfoResp)
-    };
-
-    header.crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&header), 3));
-    
-    auto header_span = std::span<uint8_t>(reinterpret_cast<uint8_t*>(&header), sizeof(header));
-    
-    write_(header_span);
-    write_(std::span<uint8_t>(reinterpret_cast<uint8_t*>(&resp), sizeof(resp)));
+    send_message(resp);
 }
 
 MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback)
@@ -154,9 +177,11 @@ void MachineInterface::dma_run()
         {
             uint8_t crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&receive_.header), 3));
             //printf("Got header id: %d, size %d\n", header_.id, header_.size);
+            //
+            printf("h %d\n", msgpu::get_millis() - prev);
+            prev = msgpu::get_millis();
             if (crc != receive_.header.crc)
             {
-                printf("CRC validation failed. Expected 0x%x, got: 0x%x\n", crc, receive_.header.crc);
                 state_ = State::init;
                 dma_run();
                 return;
@@ -168,6 +193,7 @@ void MachineInterface::dma_run()
                   //  printf("Process message with header 0\n");
                     state_ = State::init;
                     buffer_.push_back(receive_);
+                    send_message(Ack{});
                     if (buffer_.size() != buffer_.max_size())
                     {
                         dma_run();
@@ -199,10 +225,12 @@ void MachineInterface::dma_run()
 
             if (msg_crc != message_crc_)
             {
-                printf("CRC mismatch, received 0x%x, expected 0x%x. Dropping message\n", message_crc_, msg_crc);
+                send_message(Nack{});
             }
             else 
             {
+                printf("m %d\n", msgpu::get_millis() - prev);
+                send_message(Ack{});
                 buffer_.push_back(receive_);
             }
 

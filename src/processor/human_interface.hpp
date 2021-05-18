@@ -28,7 +28,7 @@ namespace processor
 class HumanInterface
 {
 public:
-    using WriteCallback = void(*)(std::span<uint8_t>);
+    using WriteCallback = void(*)(std::span<const uint8_t>);
     HumanInterface(vga::Mode& mode, WriteCallback write_callback);
 
     void process_data();

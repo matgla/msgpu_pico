@@ -70,6 +70,7 @@ int main()
         processor.process_data();
        // uint8_t byte = msgpu::read_byte();
        // processor.process(byte);
+//        printf("Elo\n");
     }
 
     msgpu::deinitialize_signal_generator();
