@@ -27,10 +27,13 @@
         {
             "link": "https://github.com/matgla/msgpu_interface.git",
             "type": "git",
-            "version": "v0.1",
+            "version": "main",
             "directory": "msgpu_interface",
             "target": "msgpu_interface",
             "options": {
+                "cmake_variables": {
+                    "DISABLE_TESTS": "ON"
+                }
             }
         },
         {

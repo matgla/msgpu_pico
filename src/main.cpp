@@ -45,8 +45,7 @@ std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
     return mode.fill_scanline(buffer, line);
 }
 
-void frame_update()
-{
+void frame_update() {
     mode.render();
 }
 
@@ -59,18 +58,16 @@ int main()
  
     msgpu::initialize_signal_generator();
     
-    processor::CommandProcessor processor(mode, &msgpu::write_bytes);
-    msgpu::set_usart_handler([&processor]{
-        //processor.dma_run();
+    static processor::CommandProcessor processor(mode, &msgpu::write_bytes);
+    msgpu::set_usart_handler([]{
+        processor.dma_run();
     });
 
-   // processor.dma_run();
+    processor.dma_run();
     while (true)
     {
-      //  processor.process_data();
-       // uint8_t byte = msgpu::read_byte();
-       // processor.process(byte);
-//        printf("Elo\n");
+        processor.process_data();
+   //     printf("Working\n");
     }
 
     msgpu::deinitialize_signal_generator();

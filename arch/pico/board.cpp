@@ -72,20 +72,20 @@ const struct {uint32_t len; const char* data;} control_blocks[] = {
 void initialize_uart()
 {
     stdio_init_all();
-    uart_init(uart0, 115200);
-    uart_set_hw_flow(uart0, true, true);
-    int UART_IRQ = UART0_IRQ;
+    uart_init(uart0, 230400);
+    uart_set_hw_flow(uart0, false, false);
+//    int UART_IRQ = UART0_IRQ;
 
     // And set up and enable the interrupt handlers
-    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
-    irq_set_enabled(UART_IRQ, true);
+//    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+//    irq_set_enabled(UART_IRQ, true);
     uart_set_fifo_enabled(uart0, false);
     // Now enable the UART to send interrupts - RX only
-    uart_set_irq_enables(uart0, true, false);
+ //   uart_set_irq_enables(uart0, true, false);
     gpio_set_function(16, GPIO_FUNC_UART);
     gpio_set_function(17, GPIO_FUNC_UART);
-    gpio_set_function(18, GPIO_FUNC_UART);
-    gpio_set_function(19, GPIO_FUNC_UART);
+//    gpio_set_function(18, GPIO_FUNC_UART);
+//    gpio_set_function(19, GPIO_FUNC_UART);
 }
 
 static int dma_channel;
@@ -133,7 +133,7 @@ void dma_handler()
     
 }
 
-void dma_test()
+void enable_dma()
 {
     dma_channel = dma_claim_unused_channel(true);
 
@@ -145,6 +145,7 @@ void dma_test()
 
     dma_channel_set_irq1_enabled(dma_channel, true);
     irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);  
+    irq_set_priority(DMA_IRQ_1, 0xff); 
     irq_set_enabled(DMA_IRQ_1, true);
 
     dma_channel_configure( 
@@ -152,7 +153,7 @@ void dma_test()
         &c, 
         nullptr, 
         &uart_get_hw(uart0)->dr, 
-        4,
+        1,
         false 
     );
 
@@ -164,44 +165,8 @@ void initialize_board()
     set_sys_clock_khz(250000, true);
     initialize_uart();
 
-    // dma_test();
+    enable_dma();
 
-
-//    int ctrl_chan = dma_claim_unused_channel(true);
-//    int data_chan = dma_claim_unused_channel(true);
-
-//    dma_channel_config c = dma_channel_get_default_config(ctrl_chan);
-//    channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
-//    channel_config_set_read_increment(&c, true);
-//    channel_config_set_write_increment(&c, true);
-//    channel_config_set_ring(&c, true, 3);
-
-//    dma_channel_configure(
-//        ctrl_chan,
-//        &c, 
-//        &dma_hw->ch[data_chan].al3_transfer_count,
-//        &control_blocks[0],
-//        2,
-//        false 
-//    );
-
-//    c = dma_channel_get_default_config(data_chan);
-//    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-//    channel_config_set_dreq(&c, DREQ_UART0_TX + 2 * uart_get_index(uart0));
-//    channel_config_set_chain_to(&c, ctrl_chan);
-//    channel_config_set_irq_quiet(&c, true);
-//    dma_channel_configure( 
-//        data_chan,
-//        &c,
-//        &uart_get_hw(uart0)->dr, 
-//        NULL,
-//        0,
-//        false
-//    );
-//    dma_start_channel_mask(1u << ctrl_chan);
-//    while (!(dma_hw->intr & 1u << data_chan))
-//        tight_loop_contents();
-//    dma_hw->ints0 = 1u << data_chan;
     printf("Board initialized\n");
 }
 
@@ -279,12 +244,6 @@ void set_resolution(uint16_t width, uint16_t height)
 uint8_t read_byte()
 {
     return uart_getc(uart0);
-    //while (buffer.empty())
-    //{
-    //}
-    //uint8_t b = buffer.front();
-    //b.pop_front();
-    //return b;
 }
 
 void write_bytes(std::span<const uint8_t> bytes)

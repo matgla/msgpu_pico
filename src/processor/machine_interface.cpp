@@ -34,6 +34,7 @@
 #include "messages/begin_primitives.hpp"
 #include "messages/end_primitives.hpp"
 #include "messages/write_vertex.hpp"
+#include "messages/write_text.hpp"
 #include "messages/messages.hpp"
 #include "messages/set_perspective.hpp"
 #include "messages/swap_buffer.hpp"
@@ -97,21 +98,13 @@ void MachineInterface::send_message(const T& msg)
 {
   //  printf("%d\n", msgpu::get_millis() - prev);
     Header header = {
-        .id = T::id,
-        .size = sizeof(T)
+        .id = T::id
     };
 
-    header.crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&header), 3));
-    
     auto header_span = std::span<uint8_t>(reinterpret_cast<uint8_t*>(&header), sizeof(header));
     
-    for (uint32_t b : header_span)
-    {
-        printf("%d, ", b);
-    }
-    printf("\n");
     write_(header_span);
-    if (header.size >= 1) 
+    if (sizeof(T) > 0) 
     {
         uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(T)));
         write_(std::span<const uint8_t>(
@@ -163,77 +156,60 @@ MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback
     handlers_[SwapBuffer::id] = &MachineInterface::swap_buffers;
 }
 
+std::size_t get_message_size(const uint8_t id)
+{
+    Messages msg_id = static_cast<Messages>(id);
+
+    switch (msg_id) 
+    {
+        case Messages::Ack: return sizeof(Ack);
+        case Messages::BeginPrimitives: return sizeof(BeginPrimitives);
+        case Messages::ChangeMode: return sizeof(ChangeMode);
+        case Messages::ClearScreen: return sizeof(ClearScreen);
+        case Messages::DrawLine: return sizeof(DrawLine);
+        case Messages::EndPrimitives: return sizeof(EndPrimitives);
+        case Messages::InfoReq: return sizeof(InfoReq);
+        case Messages::InfoResp: return sizeof(InfoResp);
+        case Messages::Nack: return sizeof(Nack);
+        case Messages::SetPerspective: return sizeof(SetPerspective);
+        case Messages::SetPixel: return sizeof(SetPixel);
+        case Messages::SwapBuffer: return sizeof(SwapBuffer);
+        case Messages::WriteText: return sizeof(WriteText);
+        case Messages::WriteVertex: return sizeof(WriteVertex);
+    }
+    return 0;
+};
+
 void MachineInterface::dma_run()
 {
     switch (state_)
     {
         case State::init: 
         {
-            msgpu::set_usart_dma_buffer(reinterpret_cast<uint8_t*>(&receive_.header), false);
-            msgpu::set_usart_dma_transfer_count(sizeof(Header), true);
+
+            msgpu::set_usart_dma_buffer(&receive_.payload[0], false);
+            msgpu::set_usart_dma_transfer_count(68, true);
             state_ = State::receive_header;
         } break;
         case State::receive_header:
         {
-            uint8_t crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&receive_.header), 3));
-            //printf("Got header id: %d, size %d\n", header_.id, header_.size);
-            //
-            printf("h %d\n", msgpu::get_millis() - prev);
-            prev = msgpu::get_millis();
-            if (crc != receive_.header.crc)
+            state_ = State::init;
+            printf("Got: ");
+            for (const auto b : receive_.payload)
             {
-                state_ = State::init;
-                dma_run();
-                return;
+                printf("%x, ", b);
             }
-            else 
+            printf("\n");
+            buffer_.push_back(receive_);
+            if (buffer_.size() != buffer_.max_size())
             {
-                if (receive_.header.size == 0)
-                {
-                  //  printf("Process message with header 0\n");
-                    state_ = State::init;
-                    buffer_.push_back(receive_);
-                    send_message(Ack{});
-                    if (buffer_.size() != buffer_.max_size())
-                    {
-                        dma_run();
-                    }
-                    return;
-                }
-                if (receive_.header.size >= 255)
-                {
-                    state_ = State::init;
-                    dma_run();
-                    return;
-                }
-                msgpu::set_usart_dma_buffer(receive_.payload.data(), false);
-                msgpu::set_usart_dma_transfer_count(receive_.header.size, true);
-                state_ = State::receive_payload;
+                dma_run();
             }
         } break;
         case State::receive_payload:
         {
-            msgpu::set_usart_dma_buffer(reinterpret_cast<uint8_t*>(&message_crc_), false);
-            msgpu::set_usart_dma_transfer_count(sizeof(message_crc_), true);
-            state_ = State::receive_crc;
-        } break;
-        case State::receive_crc:
-        {
-            const uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(receive_.payload.data(), receive_.header.size));
-            //printf("Got msg crc 0x%x\n", msg_crc);
-            
-
-            if (msg_crc != message_crc_)
-            {
-                send_message(Nack{});
-            }
-            else 
-            {
-                printf("m %d\n", msgpu::get_millis() - prev);
-                send_message(Ack{});
-                buffer_.push_back(receive_);
-            }
-
+            //printf("Receive payload: %d\n", receive_.header.id);
+            buffer_.push_back(receive_);
             state_ = State::init;
             dma_run();
         } break;
@@ -244,6 +220,7 @@ void MachineInterface::process_data()
 {
     if (!buffer_.empty())
     {
+        printf("Process message\n");
         bool rerun = false; 
         if (buffer_.size() == buffer_.max_size())
         {
@@ -266,39 +243,39 @@ Message& cast_to(void* memory)
 
 void MachineInterface::process_message()
 {
-    static uint32_t prev = 0;   
-    uint32_t n = msgpu::get_millis(); 
-    
     auto& msg = buffer_.front();
-    HandlerType handler = handlers_[msg.header.id];
+    HandlerType handler = handlers_[msg.payload[1]];
     if (handler != nullptr)
     {
         (this->*handler)();
     }
     else 
     {
-        printf("Unsupported message id: %d\n", msg.header.id);
+        printf("Unsupported message id: %d\n", msg.payload[0]);
     }
     buffer_.pop_front();
-    prev = msgpu::get_millis(); 
-
 } 
+
+uint8_t* MachineInterface::get_payload(Message& msg)
+{
+    return msg.payload + 4;
+}
 
 void MachineInterface::change_mode()
 {
-    auto& change_mode = cast_to<ChangeMode>(buffer_.front().payload.data());
+    auto& change_mode = cast_to<ChangeMode>(get_payload(buffer_.front()));
     mode_->switch_to(static_cast<vga::modes::Modes>(change_mode.mode));
 }
 
 void MachineInterface::set_pixel()
 {
-    auto& set_pixel = cast_to<SetPixel>(buffer_.front().payload.data());
+    auto& set_pixel = cast_to<SetPixel>(get_payload(buffer_.front()));
     mode_->set_pixel(set_pixel.x, set_pixel.y, set_pixel.color);
 }
 
 void MachineInterface::draw_line() 
 {
-    auto& line = cast_to<DrawLine>(buffer_.front().payload.data());
+    auto& line = cast_to<DrawLine>(get_payload(buffer_.front()));
     mode_->draw_line(line.x1, line.y1, line.x2, line.y2);
 }
 
@@ -316,7 +293,7 @@ void MachineInterface::clear_screen()
 void MachineInterface::begin_primitives()
 {
     //printf("BeginPrimitives\n");
-    auto& primitive = cast_to<BeginPrimitives>(buffer_.front().payload.data());
+    auto& primitive = cast_to<BeginPrimitives>(get_payload(buffer_.front()));
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
@@ -328,14 +305,14 @@ void MachineInterface::end_primitives()
 
 void MachineInterface::write_vertex()
 {
-    auto& vertex = cast_to<WriteVertex>(buffer_.front().payload.data());
+    auto& vertex = cast_to<WriteVertex>(get_payload(buffer_.front()));
     //printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 
 void MachineInterface::set_perspective()
 {
-    auto& perspective = cast_to<SetPerspective>(buffer_.front().payload.data());
+    auto& perspective = cast_to<SetPerspective>(get_payload(buffer_.front()));
     mode_->set_perspective(perspective.view_angle, perspective.aspect, perspective.z_far, perspective.z_near);
 }
 

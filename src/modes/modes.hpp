@@ -123,7 +123,7 @@ public:
 
 private:
     
-    VariantType mode_;
+    static inline VariantType mode_;
 };
 
 } // namespace vga

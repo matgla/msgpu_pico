@@ -126,12 +126,14 @@ public:
 
     void clear()
     {
-        mutex_enter_blocking(&mutex_);
+        //mutex_enter_blocking(&mutex_);
+        printf("Clear: %d\n", write_buffer_id_);
         for (auto& line : get_writable_frame())
         {
             line.fill(0);
         }
-        mutex_exit(&mutex_);
+        printf("Clear finished: %d\n", write_buffer_id_);
+        //mutex_exit(&mutex_);
     }
    
     void base_render()
@@ -142,7 +144,8 @@ public:
             std::size_t c = read_buffer_id_;
             read_buffer_id_ = write_buffer_id_;
             write_buffer_id_ = c;
-
+            printf("Swap buffer, now write to: %d\n", write_buffer_id_);
+            clear(); 
             swap_buffers_ = false; 
         }
         mutex_exit(&mutex_);

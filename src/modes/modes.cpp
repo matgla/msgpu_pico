@@ -65,7 +65,7 @@ void Mode::render()
     }, mode_);
 }
 
-std::size_t Mode::fill_scanline(std::span<uint32_t> line, std::size_t line_number)
+std::size_t __time_critical_func(Mode::fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
 {
     return std::visit([line, line_number](auto&& mode) ->std::size_t {
         return mode.fill_scanline(line, line_number);

@@ -35,8 +35,7 @@ namespace processor
 
 struct Message 
 {
-    Header header;
-    std::array<uint8_t, 255> payload;
+    uint8_t payload[68];
 };
 
 class MachineInterface
@@ -73,6 +72,7 @@ private:
     void write_vertex();
     void set_perspective();
 
+    uint8_t* get_payload(Message& msg);
 
     enum class State : uint8_t 
     {
@@ -83,14 +83,14 @@ private:
     };
 
     State state_;
-    static uint32_t data_[100];
+   // static uint32_t data_[50];
     eul::container::static_deque<Message, 20> buffer_;
     Message receive_;
     uint8_t message_crc_;
     WriteCallback write_;
     vga::Mode* mode_;
     
-    std::array<HandlerType, 64> handlers_;
+    std::array<HandlerType, 255> handlers_;
 };
 
 } // namespace processor

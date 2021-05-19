@@ -14,17 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=12
-#    -DPICO_SCANVIDEO_DPI_PIXEL_GSHIFT=4
-#    -DPICO_SCANVIDEO_DPI_PIXEL_BSHIFT=8
-#    -DPICO_SCANVIDEO_DPI_PIXEL_RCOUNT=4
-#    -DPICO_SCANVIDEO_DPI_PIXEL_GCOUNT=4
-#    -DPICO_SCANVIDEO_DPI_PIXEL_BCOUNT=4
-#    -DPICO_SCANVIDEO_SCANLINE_BUFFER_COUNT=4
-#    -DPICO_SCANVIDEO_MAX_SCANLINE_BUFFER_WORDS=20
-#    -DPICO_SCANVIDEO_PLANE1_VARIABLE_FRAGMENT_DMA=1
-#)
-
 add_library(msgpu_arch STATIC)
 
 target_sources(msgpu_arch 
@@ -61,32 +50,4 @@ target_compile_options(msgpu_arch PUBLIC
     $<$<CONFIG:DEBUG>:-Og -g -fvar-tracking -fvar-tracking-assignments>
     $<$<CONFIG:RELEASE>:-Os>
 )
-
-
-#find_package(msgui REQUIRED)
-
-#add_subdirectory(config)
-#add_subdirectory(disk)
-#add_subdirectory(interfaces)
-#add_subdirectory(generator)
-#add_subdirectory(memory)
-#add_subdirectory(modes)
-#add_subdirectory(processor)
-
-#find_package(littlefs REQUIRED)
-
-#target_link_libraries(msgpu
-#    PRIVATE 
-#        pico_stdlib
-#        pico_scanvideo_dpi
-#        pico_multicore
-#        msgui
-#        msgpu_generator
-#        msgpu_interfaces 
-#        msgpu_modes 
-#        msgpu_processor
-#        msgpu_video_ram
-#        msgpu_disk
-#        msgpu_config
-#)
 
