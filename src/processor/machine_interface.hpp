@@ -35,7 +35,7 @@ namespace processor
 
 struct Message 
 {
-    uint8_t payload[68];
+    uint8_t payload[8];
 };
 
 class MachineInterface

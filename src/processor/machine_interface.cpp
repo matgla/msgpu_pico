@@ -188,7 +188,7 @@ void MachineInterface::dma_run()
         {
 
             msgpu::set_usart_dma_buffer(&receive_.payload[0], false);
-            msgpu::set_usart_dma_transfer_count(68, true);
+            msgpu::set_usart_dma_transfer_count(8, true);
             state_ = State::receive_header;
         } break;
         case State::receive_header:
@@ -244,7 +244,7 @@ Message& cast_to(void* memory)
 void MachineInterface::process_message()
 {
     auto& msg = buffer_.front();
-    HandlerType handler = handlers_[msg.payload[1]];
+    HandlerType handler = handlers_[msg.payload[0]];
     if (handler != nullptr)
     {
         (this->*handler)();

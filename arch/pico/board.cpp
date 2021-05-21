@@ -69,26 +69,39 @@ const struct {uint32_t len; const char* data;} control_blocks[] = {
     {0, NULL}
 };
 
-void initialize_uart()
-{
-    stdio_init_all();
-    uart_init(uart0, 230400);
-    uart_set_hw_flow(uart0, false, false);
-//    int UART_IRQ = UART0_IRQ;
+static int dma_channel;
 
-    // And set up and enable the interrupt handlers
-//    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
-//    irq_set_enabled(UART_IRQ, true);
-    uart_set_fifo_enabled(uart0, false);
-    // Now enable the UART to send interrupts - RX only
- //   uart_set_irq_enables(uart0, true, false);
-    gpio_set_function(16, GPIO_FUNC_UART);
-    gpio_set_function(17, GPIO_FUNC_UART);
-//    gpio_set_function(18, GPIO_FUNC_UART);
-//    gpio_set_function(19, GPIO_FUNC_UART);
+void on_frame_finished()
+{
+    //uart_putc(uart0, 'x');
+    printf("RIS before: 0x%x\n", uart_get_hw(uart0)->ris);
+
+    //while (uart_is_readable(uart0))
+    //{
+    //    //uart_putc(uart0, uart_getc(uart0));
+    //    printf("%c\n", uart_getc(uart0));
+    //}
+    dma_channel_wait_for_finish_blocking(dma_channel);
+    printf("RIS after: 0x%x\n", uart_get_hw(uart0)->ris);
+
 }
 
-static int dma_channel;
+void initialize_uart()
+{
+    uart_init(uart0, 115200);
+//    uart_set_hw_flow(uart0, false, false);
+    uart_set_fifo_enabled(uart0, true);
+    gpio_set_function(16, GPIO_FUNC_UART);
+    gpio_set_function(17, GPIO_FUNC_UART);
+ 
+    int UART_IRQ = UART0_IRQ;
+    irq_set_enabled(UART_IRQ, true);
+    irq_set_exclusive_handler(UART_IRQ, on_frame_finished);
+    uart_get_hw(uart0)->imsc = (1 << UART_UARTIMSC_RTIM_LSB);
+    hw_write_masked(&uart_get_hw(uart0)->ifls, 0 << UART_UARTIFLS_RXIFLSEL_LSB, UART_UARTIFLS_RXIFLSEL_BITS);
+    //uart_set_irq_enables(uart0, true, true); 
+}
+
 
 UsartHandler usart_dma_handler;
 
@@ -110,6 +123,7 @@ void set_usart_handler(const UsartHandler& handler)
 void dma_handler()
 {
     dma_hw->ints0 = 1 << dma_channel;
+    printf("DMA\n");
     if (usart_dma_handler)
     {
         usart_dma_handler();
@@ -145,7 +159,6 @@ void enable_dma()
 
     dma_channel_set_irq1_enabled(dma_channel, true);
     irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);  
-    irq_set_priority(DMA_IRQ_1, 0xff); 
     irq_set_enabled(DMA_IRQ_1, true);
 
     dma_channel_configure( 
@@ -153,7 +166,7 @@ void enable_dma()
         &c, 
         nullptr, 
         &uart_get_hw(uart0)->dr, 
-        1,
+        8,
         false 
     );
 
@@ -163,9 +176,10 @@ void enable_dma()
 void initialize_board()
 {
     set_sys_clock_khz(250000, true);
+    stdio_init_all();
+    enable_dma();
     initialize_uart();
 
-    enable_dma();
 
     printf("Board initialized\n");
 }
