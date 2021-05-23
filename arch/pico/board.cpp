@@ -1,8 +1,6 @@
 // This file is part of msgpu project.
 // Copyright (C) 2021 Mateusz Stadnik
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
@@ -45,7 +43,7 @@ namespace msgpu
 
 static uint32_t res_width = 320;
 static uint32_t res_height = 240;
-static eul::container::static_deque<uint8_t, 255> buffer;
+std::array<uint8_t, 32> buffer;
 
 void on_uart_rx() 
 {
@@ -70,49 +68,82 @@ const struct {uint32_t len; const char* data;} control_blocks[] = {
 };
 
 static int dma_channel;
-
+static int dma_cb;
+constexpr int dma_size = 16;
+uint8_t byte_buffer;
 void on_frame_finished()
 {
     //uart_putc(uart0, 'x');
     printf("RIS before: 0x%x\n", uart_get_hw(uart0)->ris);
-
-    //while (uart_is_readable(uart0))
-    //{
-    //    //uart_putc(uart0, uart_getc(uart0));
-    //    printf("%c\n", uart_getc(uart0));
-    //}
-    dma_channel_wait_for_finish_blocking(dma_channel);
+    uint8_t* buf = reinterpret_cast<uint8_t*>(dma_hw->ch[dma_channel].write_addr); 
+    printf("DMA transfer size: %d\n", dma_hw->ch[dma_channel].transfer_count);
+    printf("DMA address: %x\n", dma_hw->ch[dma_channel].write_addr);
+    printf("Byte buffer %d\n", byte_buffer);
+    printf("Begin %p\n", buffer.data());
+    //printf("Readed bytes: %x\n", count);
+    //dma_channel_abort(dma_channel);
+    int i = 0;
+    while (uart_is_readable(uart0))
+    {
+//    //    //uart_putc(uart0, uart_getc(uart0));
+        buf[i] = uart_getc(uart0);
+        ++i;
+    }
+    //dma_channel_wait_for_finish_blocking(dma_channel);
     printf("RIS after: 0x%x\n", uart_get_hw(uart0)->ris);
+    printf("I: %d, Buffer dump: ", i);
+    for (const auto b : buffer)
+    {
+        printf("%d,", b);
+    }
+    printf("\n\n");
 
+
+  
+    set_usart_dma_buffer(buffer.data(), false);
+ //   set_usart_dma_transfer_count(dma_size, true);
+    printf("Finished frame handling\n");
+}
+
+const int uart_prio = 0x20;
+const int dma_prio = 0x10;
+
+uint8_t byte_buf() 
+{
+    return byte_buffer; 
 }
 
 void initialize_uart()
 {
     uart_init(uart0, 115200);
-//    uart_set_hw_flow(uart0, false, false);
+    uart_set_hw_flow(uart0, false, false);
     uart_set_fifo_enabled(uart0, true);
     gpio_set_function(16, GPIO_FUNC_UART);
     gpio_set_function(17, GPIO_FUNC_UART);
  
-    int UART_IRQ = UART0_IRQ;
-    irq_set_enabled(UART_IRQ, true);
-    irq_set_exclusive_handler(UART_IRQ, on_frame_finished);
-    uart_get_hw(uart0)->imsc = (1 << UART_UARTIMSC_RTIM_LSB);
-    hw_write_masked(&uart_get_hw(uart0)->ifls, 0 << UART_UARTIFLS_RXIFLSEL_LSB, UART_UARTIFLS_RXIFLSEL_BITS);
+  //  int UART_IRQ = UART0_IRQ;
+  //  irq_set_enabled(UART_IRQ, true);
+  //  irq_set_priority(UART_IRQ, uart_prio);
+  //  irq_set_exclusive_handler(UART_IRQ, on_frame_finished);
+   // uart_get_hw(uart0)->imsc = (1 << UART_UARTIMSC_RTIM_LSB);
+
+    //hw_write_masked(&uart_get_hw(uart0)->ifls, 0 << UART_UARTIFLS_RXIFLSEL_LSB, UART_UARTIFLS_RXIFLSEL_BITS);
     //uart_set_irq_enables(uart0, true, true); 
 }
 
 
 UsartHandler usart_dma_handler;
 
-void set_usart_dma_buffer(uint8_t* buffer, bool trigger)
+void set_usart_dma_buffer(void* buffer, bool trigger)
 {
     dma_channel_set_write_addr(dma_channel, buffer, trigger);  
 }
 
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
+    printf("Setting dma count %d\n", size);
     dma_channel_set_trans_count(dma_channel, size, trigger);
+    printf("Transfer count %d\n", dma_hw->ch[dma_channel].transfer_count);
 }
 
 void set_usart_handler(const UsartHandler& handler)
@@ -123,54 +154,55 @@ void set_usart_handler(const UsartHandler& handler)
 void dma_handler()
 {
     dma_hw->ints0 = 1 << dma_channel;
-    printf("DMA\n");
     if (usart_dma_handler)
     {
         usart_dma_handler();
     }
- //   if (got_header)
- //   {
- //       printf("Got header\n");
- //       got_header = false;
- //       printf("Data to get: %d\n", dst[0]);
- //       dma_channel_set_write_addr(dma_channel, dst, false);
- //       dma_channel_set_trans_count(dma_channel, dst[0], true);
- //   }
- //   else 
- //   {
- //       printf("Got payload: %s\n", dst);
- //       dma_channel_set_write_addr(dma_channel, dst, false);
- //       dma_channel_set_trans_count(dma_channel, 4, true);
- //       got_header = true;
- //   }
+}
 
-    
+void reset_dma_crc() 
+{
+    dma_hw->sniff_data = 0x0u;
+}
+
+void set_dma_mode(uint32_t mode)
+{
+    dma_sniffer_enable(dma_channel, mode, true); 
+}
+
+uint32_t get_dma_crc() 
+{
+    return dma_hw->sniff_data;
 }
 
 void enable_dma()
 {
     dma_channel = dma_claim_unused_channel(true);
-
+    
     dma_channel_config c = dma_channel_get_default_config(dma_channel);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-    channel_config_set_dreq(&c, DREQ_UART0_RX);
+    channel_config_set_dreq(&c, DREQ_UART0_RX + 2 * uart_get_index(uart0));
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, true);
+    channel_config_set_chain_to(&c, dma_cb);
+    channel_config_set_irq_quiet(&c, false);
 
-    dma_channel_set_irq1_enabled(dma_channel, true);
     irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);  
     irq_set_enabled(DMA_IRQ_1, true);
+    irq_set_priority(DMA_IRQ_1, dma_prio);
+    dma_channel_set_irq1_enabled(dma_channel, true);
+   
 
     dma_channel_configure( 
         dma_channel, 
         &c, 
         nullptr, 
         &uart_get_hw(uart0)->dr, 
-        8,
+        0,
         false 
     );
 
-    printf("Waiting for data\n");
+    dma_sniffer_enable(dma_channel, 0x2, true);
 }
 
 void initialize_board()
@@ -266,8 +298,8 @@ void write_bytes(std::span<const uint8_t> bytes)
     {
         uart_putc_raw(uart0, b);
     }
-//    write(STDOUT_FILENO, bytes.data(), bytes.size());
 }
+
 
 uint32_t get_millis()
 {
@@ -278,5 +310,6 @@ void sleep_ms(uint32_t t)
 {
     ::sleep_ms(t);
 }
+
 
 } // namespace msgpu 

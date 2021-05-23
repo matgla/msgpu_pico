@@ -9,19 +9,21 @@ import pathlib
 
 argparser = argparse.ArgumentParser(description="Script to read msgpu info")
 
-argparser.add_argument("--interface", help="Path to directory with interface")
+argparser.add_argument("--bytes", help="Path to directory with interface")
+argparser.add_argument("--start", help="Path to directory with interface")
+argparser.add_argument("--data")
 
 args = argparser.parse_args()
 
-files = []
-for path in pathlib.Path(args.interface).rglob("*.h"):
-    files.append(path)
+ser = serial.Serial("/dev/ttyUSB0", 115200)
 
-for header in files:
-    ast = parse_file(header, use_cpp=False)
-    ast.show()
+if args.start:
+    data = list(range(int(args.start), int(args.start) + int(args.bytes)))
+else: 
+    data = eval(args.data)
 
-# ser = serial.Serial("/dev/ttyACM1", 115200)
+print(data)
+ser.write(data)
 # ser.write([1])
 
 # print("Getting info")

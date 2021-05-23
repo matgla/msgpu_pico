@@ -25,7 +25,7 @@ namespace msgpu
 {
 
 void initialize_board();
-
+uint8_t byte_buf();
 void initialize_signal_generator();
 void deinitialize_signal_generator();
 
@@ -43,9 +43,14 @@ void sleep_ms(uint32_t time);
 
 using UsartHandler = eul::function<void(), sizeof(void*)>;
 
-void set_usart_dma_buffer(uint8_t* buffer, bool trigger);
+void set_usart_dma_buffer(void* buffer, bool trigger);
 void set_usart_dma_transfer_count(std::size_t size, bool trigger);
 void set_usart_handler(const UsartHandler& handler);
+
+void reset_dma_crc();
+void set_dma_mode(uint32_t mode);
+
+uint32_t get_dma_crc();
 
 } // namespace msgpu  
 

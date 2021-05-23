@@ -139,7 +139,7 @@ void MachineInterface::send_info()
 }
 
 MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback)
-    : state_(State::init)
+    : state_(State::prepare_for_header)
     , write_(write_callback)
     , mode_(mode)
 {
@@ -184,51 +184,132 @@ void MachineInterface::dma_run()
 {
     switch (state_)
     {
-        case State::init: 
+        case State::prepare_for_header: 
         {
-
-            msgpu::set_usart_dma_buffer(&receive_.payload[0], false);
-            msgpu::set_usart_dma_transfer_count(8, true);
-            state_ = State::receive_header;
+            printf("Prepare for header\n");
+            msgpu::set_usart_dma_buffer(header_buffer_.data(), false);
+            msgpu::set_usart_dma_transfer_count(sizeof(Header), true);
+            msgpu::reset_dma_crc();
+            state_ = State::synchronize_header;
         } break;
-        case State::receive_header:
+        case State::synchronize_header: 
         {
-            state_ = State::init;
-            printf("Got: ");
-            for (const auto b : receive_.payload)
+            // If start symbol is not received at start, we need to sync 
+            std::size_t difference = 0;
+            printf("Potential header get: ");
+            for (auto b : header_buffer_) 
             {
-                printf("%x, ", b);
+                printf("%d,", b);
             }
             printf("\n");
-            buffer_.push_back(receive_);
-            if (buffer_.size() != buffer_.max_size())
+            for (std::size_t i = 0; i < sizeof(Header); ++i)
+            {
+                if (header_buffer_[i] == 0x7e)
+                {
+                    difference = i;
+                    break;
+                }
+            }
+            
+            header_start_index_ = difference;
+            state_ = State::parse_header;
+            if (difference != 0) 
+            {
+                printf("Synchronize i: %d\n", difference);
+                msgpu::set_usart_dma_transfer_count(difference, true);
+            }
+            else 
             {
                 dma_run();
             }
+
         } break;
-        case State::receive_payload:
+        case State::parse_header: 
         {
-            //printf("Receive payload: %d\n", receive_.header.id);
-            buffer_.push_back(receive_);
-            state_ = State::init;
+            printf("Parse header: %d\n", header_start_index_);
+            if (header_start_index_ != 0)
+            {
+                // Buffer is misaligned, so CRC calculated by DMA is not valid 
+                header_crc_ = calculate_crc16<ccit_polynomial>(
+                    std::span<uint8_t>(&header_buffer_[header_start_index_], sizeof(Header)));
+            }
+            else 
+            {
+                header_crc_ = msgpu::get_dma_crc(); 
+            }
+            
+            msgpu::set_usart_dma_buffer(&received_crc_, false);
+            msgpu::set_usart_dma_transfer_count(sizeof(received_crc_), true);
+            printf("Going to verify\n");
+            state_ = State::verify_crc;
+
+        } break;
+        case State::verify_crc:
+        {
+            printf("Got CRC: 0x%x\n", received_crc_);
+            state_ = State::receive_header;
+            if (header_crc_ != received_crc_)
+            {
+                printf("Header CRC mismatch, calculated: 0x%x, received 0x%x\n", header_crc_, received_crc_);
+            }
             dma_run();
         } break;
+        case State::receive_header:
+        {
+            Message msg; 
+            std::memcpy(&msg.header, &header_buffer_[header_start_index_], sizeof(Header));
+            msg.received = false; 
+
+            printf("Got header { id: %d, size: %d }\n", msg.header.id, msg.header.size);
+
+            if (msg.header.size > 64) 
+            {
+                state_ = State::prepare_for_header;
+                return;
+            }
+            messages_.push_back(msg);
+
+            msgpu::set_usart_dma_buffer(messages_.back().payload.data(), false);
+            msgpu::set_usart_dma_transfer_count(msg.header.size, true);
+            msgpu::reset_dma_crc();
+            state_ = State::receive_payload_crc;
+        } break;
+        case State::receive_payload_crc:
+        {
+            printf("Receive payload\n");
+            message_crc_ = msgpu::get_dma_crc();
+            msgpu::set_usart_dma_buffer(&received_crc_, false);
+            msgpu::set_usart_dma_transfer_count(sizeof(received_crc_), true);
+            state_ = State::verify_payload_crc;
+        } break;
+        case State::verify_payload_crc:
+        {
+            printf("Verify payload\n");
+            state_ = State::prepare_for_header;
+            if (message_crc_ != received_crc_)
+            {
+                printf("Message CRC failed, recived: 0x%x, expected 0x%x\n", received_crc_, message_crc_);
+                messages_.pop_back();
+            }
+            else 
+            {
+                printf("Message received\n");
+                messages_.back().received = true;
+            }
+            dma_run();
+        }
     }
 }
 
 void MachineInterface::process_data() 
 {
-    if (!buffer_.empty())
+    if (!messages_.empty())
     {
-        printf("Process message\n");
-        bool rerun = false; 
-        if (buffer_.size() == buffer_.max_size())
+        if (messages_.front().received)
         {
-            rerun = true;
+            printf("Process message\n");
+            process_message();
         }
-
-        process_message();
-        if (rerun) dma_run();
     }
 }
 void MachineInterface::process(uint8_t byte)
@@ -243,39 +324,34 @@ Message& cast_to(void* memory)
 
 void MachineInterface::process_message()
 {
-    auto& msg = buffer_.front();
-    HandlerType handler = handlers_[msg.payload[0]];
+    const auto& msg = messages_.front();
+    HandlerType handler = handlers_[msg.header.id];
     if (handler != nullptr)
     {
         (this->*handler)();
     }
     else 
     {
-        printf("Unsupported message id: %d\n", msg.payload[0]);
+        printf("Unsupported message id: %d\n", msg.header.id);
     }
-    buffer_.pop_front();
+    messages_.pop_front();
 } 
-
-uint8_t* MachineInterface::get_payload(Message& msg)
-{
-    return msg.payload + 4;
-}
 
 void MachineInterface::change_mode()
 {
-    auto& change_mode = cast_to<ChangeMode>(get_payload(buffer_.front()));
+    auto& change_mode = cast_to<ChangeMode>(messages_.front().payload.data());
     mode_->switch_to(static_cast<vga::modes::Modes>(change_mode.mode));
 }
 
 void MachineInterface::set_pixel()
 {
-    auto& set_pixel = cast_to<SetPixel>(get_payload(buffer_.front()));
+    auto& set_pixel = cast_to<SetPixel>(messages_.front().payload.data());
     mode_->set_pixel(set_pixel.x, set_pixel.y, set_pixel.color);
 }
 
 void MachineInterface::draw_line() 
 {
-    auto& line = cast_to<DrawLine>(get_payload(buffer_.front()));
+    auto& line = cast_to<DrawLine>(messages_.front().payload.data());
     mode_->draw_line(line.x1, line.y1, line.x2, line.y2);
 }
 
@@ -293,7 +369,7 @@ void MachineInterface::clear_screen()
 void MachineInterface::begin_primitives()
 {
     //printf("BeginPrimitives\n");
-    auto& primitive = cast_to<BeginPrimitives>(get_payload(buffer_.front()));
+    auto& primitive = cast_to<BeginPrimitives>(messages_.front().payload.data());
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
@@ -305,14 +381,14 @@ void MachineInterface::end_primitives()
 
 void MachineInterface::write_vertex()
 {
-    auto& vertex = cast_to<WriteVertex>(get_payload(buffer_.front()));
+    auto& vertex = cast_to<WriteVertex>(messages_.front().payload.data());
     //printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 
 void MachineInterface::set_perspective()
 {
-    auto& perspective = cast_to<SetPerspective>(get_payload(buffer_.front()));
+    auto& perspective = cast_to<SetPerspective>(messages_.front().payload.data());
     mode_->set_perspective(perspective.view_angle, perspective.aspect, perspective.z_far, perspective.z_near);
 }
 

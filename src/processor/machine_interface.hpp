@@ -35,7 +35,9 @@ namespace processor
 
 struct Message 
 {
-    uint8_t payload[8];
+    bool received;
+    Header header; 
+    std::array<uint8_t, 64> payload;
 };
 
 class MachineInterface
@@ -74,19 +76,29 @@ private:
 
     uint8_t* get_payload(Message& msg);
 
+    uint8_t* get_next_buffer();
+
     enum class State : uint8_t 
     {
-        init,
+        prepare_for_header,
+        synchronize_header,
+        parse_header,
+        verify_crc,
         receive_header,
         receive_payload,
+        receive_payload_crc,
+        verify_payload_crc,
         receive_crc
     };
 
     State state_;
-   // static uint32_t data_[50];
-    eul::container::static_deque<Message, 20> buffer_;
-    Message receive_;
-    uint8_t message_crc_;
+    std::array<uint8_t, sizeof(Header)*2> header_buffer_;
+    uint8_t header_start_index_;
+    uint16_t header_crc_;
+    uint16_t message_crc_;
+    uint16_t received_crc_;
+    Header current_header_;
+    eul::container::static_deque<Message, 16> messages_;
     WriteCallback write_;
     vga::Mode* mode_;
     
