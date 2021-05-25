@@ -146,6 +146,7 @@ public:
             read_buffer_id_ = write_buffer_id_;
             write_buffer_id_ = c;
             swap_buffers_ = false; 
+            msgpu::unblock_display();
         }
         mutex_exit(&mutex_);
     }
@@ -166,9 +167,7 @@ public:
 
     void swap_buffers()
     {
-        mutex_enter_blocking(&mutex_);
         swap_buffers_ = true;
-        mutex_exit(&mutex_);
     }
 
     using BufferType = typename BufferTypeGenerator<Configuration>::type;

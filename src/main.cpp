@@ -18,8 +18,7 @@
 
 #include "modes/modes.hpp"
 
-#include "processor/command_processor.hpp"
-#include "processor/human_interface.hpp"
+#include "processor/machine_interface.hpp"
 
 #include "board.hpp"
 
@@ -52,7 +51,7 @@ void frame_update() {
 } // namespace msgpu
 
 
-static processor::CommandProcessor proc(mode, &msgpu::write_bytes);
+static processor::MachineInterface proc(&mode, &msgpu::write_bytes);
 
 void process_frame()
 {
