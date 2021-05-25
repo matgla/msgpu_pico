@@ -145,9 +145,7 @@ public:
             std::size_t c = read_buffer_id_;
             read_buffer_id_ = write_buffer_id_;
             write_buffer_id_ = c;
-            clear(); 
             swap_buffers_ = false; 
-            msgpu::unblock_display();
         }
         mutex_exit(&mutex_);
     }
@@ -228,17 +226,11 @@ public:
 
     std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
     {
-        const auto& line = this->get_readable_frame()[line_number];
-        auto& line_buffer = this->line_buffer_[next_line_id];
+        const uint16_t* current_line = this->line_buffer_[line_number % this->line_buffer_size];
+        std::size_t next_line_id = (line_number + 1) % this->line_buffer_size; 
 
-        for (int i = 0; i < line.size(); ++i)
-        {
-            auto colors = line.get(i);
-            line_buffer[i] = Configuration::color_palette[colors & 0xff];
-            line_buffer[++i] = Configuration::color_palette[(colors >> 8) & 0xff]; 
-            line_buffer[++i] = Configuration::color_palette[(colors >> 16) & 0xff];
-            line_buffer[++i] = Configuration::color_palette[(colors >> 24) & 0xff];
-        }
+        copy_line_to_buffer(line_number + 1, next_line_id);  
+
         return vga::Vga::fill_scanline_buffer(line, std::span<const uint16_t>(current_line, Configuration::resolution_width));
     }
 
