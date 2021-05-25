@@ -34,7 +34,7 @@
 #include "qspi.hpp"
 
 static vga::Mode mode; 
-
+ 
 namespace msgpu 
 {
 
@@ -47,8 +47,18 @@ void frame_update() {
     mode.render();
 }
 
+
+
 } // namespace msgpu
 
+
+static processor::CommandProcessor proc(mode, &msgpu::write_bytes);
+
+void process_frame()
+{
+    proc.dma_run();
+    proc.process_data();
+}
 
 int main() 
 {
@@ -56,15 +66,17 @@ int main()
  
     msgpu::initialize_signal_generator();
     
-    static processor::CommandProcessor processor(mode, &msgpu::write_bytes);
     msgpu::set_usart_handler([]{
-        processor.dma_run();
+        proc.schedule_update();
     });
-
-    processor.dma_run();
+    
+    proc.schedule_update();
     while (true)
     {
-        processor.process_data();
+        process_frame();
+//        msgpu::sleep_ms(1000);
+//        static int i = 0;
+//        printf("Working %d\n", ++i);
     }
 
     msgpu::deinitialize_signal_generator();

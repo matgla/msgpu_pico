@@ -38,6 +38,7 @@
 #include "messages/messages.hpp"
 #include "messages/set_perspective.hpp"
 #include "messages/swap_buffer.hpp"
+#include "messages/draw_triangle.hpp"
 #include "modes/mode_types.hpp"
 
 #include "board.hpp"
@@ -115,7 +116,7 @@ void MachineInterface::send_message(const T& msg)
     prev = msgpu::get_millis();
 }
 
-void MachineInterface::send_info()
+void MachineInterface::send_info(const void* payload)
 {
     InfoResp resp {
         .version_major = 1, 
@@ -142,6 +143,7 @@ MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback
     : state_(State::prepare_for_header)
     , write_(write_callback)
     , mode_(mode)
+    , update_scheduled_(false)
 {
     handlers_.fill(0);
     handlers_[ChangeMode::id] = &MachineInterface::change_mode; 
@@ -154,55 +156,29 @@ MachineInterface::MachineInterface(vga::Mode* mode, WriteCallback write_callback
     handlers_[WriteVertex::id] = &MachineInterface::write_vertex;
     handlers_[SetPerspective::id] = &MachineInterface::set_perspective;
     handlers_[SwapBuffer::id] = &MachineInterface::swap_buffers;
+    handlers_[DrawTriangle::id] = &MachineInterface::draw_triangle;
 }
-
-std::size_t get_message_size(const uint8_t id)
-{
-    Messages msg_id = static_cast<Messages>(id);
-
-    switch (msg_id) 
-    {
-        case Messages::Ack: return sizeof(Ack);
-        case Messages::BeginPrimitives: return sizeof(BeginPrimitives);
-        case Messages::ChangeMode: return sizeof(ChangeMode);
-        case Messages::ClearScreen: return sizeof(ClearScreen);
-        case Messages::DrawLine: return sizeof(DrawLine);
-        case Messages::EndPrimitives: return sizeof(EndPrimitives);
-        case Messages::InfoReq: return sizeof(InfoReq);
-        case Messages::InfoResp: return sizeof(InfoResp);
-        case Messages::Nack: return sizeof(Nack);
-        case Messages::SetPerspective: return sizeof(SetPerspective);
-        case Messages::SetPixel: return sizeof(SetPixel);
-        case Messages::SwapBuffer: return sizeof(SwapBuffer);
-        case Messages::WriteText: return sizeof(WriteText);
-        case Messages::WriteVertex: return sizeof(WriteVertex);
-    }
-    return 0;
-};
 
 void MachineInterface::dma_run()
 {
+    if (!update_scheduled_) return;
+    update_scheduled_ = false;
     switch (state_)
     {
         case State::prepare_for_header: 
         {
-            printf("Prepare for header\n");
             msgpu::set_usart_dma_buffer(header_buffer_.data(), false);
             msgpu::set_usart_dma_transfer_count(sizeof(Header), true);
             msgpu::reset_dma_crc();
+            std::memset(header_buffer_.data(), 0, header_buffer_.size());
             state_ = State::synchronize_header;
         } break;
         case State::synchronize_header: 
         {
             // If start symbol is not received at start, we need to sync 
             std::size_t difference = 0;
-            printf("Potential header get: ");
-            for (auto b : header_buffer_) 
-            {
-                printf("%d,", b);
-            }
-            printf("\n");
-            for (std::size_t i = 0; i < sizeof(Header); ++i)
+
+           for (std::size_t i = 0; i < sizeof(Header); ++i)
             {
                 if (header_buffer_[i] == 0x7e)
                 {
@@ -215,18 +191,17 @@ void MachineInterface::dma_run()
             state_ = State::parse_header;
             if (difference != 0) 
             {
-                printf("Synchronize i: %d\n", difference);
                 msgpu::set_usart_dma_transfer_count(difference, true);
             }
             else 
             {
-                dma_run();
+                update_scheduled_ = true;
+                return;
             }
 
         } break;
         case State::parse_header: 
         {
-            printf("Parse header: %d\n", header_start_index_);
             if (header_start_index_ != 0)
             {
                 // Buffer is misaligned, so CRC calculated by DMA is not valid 
@@ -240,7 +215,6 @@ void MachineInterface::dma_run()
             
             msgpu::set_usart_dma_buffer(&received_crc_, false);
             msgpu::set_usart_dma_transfer_count(sizeof(received_crc_), true);
-            printf("Going to verify\n");
             state_ = State::verify_crc;
 
         } break;
@@ -251,8 +225,10 @@ void MachineInterface::dma_run()
             if (header_crc_ != received_crc_)
             {
                 printf("Header CRC mismatch, calculated: 0x%x, received 0x%x\n", header_crc_, received_crc_);
+                state_ = State::prepare_for_header;
             }
-            dma_run();
+            update_scheduled_ = true;
+            return;
         } break;
         case State::receive_header:
         {
@@ -260,23 +236,48 @@ void MachineInterface::dma_run()
             std::memcpy(&msg.header, &header_buffer_[header_start_index_], sizeof(Header));
             msg.received = false; 
 
-            printf("Got header { id: %d, size: %d }\n", msg.header.id, msg.header.size);
+            printf("Header dump: ");
+            for (auto b : header_buffer_)
+            {
+                printf("0x%x, ", b);
+            }
+            printf("\n");
+    
 
+            printf("Got header { id: %d, size: %d }\n", msg.header.id, msg.header.size);
             if (msg.header.size > 64) 
             {
                 state_ = State::prepare_for_header;
+                update_scheduled_ = true;
                 return;
             }
-            messages_.push_back(msg);
 
+            if (msg.header.size == 0) 
+            {
+                state_ = State::prepare_for_header; 
+                msg.received = true;
+                messages_.push_back(msg);
+                update_scheduled_ = true;
+                return;
+            }
+            msgpu::reset_dma_crc();
+            messages_.push_back(msg);
+            
             msgpu::set_usart_dma_buffer(messages_.back().payload.data(), false);
             msgpu::set_usart_dma_transfer_count(msg.header.size, true);
-            msgpu::reset_dma_crc();
+ 
+
             state_ = State::receive_payload_crc;
         } break;
         case State::receive_payload_crc:
         {
-            printf("Receive payload\n");
+            printf ("Payload received: ");
+            std::span<const uint8_t> data(messages_.back().payload.data(), messages_.back().header.size);
+            for (const auto b : data) 
+            {
+                printf("0x%x,", b);
+            }
+            printf("\n");
             message_crc_ = msgpu::get_dma_crc();
             msgpu::set_usart_dma_buffer(&received_crc_, false);
             msgpu::set_usart_dma_transfer_count(sizeof(received_crc_), true);
@@ -284,7 +285,6 @@ void MachineInterface::dma_run()
         } break;
         case State::verify_payload_crc:
         {
-            printf("Verify payload\n");
             state_ = State::prepare_for_header;
             if (message_crc_ != received_crc_)
             {
@@ -296,100 +296,113 @@ void MachineInterface::dma_run()
                 printf("Message received\n");
                 messages_.back().received = true;
             }
-            dma_run();
+            update_scheduled_ = true;
+            return;
         }
     }
 }
 
 void MachineInterface::process_data() 
 {
-    if (!messages_.empty())
-    {
-        if (messages_.front().received)
+        bool received = !messages_.empty() && messages_.front().received;
+        if (received)
         {
             printf("Process message\n");
-            process_message();
+            
+            Message msg = messages_.front();
+            std::memcpy(msg.payload.data(), messages_.front().payload.data(), messages_.front().header.size);
+            messages_.pop_front();
+            process_message(msg);
         }
-    }
 }
 void MachineInterface::process(uint8_t byte)
 {
 }
 
 template <typename Message>
-Message& cast_to(void* memory)
+const Message& cast_to(const void* memory)
 {
-    return *static_cast<Message*>(memory);
+    return *static_cast<const Message*>(memory);
 }
 
-void MachineInterface::process_message()
+void MachineInterface::process_message(const Message& msg)
 {
-    const auto& msg = messages_.front();
     HandlerType handler = handlers_[msg.header.id];
     if (handler != nullptr)
     {
-        (this->*handler)();
+        (this->*handler)(msg.payload.data());
     }
     else 
     {
         printf("Unsupported message id: %d\n", msg.header.id);
     }
-    messages_.pop_front();
 } 
 
-void MachineInterface::change_mode()
+void MachineInterface::change_mode(const void* payload)
 {
-    auto& change_mode = cast_to<ChangeMode>(messages_.front().payload.data());
+    auto& change_mode = cast_to<ChangeMode>(payload);
     mode_->switch_to(static_cast<vga::modes::Modes>(change_mode.mode));
 }
 
-void MachineInterface::set_pixel()
+void MachineInterface::set_pixel(const void* payload)
 {
-    auto& set_pixel = cast_to<SetPixel>(messages_.front().payload.data());
+    auto& set_pixel = cast_to<SetPixel>(payload);
     mode_->set_pixel(set_pixel.x, set_pixel.y, set_pixel.color);
 }
 
-void MachineInterface::draw_line() 
+void MachineInterface::draw_line(const void* payload) 
 {
-    auto& line = cast_to<DrawLine>(messages_.front().payload.data());
+    auto& line = cast_to<DrawLine>(payload);
     mode_->draw_line(line.x1, line.y1, line.x2, line.y2);
 }
 
-void MachineInterface::swap_buffers()
+void MachineInterface::swap_buffers(const void* payload)
 {
     //printf("Swap buffer\n");
     mode_->swap_buffer();
 }
 
-void MachineInterface::clear_screen()
+void MachineInterface::clear_screen(const void* payload)
 {
     mode_->clear();
 }
 
-void MachineInterface::begin_primitives()
+void MachineInterface::begin_primitives(const void* payload)
 {
     //printf("BeginPrimitives\n");
-    auto& primitive = cast_to<BeginPrimitives>(messages_.front().payload.data());
+    auto& primitive = cast_to<BeginPrimitives>(payload);
     mode_->begin_primitives(static_cast<PrimitiveType>(primitive.type));
 }
 
-void MachineInterface::end_primitives()
+void MachineInterface::end_primitives(const void* payload)
 {
    // printf("End primitive\n");
     mode_->end_primitives();
 }
 
-void MachineInterface::write_vertex()
+void MachineInterface::write_vertex(const void* payload)
 {
-    auto& vertex = cast_to<WriteVertex>(messages_.front().payload.data());
+    auto& vertex = cast_to<WriteVertex>(payload);
     //printf("write: %f %f %f\n", vertex.x, vertex.y, vertex.z);
     mode_->write_vertex(vertex.x, vertex.y, vertex.z);
 }
 
-void MachineInterface::set_perspective()
+void MachineInterface::set_perspective(const void* payload)
 {
-    auto& perspective = cast_to<SetPerspective>(messages_.front().payload.data());
+    auto& perspective = cast_to<SetPerspective>(payload);
     mode_->set_perspective(perspective.view_angle, perspective.aspect, perspective.z_far, perspective.z_near);
+}
+
+void MachineInterface::draw_triangle(const void* payload)
+{
+    auto& draw = cast_to<DrawTriangle>(payload);
+    bool fill = draw.fill == FillType::Solid ? true : false;
+    mode_->draw_triangle(draw.x1, draw.y1, draw.x2, draw.y2, draw.x3, draw.y3, fill, draw.color);
+}
+
+void MachineInterface::schedule_update() 
+{
+    update_scheduled_ = true;    
 }
 
 } // namespace processor 

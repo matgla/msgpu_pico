@@ -34,6 +34,7 @@ public:
     void process_data();
     void process(uint8_t byte);
     void dma_run();
+    void schedule_update();
 private:
     void process_write(uint8_t byte);
     void process_command();

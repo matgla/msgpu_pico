@@ -54,68 +54,14 @@ void on_uart_rx()
     }
 }
 
-const char word0[] = "Transferring data ";
-const char word1[] = "one ";
-const char word2[] = "at ";
-const char word3[] = "a time!\n";
-
-const struct {uint32_t len; const char* data;} control_blocks[] = {
-    {count_of(word0) - 1, word0},
-    {count_of(word1) - 1, word1},
-    {count_of(word2) - 1, word2},
-    {count_of(word3) - 1, word3},
-    {0, NULL}
-};
-
 static int dma_channel;
-static int dma_cb;
 constexpr int dma_size = 16;
-uint8_t byte_buffer;
-void on_frame_finished()
-{
-    //uart_putc(uart0, 'x');
-    printf("RIS before: 0x%x\n", uart_get_hw(uart0)->ris);
-    uint8_t* buf = reinterpret_cast<uint8_t*>(dma_hw->ch[dma_channel].write_addr); 
-    printf("DMA transfer size: %d\n", dma_hw->ch[dma_channel].transfer_count);
-    printf("DMA address: %x\n", dma_hw->ch[dma_channel].write_addr);
-    printf("Byte buffer %d\n", byte_buffer);
-    printf("Begin %p\n", buffer.data());
-    //printf("Readed bytes: %x\n", count);
-    //dma_channel_abort(dma_channel);
-    int i = 0;
-    while (uart_is_readable(uart0))
-    {
-//    //    //uart_putc(uart0, uart_getc(uart0));
-        buf[i] = uart_getc(uart0);
-        ++i;
-    }
-    //dma_channel_wait_for_finish_blocking(dma_channel);
-    printf("RIS after: 0x%x\n", uart_get_hw(uart0)->ris);
-    printf("I: %d, Buffer dump: ", i);
-    for (const auto b : buffer)
-    {
-        printf("%d,", b);
-    }
-    printf("\n\n");
 
-
-  
-    set_usart_dma_buffer(buffer.data(), false);
- //   set_usart_dma_transfer_count(dma_size, true);
-    printf("Finished frame handling\n");
-}
-
-const int uart_prio = 0x20;
-const int dma_prio = 0x10;
-
-uint8_t byte_buf() 
-{
-    return byte_buffer; 
-}
+const int dma_prio = 0x00;
 
 void initialize_uart()
 {
-    uart_init(uart0, 115200);
+    uart_init(uart0, 230400);
     uart_set_hw_flow(uart0, false, false);
     uart_set_fifo_enabled(uart0, true);
     gpio_set_function(16, GPIO_FUNC_UART);
@@ -184,8 +130,6 @@ void enable_dma()
     channel_config_set_dreq(&c, DREQ_UART0_RX + 2 * uart_get_index(uart0));
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, true);
-    channel_config_set_chain_to(&c, dma_cb);
-    channel_config_set_irq_quiet(&c, false);
 
     irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);  
     irq_set_enabled(DMA_IRQ_1, true);
@@ -229,12 +173,9 @@ void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int 
 void __time_critical_func(render_loop)()
 {
     int core_num = get_core_num();
-
-    while (true) 
+    while (true)
     {
         scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(true);
-
-        mutex_enter_blocking(&frame_logic_mutex);
 
         uint32_t frame_num = scanvideo_frame_number(scanline_buffer->scanline_id);
 
@@ -247,9 +188,10 @@ void __time_critical_func(render_loop)()
         }
         ++line;
 
+        mutex_enter_blocking(&frame_logic_mutex);
         render_scanline(scanline_buffer, core_num);
         mutex_exit(&frame_logic_mutex);
-        
+
         scanvideo_end_scanline_generation(scanline_buffer);
     }
 }
@@ -257,8 +199,13 @@ void __time_critical_func(render_loop)()
 void core1_func()
 {
     sem_acquire_blocking(&video_setup_complete);
-
     render_loop();
+}
+
+int64_t timer_callback(alarm_id_t alarm_id, void* user_data)
+{
+    render_loop();
+    return 20;
 }
 
 void block_display()

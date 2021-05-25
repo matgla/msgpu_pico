@@ -61,4 +61,11 @@ void CommandProcessor::dma_run()
     }, interface_);
 }
 
+void CommandProcessor::schedule_update() 
+{
+    std::visit([](auto&& arg) {
+        arg.schedule_update();
+    }, interface_);
+}
+
 } // namespace processor

@@ -1,8 +1,6 @@
 // This file is part of msgpu project.
 // Copyright (C) 2021 Mateusz Stadnik
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
@@ -50,18 +48,12 @@ public:
         Base<Configuration>::base_render();
     }
 
-    void set_pixel(int x, int y, uint16_t color) 
+    void __time_critical_func(set_pixel)(int x, int y, uint16_t color) 
     {
-        typename Configuration::Color c = Configuration::Color::black;
-        if (color != 0 )
-        {
-            c = Configuration::Color::white;
-        }
-
-        Base<Configuration>::set_pixel({.x = x, .y = y}, static_cast<typename Configuration::Color>(c));
+        Base<Configuration>::set_pixel({.x = x, .y = y}, static_cast<Configuration::Color>(color));
     }
 
-    void __time_critical_func(draw_line)(int x1, int y1, int x2, int y2)
+    void __time_critical_func(draw_line)(int x1, int y1, int x2, int y2, uint16_t color = Configuration::Color::white)
     {
         int d, dx, dy, ai, bi, xi, yi;
         int x = x1, y = y1;
@@ -88,7 +80,7 @@ public:
             dy = y1 - y2;
         }
     
-        uint16_t color = Configuration::Color::white;
+        //uint16_t color = Configuration::Color::white;
         set_pixel(x, y, color);
         
         if (dx > dy)
@@ -110,8 +102,7 @@ public:
                     d += bi;
                     x += xi;
                 }
-                set_pixel(x, y, color);
-            }
+                set_pixel(x, y, color); }
         }
         else 
         {
@@ -201,10 +192,99 @@ public:
 
     }
 
+    struct Vertex 
+    {
+        float x;
+        float y;
+        float z;
+    };
+
+    struct Triangle 
+    {
+        Vertex data[3];
+    };
+
+    void __time_critical_func(draw_triangle)(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, bool fill, uint16_t color)
+    {
+        printf("Drawing triangle\n");
+        Vertex triangle[3] = {
+            { .x = static_cast<float>(x1), .y = static_cast<float>(y1), .z = 0 },
+            { .x = static_cast<float>(x2), .y = static_cast<float>(y2), .z = 0 },
+            { .x = static_cast<float>(x3), .y = static_cast<float>(y3), .z = 0 }
+        };
+
+        std::sort(std::begin(triangle), std::end(triangle), 
+            [](const Vertex& a, const Vertex& b) {
+                return a.y < b.y;
+            }
+        );
+        
+        const auto& A = triangle[0];
+        const auto& B = triangle[1];
+        const auto& C = triangle[2];
+
+        float dx1 = 0;
+        float dx2 = 0; 
+        float dx3 = 0;
+    
+        
+        if (B.y - A.y > 0) 
+        {
+            dx1 = (B.x - A.x) / (B.y - A.y);
+        }
+        if (C.y - A.y > 0) 
+        {
+            dx2 = (C.x - A.x) / (C.y - A.y);
+        }
+        if (C.y - B.y > 0) 
+        {
+            dx3 = (C.x - B.x) / (C.y - B.y);
+        }
+
+        printf("Draw /\\\n\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf ("%f: x: %f, y: %f\n", i, triangle[i].x, triangle[i].y);
+        }
+        printf("=================\n");
+        printf(" dx1: %f\n", dx1);
+        printf(" dx2: %f\n", dx2);
+        printf(" dx3: %f\n", dx3);
+
+
+        Vertex S = A;
+        Vertex E = A;
+        if (dx1 > dx2) 
+        {
+            for (;S.y <= B.y; S.y++, E.y++, S.x+=dx2, E.x+=dx1)
+            {
+                draw_line(S.x, S.y, E.x, S.y, color);
+            }
+            E = B; 
+            for (;S.y <= C.y; S.y++, E.y++, S.x+=dx2, E.x+=dx3)
+            {
+                draw_line(S.x, S.y, E.x, S.y, color);
+            }
+        }
+        else 
+        {
+            for (;S.y <= B.y; S.y++, E.y++, S.x+=dx1, E.x+=dx2)
+            {
+                draw_line(S.x, S.y, E.x, S.y, color);
+            }
+            S = B; 
+            for (;S.y <= C.y; S.y++, E.y++, S.x+=dx3, E.x+=dx2)
+            {
+                draw_line(S.x, S.y, E.x, S.y, color);
+            }
+        }
+    }
+
 
 protected:
     inline static float theta = 0.0f;
     using Vector4 = eul::math::vector<float, 4>;
+
     void __time_critical_func(draw_primitive)()
     {
         const int vertexes = get_vertex_count_for(primitive_type);
@@ -225,11 +305,13 @@ protected:
             {          0,          0 , 0, 1}
         };
 
+        Triangle t;
+         
         int prev_x, prev_y, first_x, first_y;
         for (int i = 0; i < vertexes; ++i)
         {
             Vector4 translated = vertex_buffer[i];
-            
+           
             translated = translated * rotate_x;
             translated = translated * rotate_z; 
 
@@ -252,30 +334,12 @@ protected:
 
             x *= 0.5f * (Configuration::resolution_width - 1);
             y *= 0.5f * (Configuration::resolution_height - 1);
-
-           // printf("Setting pixel: %f %f\n", x, y);
             
-            //set_pixel(Configuration::resolution_width - x, Configuration::resolution_height - y, 0xfff);
-            if (i == 0)
-            {
-                prev_x = x;
-                prev_y = y;
-                first_x = x;
-                first_y = y;
-            }
-            else 
-            {
-                draw_line(prev_x, prev_y, x, y);
- 
-                prev_x = x;
-                prev_y = y;
-            }
-
-            if (i == 2)
-            {
-                draw_line(x, y, first_x, first_y);
-            }
+            t.data[i].x = x;
+            t.data[i].y = y;
         }
+
+        draw_triangle(t.data[0].x, t.data[0].y, t.data[1].x, t.data[1].y, t.data[2].x, t.data[2].y, true, 6);
     }
 
     int __time_critical_func(get_vertex_count_for)(PrimitiveType type)

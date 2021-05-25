@@ -38,6 +38,7 @@ public:
     void process_data();
     void process(uint8_t byte);
     void dma_run();
+    void schedule_update();
 private:
     vga::Mode& mode_;
     WriteCallback write_;

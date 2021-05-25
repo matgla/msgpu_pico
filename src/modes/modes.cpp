@@ -231,5 +231,16 @@ void Mode::swap_buffer()
     }, mode_);
 }
 
+void Mode::draw_triangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, bool fill, uint16_t color)
+{
+    std::visit([x1, y1, x2, y2, x3, y3, fill, color](auto&& mode) {
+        if constexpr (std::is_same<typename std::decay_t<decltype(mode)>::type, vga::modes::Graphic>::value)
+        {
+            mode.draw_triangle(x1, y1, x2, y2, x3, y3, fill, color);
+        }
+    }, mode_);
+
+}
+ 
 
 } // namespace vga

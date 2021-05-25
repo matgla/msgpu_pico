@@ -44,6 +44,10 @@ void HumanInterface::write()
     state_ = State::writing;
 }
 
+void HumanInterface::schedule_update()
+{
+}
+
 void HumanInterface::process_command()
 {
     printf("\nProcessing command: %s\n", buffer_);

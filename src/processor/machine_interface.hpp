@@ -30,6 +30,8 @@
 
 #include <eul/container/static_deque.hpp>
 
+#include "sync.hpp"
+
 namespace processor 
 {
 
@@ -49,30 +51,34 @@ public:
     void process(uint8_t byte);
     void process_data();
     void dma_run();
+    void schedule_update();
+
 private:
     
     template <typename T>
     void send_message(const T& msg);
 
-    void process_message(); 
+    void process_message(const Message& msg); 
 
-    typedef void(MachineInterface::*HandlerType)();
+    typedef void(MachineInterface::*HandlerType)(const void* data);
 
-    void send_info();
-    void change_mode();
+    void send_info(const void* payload);
+    void change_mode(const void* payload);
 
-    void set_pixel();
-    void draw_line();
+    void swap_buffers(const void* payload);
+    void clear_screen(const void* payload);
 
-    void swap_buffers();
-    void clear_screen();
+    // 2D API 
+    void set_pixel(const void* payload);
+    void draw_line(const void* payload);
+    void draw_triangle(const void* payload);
 
     // 3d GPU API 
     
-    void begin_primitives();
-    void end_primitives();
-    void write_vertex();
-    void set_perspective();
+    void begin_primitives(const void* payload);
+    void end_primitives(const void* payload);
+    void write_vertex(const void* payload);
+    void set_perspective(const void* payload);
 
     uint8_t* get_payload(Message& msg);
 
@@ -98,11 +104,13 @@ private:
     uint16_t message_crc_;
     uint16_t received_crc_;
     Header current_header_;
-    eul::container::static_deque<Message, 16> messages_;
+    eul::container::static_deque<Message, 32> messages_;
     WriteCallback write_;
     vga::Mode* mode_;
-    
+    bool update_scheduled_; 
+
     std::array<HandlerType, 255> handlers_;
+    mutex_t mutex_;
 };
 
 } // namespace processor

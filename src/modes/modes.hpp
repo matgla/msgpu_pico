@@ -90,9 +90,12 @@ public:
         Graphic_320x240_256
     >; 
 
-    void clear();
     void switch_to(const vga::modes::Modes mode);
     void __time_critical_func(render)();
+    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number);
+    void swap_buffer();
+    
+    // TEXT API 
     void write(char c);
     void move_cursor(int row, int column);
     void set_cursor(int row, int column);
@@ -100,12 +103,15 @@ public:
     void set_foreground_color(int foreground);
     void set_background_color(int background);
     void set_color(int foreground, int background);
-    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number);
+ 
+    // 2D API 
+    void clear();
     void set_pixel(int x, int y, uint16_t color);
     void draw_line(int x1, int y1, int x2, int y2);
 
-    void swap_buffer();
-    // 3d api 
+    void draw_triangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, bool fill, uint16_t color);
+    
+    // 3D api 
     void begin_primitives(PrimitiveType type);
     void end_primitives();
     void write_vertex(float x, float y, float z);

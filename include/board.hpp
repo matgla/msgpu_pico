@@ -21,6 +21,8 @@
 
 #include <eul/functional/function.hpp>
 
+void process_frame();
+
 namespace msgpu 
 {
 
@@ -51,7 +53,8 @@ void reset_dma_crc();
 void set_dma_mode(uint32_t mode);
 
 uint32_t get_dma_crc();
-
+void block_display();
+void unblock_display();
 } // namespace msgpu  
 
 void start_vga();
