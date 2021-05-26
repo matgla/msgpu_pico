@@ -14,23 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(mocks)
+message (STATUS "Configuring arch for UT")
 
-add_executable(msgpu_ut)
+add_library(msgpu_arch STATIC)
 
-target_sources(msgpu_ut 
+target_sources(msgpu_arch 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
     PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/empty.cpp 
-        ${CMAKE_CURRENT_SOURCE_DIR}/io/usart_point_tests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.cpp
 )
 
-find_package(gtest REQUIRED)
-
-target_link_libraries(msgpu_ut
-    PRIVATE 
-        gtest 
-        gmock 
-        gtest_main
-
-        msgpu_io
+target_include_directories(msgpu_arch
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )

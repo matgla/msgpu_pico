@@ -43,7 +43,6 @@ void set_resolution(uint16_t width, uint16_t height);
 uint32_t get_millis();
 void sleep_ms(uint32_t time);
 
-using UsartHandler = eul::function<void(), sizeof(void*)>;
 
 void block_display();
 void unblock_display();

@@ -122,7 +122,7 @@ uint8_t read_byte()
     return byte;
 }
 
-void write_bytes(std::span<uint8_t> data)
+void write_bytes(std::span<const uint8_t> data)
 {
     write(serial_port_id, data.data(), data.size());
 }
@@ -143,6 +143,7 @@ uint32_t get_millis()
 {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
+
 
 } // namespace msgpu 
 

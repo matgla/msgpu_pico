@@ -13,22 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #pragma once 
 
-#include <eul/functional/function.hpp>
-
-namespace hal 
-{
-
-using UsartHandler = eul::function<void(), sizeof(void*)>;
-
-void reset_dma_crc();
-void set_usart_dma_buffer(void* buffer, bool trigger);
-void set_usart_dma_transfer_count(std::size_t size, bool trigger);
-void set_usart_handler(const UsartHandler& handler);
-
-void set_dma_mode(uint32_t mode);
-
-uint32_t get_dma_crc();
-
-}
+#define __time_critical_func(x) x

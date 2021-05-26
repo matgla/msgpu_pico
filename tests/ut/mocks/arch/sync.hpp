@@ -13,22 +13,16 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #pragma once 
 
-#include <eul/functional/function.hpp>
+#include <mutex>
 
-namespace hal 
-{
+using mutex_t = std::mutex;
 
-using UsartHandler = eul::function<void(), sizeof(void*)>;
+void mutex_init(mutex_t* m);
 
-void reset_dma_crc();
-void set_usart_dma_buffer(void* buffer, bool trigger);
-void set_usart_dma_transfer_count(std::size_t size, bool trigger);
-void set_usart_handler(const UsartHandler& handler);
+void mutex_enter_blocking(mutex_t* m);
 
-void set_dma_mode(uint32_t mode);
+void mutex_exit(mutex_t* m);
 
-uint32_t get_dma_crc();
-
-}

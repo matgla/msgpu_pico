@@ -79,6 +79,29 @@
                     "include_directories": [""]
                 }
             }
+        },
+        {
+            "target": "gtest",
+            "version": "v1.10.x",
+            "directory": "gtest",
+            "options": { },
+            "type": "git",
+            "link": "https://github.com/google/googletest.git"
+        },
+        {
+            "target": "sml",
+            "version": "v1.1.4",
+            "link": "https://github.com/boost-ext/sml.git",
+            "type": "git",
+            "directory": "sml", 
+            "options": {
+                "cmake_variables": {
+                    "SML_BUILD_BENCHMARKS": "OFF CACHE \"\" INTERNAL ",
+                    "SML_BUILD_EXAMPLES": "OFF CACHE \"\" INTERNAL ",
+                    "SML_BUILD_TESTS": "OFF CACHE \"\" INTERNAL ",
+                    "SML_USE_EXCEPTIONS": "OFF CACHE \"\" INTERNAL "
+                }
+            }
         }
     ]
 }

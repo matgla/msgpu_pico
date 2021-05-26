@@ -34,6 +34,7 @@ target_sources(msgpu_modes
 target_link_libraries(msgpu_modes
     PUBLIC 
         msgui 
+        msgpu_interface
         msgpu_arch
         msgpu_generator_interface
         msgpu_generator

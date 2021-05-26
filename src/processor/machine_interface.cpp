@@ -42,6 +42,7 @@
 #include "modes.hpp"
 
 #include "board.hpp"
+#include "hal_dma.hpp"
 
 namespace processor 
 {
@@ -167,9 +168,9 @@ void MachineInterface::dma_run()
     {
         case State::prepare_for_header: 
         {
-            msgpu::set_usart_dma_buffer(header_buffer_.data(), false);
-            msgpu::set_usart_dma_transfer_count(sizeof(Header), true);
-            msgpu::reset_dma_crc();
+            hal::set_usart_dma_buffer(header_buffer_.data(), false);
+            hal::set_usart_dma_transfer_count(sizeof(Header), true);
+            hal::reset_dma_crc();
             std::memset(header_buffer_.data(), 0, header_buffer_.size());
             state_ = State::synchronize_header;
         } break;
@@ -191,7 +192,7 @@ void MachineInterface::dma_run()
             state_ = State::parse_header;
             if (difference != 0) 
             {
-                msgpu::set_usart_dma_transfer_count(difference, true);
+                hal::set_usart_dma_transfer_count(difference, true);
             }
             else 
             {
@@ -210,11 +211,11 @@ void MachineInterface::dma_run()
             }
             else 
             {
-                header_crc_ = msgpu::get_dma_crc(); 
+                header_crc_ = hal::get_dma_crc(); 
             }
             
-            msgpu::set_usart_dma_buffer(&received_crc_, false);
-            msgpu::set_usart_dma_transfer_count(sizeof(received_crc_), true);
+            hal::set_usart_dma_buffer(&received_crc_, false);
+            hal::set_usart_dma_transfer_count(sizeof(received_crc_), true);
             state_ = State::verify_crc;
 
         } break;
@@ -260,11 +261,11 @@ void MachineInterface::dma_run()
                 update_scheduled_ = true;
                 return;
             }
-            msgpu::reset_dma_crc();
+            hal::reset_dma_crc();
             messages_.push_back(msg);
             
-            msgpu::set_usart_dma_buffer(messages_.back().payload.data(), false);
-            msgpu::set_usart_dma_transfer_count(msg.header.size, true);
+            hal::set_usart_dma_buffer(messages_.back().payload.data(), false);
+            hal::set_usart_dma_transfer_count(msg.header.size, true);
  
 
             state_ = State::receive_payload_crc;
@@ -278,9 +279,9 @@ void MachineInterface::dma_run()
                 printf("0x%x,", b);
             }
             printf("\n");
-            message_crc_ = msgpu::get_dma_crc();
-            msgpu::set_usart_dma_buffer(&received_crc_, false);
-            msgpu::set_usart_dma_transfer_count(sizeof(received_crc_), true);
+            message_crc_ = hal::get_dma_crc();
+            hal::set_usart_dma_buffer(&received_crc_, false);
+            hal::set_usart_dma_transfer_count(sizeof(received_crc_), true);
             state_ = State::verify_payload_crc;
         } break;
         case State::verify_payload_crc:

@@ -21,6 +21,7 @@
 #include "processor/machine_interface.hpp"
 
 #include "board.hpp"
+#include "hal_dma.hpp"
 
 #include "messages/begin_primitives.hpp"
 #include "messages/header.hpp"
@@ -65,7 +66,7 @@ int main()
  
     msgpu::initialize_signal_generator();
     
-    msgpu::set_usart_handler([]{
+    hal::set_usart_handler([]{
         proc.schedule_update();
     });
     

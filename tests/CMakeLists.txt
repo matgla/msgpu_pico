@@ -14,23 +14,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(mocks)
-
-add_executable(msgpu_ut)
-
-target_sources(msgpu_ut 
-    PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/empty.cpp 
-        ${CMAKE_CURRENT_SOURCE_DIR}/io/usart_point_tests.cpp
-)
-
-find_package(gtest REQUIRED)
-
-target_link_libraries(msgpu_ut
-    PRIVATE 
-        gtest 
-        gmock 
-        gtest_main
-
-        msgpu_io
-)
+add_subdirectory(ut)

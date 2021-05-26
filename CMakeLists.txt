@@ -35,7 +35,7 @@ include (mspkg)
 
 setup_mspkg(${mspkg_SOURCE_DIR})
 
-if (NOT USE_SIMULATION)
+if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     message (STATUS "Searching pico sdk")
     find_package(pico-sdk REQUIRED)
     include (cmake/preload/toolchains/pico_arm_gcc)
@@ -45,7 +45,7 @@ endif ()
 enable_language(ASM C CXX) 
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (NOT USE_SIMULATION)
+if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     find_package(pico-extras REQUIRED)
     include (external/pico_extras_import)
     pico_sdk_init()
@@ -54,6 +54,15 @@ endif ()
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 20)
 
+add_library(common_flags INTERFACE)
+
+target_compile_options(common_flags
+    INTERFACE 
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a -Wfloat-equal -Wshadow -Wundef -Wpointer-arith -Wcast-align -Wconversion -Wall
+    -Wpedantic -Wextra -Werror>
+    $<$<CONFIG:DEBUG>:-Og -g> 
+    $<$<CONFIG:RELEASE>:-Os>
+)
 #set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/scripts/message_generator.py)
 
 add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=12
@@ -71,3 +80,8 @@ add_subdirectory(arch)
 
 add_subdirectory(include)
 add_subdirectory(src)
+
+if (ENABLE_TESTS)
+    message(STATUS "Testing: enabled")
+    add_subdirectory(tests)
+endif ()

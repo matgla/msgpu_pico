@@ -16,6 +16,12 @@
 
 find_package(msgui REQUIRED)
 
+add_subdirectory(io)
+add_subdirectory(modes)
+add_subdirectory(processor)
+
+
+if (NOT ENABLE_TESTS)
 add_executable(msgpu) 
 
 target_sources(msgpu 
@@ -29,9 +35,6 @@ target_compile_options(msgpu
         $<$<CONFIG:DEBUG>:-Og -g>
         $<$<CONFIG:RELEASE>:-Os>
 )
-
-add_subdirectory(modes)
-add_subdirectory(processor)
 
 target_link_libraries(msgpu 
     PRIVATE 
@@ -47,5 +50,7 @@ pico_enable_stdio_usb(msgpu 1)
 pico_enable_stdio_uart(msgpu 0)
 
 pico_add_extra_outputs(msgpu)
+
+endif()
 
 endif()
