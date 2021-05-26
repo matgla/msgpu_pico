@@ -57,7 +57,7 @@ void on_uart_rx()
 static int dma_channel;
 constexpr int dma_size = 16;
 
-const int dma_prio = 0x00;
+const int dma_prio = 0x10;
 
 void initialize_uart()
 {
@@ -190,8 +190,7 @@ void __time_critical_func(render_loop)()
 
         mutex_enter_blocking(&frame_logic_mutex);
         render_scanline(scanline_buffer, core_num);
-        mutex_exit(&frame_logic_mutex);
-
+        mutex_exit(&frame_logic_mutex); 
         scanvideo_end_scanline_generation(scanline_buffer);
     }
 }

@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <cstddef>
 
-#include "modes/mode_types.hpp"
+#include "modes.hpp"
 
 namespace vga
 {

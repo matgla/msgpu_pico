@@ -25,6 +25,12 @@ target_link_libraries(msgpu_generator
     PRIVATE 
         msgui 
     PUBLIC
-        msgpu_generator_interface 
+        msgpu_interface 
+        msgpu_generator_interface
+)
+
+target_include_directories(msgpu_generator
+    PUBLIC 
+        ${PROJECT_SOURCE_DIR}/arch/x86
 )
 

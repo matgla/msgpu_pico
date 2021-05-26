@@ -19,6 +19,7 @@ add_subdirectory(generator)
 add_library(msgpu_interface INTERFACE)
 
 target_sources(msgpu_interface INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/board.hpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/qspi.hpp
 )
@@ -26,5 +27,10 @@ target_sources(msgpu_interface INTERFACE
 target_include_directories(msgpu_interface
     INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(msgpu_interface 
+    INTERFACE 
+        eul_functional        
 )
 

@@ -24,7 +24,7 @@
 #include "generator/vga.hpp"
 
 #include "modes/buffer.hpp"
-#include "modes/mode_types.hpp"
+#include "modes.hpp"
 
 #include "board.hpp"
 #include "sync.hpp"
@@ -111,138 +111,6 @@ protected:
     BufferType framebuffer_;
 };
 
-template <typename Configuration> 
-class DoubleBufferedModeBase 
-{
-public:
-    DoubleBufferedModeBase()
-        : swap_buffers_(false)
-        , read_buffer_id_(1)
-        , write_buffer_id_(0)
-    {
-        mutex_init(&mutex_);
-        get_vga().change_mode(Configuration::mode);
-    }
-
-    void clear()
-    {
-        //mutex_enter_blocking(&mutex_);
-        printf("Clear: %d\n", write_buffer_id_);
-        for (auto& line : get_writable_frame())
-        {
-            line.fill(0);
-        }
-        printf("Clear finished: %d\n", write_buffer_id_);
-        //mutex_exit(&mutex_);
-    }
-   
-    void base_render()
-    {
-        mutex_enter_blocking(&mutex_);
-        if (swap_buffers_)
-        {
-            msgpu::block_display(); 
-            std::size_t c = read_buffer_id_;
-            read_buffer_id_ = write_buffer_id_;
-            write_buffer_id_ = c;
-            swap_buffers_ = false; 
-            msgpu::unblock_display();
-        }
-        mutex_exit(&mutex_);
-    }
-
-    void set_pixel(const msgui::Position position, const typename Configuration::Color color)
-    {
-        if (position.x < 0 || position.x >= Configuration::resolution_width)
-        {
-            return;
-        }
-
-        if (position.y < 0 || position.y >= Configuration::resolution_height)
-        {
-            return;
-        }
-        this->framebuffer_[write_buffer_id_][position.y][position.x] = color;
-    }
-
-    void swap_buffers()
-    {
-        swap_buffers_ = true;
-    }
-
-    using BufferType = typename BufferTypeGenerator<Configuration>::type;
-
-    BufferType& get_writable_frame() 
-    {
-        return framebuffer_[write_buffer_id_];
-    }
-
-    const BufferType& get_readable_frame() const 
-    {
-
-        return framebuffer_[read_buffer_id_];
-    }
-
-protected:
-
-    bool swap_buffers_;
-    std::size_t write_buffer_id_;
-    std::size_t read_buffer_id_;
-    mutex_t mutex_;
-    BufferType framebuffer_[2];
-};
-
-
-
-template <typename Configuration, template <typename> typename Base> 
-class PaletteModeBase : public Base<Configuration>
-{
-public: 
-    void __time_critical_func(copy_line_to_buffer)(std::size_t line_number, std::size_t next_line_id)
-    {
-        if (line_number < Configuration::resolution_height)
-        {
-            const auto& line = this->get_readable_frame()[line_number];
-            auto& line_buffer = this->line_buffer_[next_line_id];
-
-            for (int i = 0; i < line.size(); ++i)
-            {
-                auto colors = line.get(i);
-                line_buffer[i] = Configuration::color_palette[colors & 0xff];
-                line_buffer[++i] = Configuration::color_palette[(colors >> 8) & 0xff]; 
-                line_buffer[++i] = Configuration::color_palette[(colors >> 16) & 0xff];
-                line_buffer[++i] = Configuration::color_palette[(colors >> 24) & 0xff];
-              //  line_buffer[++i] = Configuration::color_palette[(colors >> 16) & 0xf];
-              //  line_buffer[++i] = Configuration::color_palette[(colors >> 20) & 0xf]; 
-              //  line_buffer[++i] = Configuration::color_palette[(colors >> 24) & 0xf];
-              //  line_buffer[++i] = Configuration::color_palette[(colors >> 28) & 0xf];
-
-            }
-
-        }
- 
-    }
-
-    std::size_t __time_critical_func(fill_scanline)(std::span<uint32_t> line, std::size_t line_number)
-    {
-        const uint16_t* current_line = this->line_buffer_[line_number % this->line_buffer_size];
-        std::size_t next_line_id = (line_number + 1) % this->line_buffer_size; 
-
-        copy_line_to_buffer(line_number + 1, next_line_id);  
-
-        return vga::Vga::fill_scanline_buffer(line, std::span<const uint16_t>(current_line, Configuration::resolution_width));
-    }
-
-    void __time_critical_func(base_render)() 
-    {
-        Base<Configuration>::base_render();
-        copy_line_to_buffer(0, 0);
-    }
-
-protected:
-    constexpr static std::size_t line_buffer_size = 11;
-    uint16_t line_buffer_[line_buffer_size][Configuration::resolution_width];
-};
 
 template <typename Configuration, template <typename> typename Base>
 class RawModeBase : public Base<Configuration>
@@ -293,13 +161,7 @@ template <typename Configuration>
 using SingleBufferedPaletteBase = PaletteModeBase<Configuration, ModeBase>;
 
 template <typename Configuration>
-using DoubleBufferedPaletteBase = PaletteModeBase<Configuration, DoubleBufferedModeBase>;
-
-template <typename Configuration>
 using SingleBufferedRawBase = RawModeBase<Configuration, ModeBase>;
-
-template <typename Configuration>
-using DoubleBufferedRawBase = RawModeBase<Configuration, DoubleBufferedModeBase>;
 
 } // namespace vga::modes
  

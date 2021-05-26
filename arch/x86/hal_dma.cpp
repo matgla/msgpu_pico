@@ -13,25 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
 
-#pragma once 
-
-#include <string_view>
-
-namespace vga::modes 
-{
-
-enum class Modes
-{
-    Text_80x30_16 = 1,
-    Text_40x30_16 = 2,
-    Text_40x30_12bit = 3,
-    Graphic_640x480_16 = 10,
-    Graphic_320x240_16 = 11,
-    Graphic_320x240_12bit = 12
-};
-
-std::string_view to_string(Modes mode);
-
-} // namespace vga::modes
 

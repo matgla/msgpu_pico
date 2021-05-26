@@ -14,39 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 #pragma once 
 
-#include <cstdint>
-#include <span>
-
-#include <eul/functional/function.hpp>
-
-void process_frame();
-
-namespace msgpu 
+namespace vga::modes 
 {
 
-void initialize_board();
-uint8_t byte_buf();
-void initialize_signal_generator();
-void deinitialize_signal_generator();
+enum class Modes
+{
+    Text_80x30_16 = 1,
+    Text_40x30_16 = 2,
+    Text_40x30_12bit = 3,
+    Graphic_640x480_16 = 10,
+    Graphic_320x240_16 = 11,
+    Graphic_320x240_12bit = 12
+};
 
-std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line);
+} // namespace vga::modes
 
-void frame_update();
-
-uint8_t read_byte();
-void write_bytes(std::span<const uint8_t> byte);
-
-void set_resolution(uint16_t width, uint16_t height);
-
-uint32_t get_millis();
-void sleep_ms(uint32_t time);
-
-using UsartHandler = eul::function<void(), sizeof(void*)>;
-
-void block_display();
-void unblock_display();
-} // namespace msgpu  
-
-void start_vga();

@@ -20,7 +20,7 @@
 #include <string_view>
 #include <span> 
 
-#include "modes/mode_types.hpp"
+#include "modes.hpp"
 
 #include "config.hpp"
 

@@ -19,7 +19,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "modes/mode_types.hpp"
+#include "modes.hpp"
 
 namespace vga::modes::graphic 
 {

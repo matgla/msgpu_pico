@@ -31,6 +31,7 @@ target_include_directories(msgpu_generator_interface
     INTERFACE  
         ${PROJECT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/generator
 )
 
 target_link_libraries(msgpu_generator_interface 

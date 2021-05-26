@@ -18,12 +18,8 @@ add_library(msgpu_processor)
 
 target_sources(msgpu_processor
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/command_processor.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/human_interface.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/machine_interface.hpp
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/command_processor.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/human_interface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/machine_interface.cpp
 )
 

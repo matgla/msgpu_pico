@@ -39,7 +39,7 @@
 #include "messages/set_perspective.hpp"
 #include "messages/swap_buffer.hpp"
 #include "messages/draw_triangle.hpp"
-#include "modes/mode_types.hpp"
+#include "modes.hpp"
 
 #include "board.hpp"
 
@@ -107,11 +107,11 @@ void MachineInterface::send_message(const T& msg)
     write_(header_span);
     if (sizeof(T) > 0) 
     {
-        uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(T)));
-        write_(std::span<const uint8_t>(
-            reinterpret_cast<const uint8_t*>(&msg_crc), 
-            sizeof(msg_crc)));
-        write_(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(msg)));
+        // uint8_t msg_crc = calculate_crc8(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(T)));
+        //// write_(std::span<const uint8_t>(
+            //std::begin(reinterpret_cast<const uint8_t*>(&msg_crc)), 
+            //sizeof(msg_crc)));
+        //write_(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&msg), sizeof(msg)));
     }
     prev = msgpu::get_millis();
 }

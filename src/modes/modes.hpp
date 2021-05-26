@@ -19,6 +19,8 @@
 
 #include <eul/math/matrix.hpp>
 
+#include "modes/palette_mode_base.hpp"
+#include "modes/double_buffered_mode_base.hpp"
 #include "modes/text/text_mode.hpp"
 #include "modes/text/80x30_16.hpp"
 #include "modes/text/40x30_16.hpp"
