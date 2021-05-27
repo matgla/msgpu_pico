@@ -14,28 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#include "hal_dma_mocks.hpp"
 
-#include <cstdint> 
+extern HalDmaMock* hal_dma_mock;
 
-#include <gmock/gmock.h>
-
-class HalDmaInterface 
+namespace hal 
 {
-public: 
-    virtual ~HalDmaInterface() = default;
-
-    virtual void set_usart_dma_buffer(void* buffer, bool trigger) = 0;
-    virtual void set_usart_dma_transfer_count(std::size_t size, bool trigger) = 0;
-    virtual void reset_dma_crc() = 0;
-    virtual uint32_t get_dma_crc() = 0;
-};
-
-class HalDmaMock : public HalDmaInterface
+void set_usart_dma_buffer(void* buffer, bool trigger)
 {
-public: 
-    MOCK_METHOD2(set_usart_dma_buffer, void(void*, bool trigger));
-    MOCK_METHOD2(set_usart_dma_transfer_count, void(std::size_t size, bool trigger));
-    MOCK_METHOD0(reset_dma_crc, void());
-    MOCK_METHOD0(get_dma_crc, uint32_t());
-};
+    hal_dma_mock->set_usart_dma_buffer(buffer, trigger);
+}
+
+void set_usart_dma_transfer_count(std::size_t size, bool trigger)
+{
+    hal_dma_mock->set_usart_dma_transfer_count(size, trigger);
+}
+
+void reset_dma_crc()
+{
+    hal_dma_mock->reset_dma_crc();
+}
+
+void get_dma_crc()
+{
+    hal_dma_mock->get_dma_crc();
+}
+
+} // namespace hal

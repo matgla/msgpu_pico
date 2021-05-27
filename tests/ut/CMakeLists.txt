@@ -32,5 +32,6 @@ target_link_libraries(msgpu_ut
         gmock 
         gtest_main
 
+        msgpu_arch          
         msgpu_io
 )

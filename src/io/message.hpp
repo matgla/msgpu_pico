@@ -16,26 +16,19 @@
 
 #pragma once 
 
-#include <cstdint> 
+#include <array>
+#include <cstdint>
 
-#include <gmock/gmock.h>
+#include "messages/header.hpp"
 
-class HalDmaInterface 
+namespace msgpu::io 
 {
-public: 
-    virtual ~HalDmaInterface() = default;
 
-    virtual void set_usart_dma_buffer(void* buffer, bool trigger) = 0;
-    virtual void set_usart_dma_transfer_count(std::size_t size, bool trigger) = 0;
-    virtual void reset_dma_crc() = 0;
-    virtual uint32_t get_dma_crc() = 0;
+struct Message 
+{
+    bool received; 
+    Header header; 
+    std::array<uint8_t, 32> payload;
 };
 
-class HalDmaMock : public HalDmaInterface
-{
-public: 
-    MOCK_METHOD2(set_usart_dma_buffer, void(void*, bool trigger));
-    MOCK_METHOD2(set_usart_dma_transfer_count, void(std::size_t size, bool trigger));
-    MOCK_METHOD0(reset_dma_crc, void());
-    MOCK_METHOD0(get_dma_crc, uint32_t());
-};
+} // namespace msgpu::io

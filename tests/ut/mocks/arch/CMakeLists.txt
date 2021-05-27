@@ -22,16 +22,20 @@ target_sources(msgpu_arch
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma_mocks.hpp
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma_mocks.cpp
 )
 
 target_include_directories(msgpu_arch
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}
 )
 
 target_link_libraries(msgpu_arch 
     PUBLIC 
         msgpu_interface
+        gmock
 )
