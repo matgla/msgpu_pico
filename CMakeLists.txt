@@ -85,3 +85,5 @@ if (ENABLE_TESTS)
     message(STATUS "Testing: enabled")
     add_subdirectory(tests)
 endif ()
+
+#file (CREATE_LINK ${PROJECT_BINARY_DIR}/compile_commands.json ${PROJECT_SOURCE_DIR}/compile_commands.json)

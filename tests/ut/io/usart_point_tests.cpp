@@ -18,17 +18,25 @@
 
 #include "io/usart_point.hpp"
 
+
 namespace msgpu::io 
 {
 
 class UsartPointShould : public testing::Test 
 {
+protected: 
+    UsartPointShould()
+        : sut_(data_)
+    {
+    }
 
+    UsartPoint data_;
+    boost::sml::sm<UsartPoint> sut_;
 };
 
 TEST_F(UsartPointShould, ReceiveCorrectPackage)
 {
-    EXPECT_TRUE(false);
+    sut_.process_event(init{});
 }
 
 } // namespace msgpu::io

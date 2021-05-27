@@ -14,43 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
-
-#include <array>
-#include <cstdint>
-
-#include <boost/sml.hpp>
-
-#include "messages/header.hpp"
-
-namespace msgpu::io 
+class HalDmaInterface 
 {
+public: 
+    virtual ~HalDmaInterface() = default;
 
-struct init{};
-struct data{};
+    virtual void set_usart_dma_buffer(void* buffer, bool trigger) = 0;
+    virtual void set_usart_dma_transfer_count(void* buffer, bool trigger) = 0;
 
-/// @brief Implements external world interface with standard USART protocol
-/// @author Mateusz Stadnik
-class UsartPoint
-{
-    using Self = UsartPoint;
-public:
-    auto operator()() 
-    {
-        using namespace boost::sml;
-
-        return make_transition_table(
-            *"init"_s + event<init> / (&Self::prepare_for_token) = "wait_for_start_token"_s
-        );
-    }
-private:
-    void prepare_for_header();
-    void prepare_for_token();
-
-    uint8_t token_buffer_;
-    uint16_t received_crc_;
-    uint16_t calculated_crc_;
 };
-
-} // namespace msgpu::io 
 

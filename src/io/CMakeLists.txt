@@ -26,11 +26,20 @@ target_sources(msgpu_io
 
 find_package(sml REQUIRED)
 
+get_target_property(sml_include_directories sml INTERFACE_INCLUDE_DIRECTORIES)
+
+add_library(sml_external INTERFACE) 
+
+target_include_directories(sml_external SYSTEM INTERFACE ${sml_include_directories})
+
+add_library(external::sml ALIAS sml_external)
+
 target_link_libraries(msgpu_io 
-    PRIVATE 
+    PRIVATE
         common_flags
+        msgpu_arch
     PUBLIC
-        sml
+        external::sml 
         msgpu_messages
 )
 

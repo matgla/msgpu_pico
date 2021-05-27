@@ -30,3 +30,8 @@ target_include_directories(msgpu_arch
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+target_link_libraries(msgpu_arch 
+    PUBLIC 
+        msgpu_interface
+)
