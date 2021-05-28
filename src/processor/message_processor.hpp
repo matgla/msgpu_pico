@@ -25,16 +25,23 @@ namespace msgpu
 namespace processor 
 {
 
-
+/// @brief Binds message handling method and object.
 template <typename BindedType, typename MsgType>
 struct HandlerBinder 
 {
     typedef void (BindedType::*fun)(const MsgType& payload);
     
+    /// @brief Constructs binder object 
+    ///
+    /// @param f - pointer to member function for handling message 
+    /// @param b - pointer to object on which member function will be called 
     HandlerBinder(fun f, BindedType* b) : f_(f), self_(b)
     {
     }
 
+    /// @brief Calls handling function 
+    ///
+    /// @param payload - pointer to payload which will be converted to \ref MsgType 
     void operator()(const void* payload) const
     {
         (self_->*f_)(*static_cast<const MsgType*>(payload));
@@ -45,13 +52,22 @@ private:
     BindedType* self_;
 };
 
+/// @brief Registers handlers methods for message ids 
 class MessageProcessor 
 {
 public: 
+    /// @brief Constructs message processor (initializes data)
     MessageProcessor();
 
+    /// @brief Process message received from io 
+    ///
+    /// @details Calls handler stored in \ref handlers_. 
     void process_message(const io::Message& message);
  
+    /// @brief Register message processing function 
+    ///
+    /// @param fun - pointer to member function for handling message 
+    /// @param obj - pointer to object on which member function will be called 
     template <typename MessageType>
     void register_handler(auto fun, auto* obj)
     {
