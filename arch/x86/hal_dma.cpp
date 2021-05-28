@@ -17,8 +17,25 @@
 
 #include "hal_dma.hpp"
 
+#include <cstdint>
+#include <cstring>
+#include <vector>
+#include <thread>
+
+#include <eul/crc/crc.hpp>
+
+#include "board.hpp" 
+
 namespace hal 
 {
+
+namespace 
+{
+static UsartHandler handler; 
+static std::size_t size_to_receive;
+static void* buffer;
+static uint32_t crc;
+} // namespace
 
 void reset_dma_crc()
 {
@@ -34,8 +51,27 @@ void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
 }
 
-void set_usart_handler(const UsartHandler& handler)
+void set_usart_handler(const UsartHandler& h)
 {
+    handler = h;
+    static std::thread t([]{
+        std::vector<uint8_t> buf; 
+        std::size_t i = 0;
+        while (i < size_to_receive)
+        {
+            uint8_t byte = msgpu::read_byte();
+            buf.push_back(byte);
+            crc = calculate_crc<uint16_t, ccit_polynomial, 0, false>(std::span<const uint8_t>(&byte, 1), crc);
+            ++i;
+        }
+        std::memcpy(buffer, buf.data(), size_to_receive);
+
+        if (handler) 
+        {
+            crc = calculate_crc16(buf); 
+            handler();
+        }
+    });
 }
 
 void set_dma_mode(uint32_t mode)

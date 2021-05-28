@@ -43,7 +43,8 @@ std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
     return mode.fill_scanline(buffer, line);
 }
 
-void frame_update() {
+void frame_update()
+{
     mode.render();
 }
 
@@ -65,7 +66,7 @@ int main()
     msgpu::initialize_board();
  
     msgpu::initialize_signal_generator();
-    
+
     hal::set_usart_handler([]{
         proc.schedule_update();
     });

@@ -31,8 +31,10 @@ target_sources(msgpu_arch
 find_package(SFML 2 REQUIRED graphics) 
 
 target_link_libraries(msgpu_arch 
-    PRIVATE 
+    PUBLIC
         msgpu_interface
+    PRIVATE
+        eul_crc
         sfml-graphics
         pthread
 )

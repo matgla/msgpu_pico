@@ -18,15 +18,14 @@ add_library(msgpu_processor)
 
 target_sources(msgpu_processor
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/machine_interface.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.hpp
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/machine_interface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.cpp
 )
 
 
 target_link_libraries(msgpu_processor 
     PRIVATE 
-        msgpu_modes 
         eul_mpl
         eul_math
     PUBLIC 

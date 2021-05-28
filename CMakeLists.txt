@@ -83,6 +83,8 @@ add_subdirectory(src)
 
 if (ENABLE_TESTS)
     message(STATUS "Testing: enabled")
+    include(CTest)
+    enable_testing()
     add_subdirectory(tests)
 endif ()
 
