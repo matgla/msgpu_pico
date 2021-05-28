@@ -25,6 +25,20 @@ namespace msgpu::io
 
 constexpr uint8_t start_token = 0x7e;
 
+std::optional<Message> UsartPoint::pop() 
+{
+    if (!messages_.empty())
+    {
+        if (messages_.front().received)
+        {
+            Message msg = messages_.front();
+            messages_.pop_front();
+            return msg;
+        }
+    }
+    return {};
+}
+
 // ACTIONS 
 
 void UsartPoint::prepare_for_header()
@@ -82,6 +96,11 @@ bool UsartPoint::verify_crc()
 bool UsartPoint::message_without_size() 
 {
     return current_message_->header.size == 0;
+}
+
+bool UsartPoint::check_header()
+{
+    return current_message_->header.size <= 32;
 }
 
 } // namespace msgpu::io

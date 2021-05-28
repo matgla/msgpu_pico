@@ -18,6 +18,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 #include <boost/sml.hpp>
 
@@ -72,7 +73,7 @@ public:
         auto const got_frame_start = wrap(&Self::got_start_token);
         auto const verify = wrap(&Self::verify_crc);
         auto const empty_message = wrap(&Self::message_without_size);
-
+        auto const verify_header = wrap(&Self::check_header);
         return make_transition_table(
            *"init"_s                 + event<init>                                    
                         / (&Self::prepare_for_token)  = "wait_for_start_token"_s,
@@ -82,11 +83,11 @@ public:
                         / (&Self::prepare_for_token)  = "wait_for_start_token"_s,
             "wait_for_header"_s + event<dma_finished>
                         / (&Self::prepare_for_crc)    = "wait_for_header_crc"_s,
-            "wait_for_header_crc"_s + event<dma_finished> [ verify && !empty_message ]
+            "wait_for_header_crc"_s + event<dma_finished> [ verify && verify_header && !empty_message ]
                         / (&Self::prepare_for_payload) = "wait_for_payload"_s,
             "wait_for_header_crc"_s + event<dma_finished> [ verify && empty_message ] 
                         / (wrap(&Self::store_message), &Self::prepare_for_token) = "wait_for_start_token"_s,
-            "wait_for_header_crc"_s + event<dma_finished> [ !verify] 
+            "wait_for_header_crc"_s + event<dma_finished> [ !verify || !verify_header] 
                         / (wrap(&Self::drop_message), &Self::prepare_for_token)  = "wait_for_start_token"_s, 
             "wait_for_payload"_s + event<dma_finished> 
                         / (&Self::prepare_for_crc)   = "wait_for_payload_crc"_s, 
@@ -97,6 +98,10 @@ public:
 
         );
     }
+
+    /// @brief Provide access to ready messages 
+        /// @return Message object if it's ready to process or none if queue is empty
+    std::optional<Message> pop();
 private:
     // ==================== GUARDS ==================//
     /// @brief Checks if token buffer contains 0x7e, which is symbol for frame start.
@@ -105,6 +110,9 @@ private:
     bool verify_crc();
     /// @brief Checks if message contains only header (id, without any payload).
     bool message_without_size();
+
+    /// @brief Checks if payload size is correct (<=32 bytes) 
+    bool check_header();
 
     // =================== ACTIONS ==================//
 
