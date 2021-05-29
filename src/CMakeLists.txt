@@ -18,6 +18,7 @@ find_package(msgui REQUIRED)
 
 add_subdirectory(io)
 add_subdirectory(modes)
+add_subdirectory(mode)
 add_subdirectory(processor)
 
 

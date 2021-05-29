@@ -14,25 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_processor)
+add_library(msgpu_mode INTERFACE)
 
-target_sources(msgpu_processor
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.hpp
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.cpp
+target_sources(msgpu_mode
+    INTERFACE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
 )
 
 
-target_link_libraries(msgpu_processor 
-    PUBLIC 
-        msgpu_messages
-        eul_functional
-    PRIVATE 
-        common_flags
-)
+target_link_libraries(msgpu_mode 
+#    PUBLIC 
+#        msgpu_messages
+#        eul_functional
+#    PRIVATE 
+INTERFACE 
+    common_flags
+    )
+#        common_flags
+#)
 
-target_include_directories(msgpu_processor
-    PUBLIC
+target_include_directories(msgpu_mode
+    INTERFACE 
         ${PROJECT_SOURCE_DIR}/src
 )

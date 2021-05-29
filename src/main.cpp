@@ -18,10 +18,23 @@
 
 #include "modes/modes.hpp"
 
-#include "processor/machine_interface.hpp"
+#include "processor/message_processor.hpp"
 
 #include "board.hpp"
 #include "hal_dma.hpp"
+
+#include "messages/change_mode.hpp"
+#include "messages/set_pixel.hpp"
+#include "messages/draw_line.hpp"
+#include "messages/info_req.hpp"
+#include "messages/clear_screen.hpp"
+#include "messages/begin_primitives.hpp"
+#include "messages/end_primitives.hpp"
+#include "messages/write_vertex.hpp"
+#include "messages/write_text.hpp"
+#include "messages/set_perspective.hpp"
+#include "messages/swap_buffer.hpp"
+#include "messages/draw_triangle.hpp"
 
 #include "messages/begin_primitives.hpp"
 #include "messages/header.hpp"
@@ -48,17 +61,12 @@ void frame_update()
     mode.render();
 }
 
-
+static processor::MessageProcessor proc();
 
 } // namespace msgpu
 
-
-static processor::MachineInterface proc(&mode, &msgpu::write_bytes);
-
 void process_frame()
 {
-    proc.dma_run();
-    proc.process_data();
 }
 
 int main() 
@@ -67,11 +75,10 @@ int main()
  
     msgpu::initialize_signal_generator();
 
+
     hal::set_usart_handler([]{
-        proc.schedule_update();
     });
     
-    proc.schedule_update();
     while (true)
     {
         process_frame();

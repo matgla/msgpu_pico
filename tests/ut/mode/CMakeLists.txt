@@ -1,5 +1,5 @@
-# This file is part of MS GPU project.
-# Copyright (C) 2020 Mateusz Stadnik
+# This file is part of MSGPU project. 
+# Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,25 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_processor)
+add_executable(msgpu_ut_mode)
 
-target_sources(msgpu_processor
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.hpp
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.cpp
+target_sources(msgpu_ut_mode
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/modes_tests.cpp
 )
 
-
-target_link_libraries(msgpu_processor 
-    PUBLIC 
-        msgpu_messages
-        eul_functional
+target_link_libraries(msgpu_ut_mode
     PRIVATE 
+        gtest
+        gmock 
+        gtest_main 
+
+        msgpu_mode
+
         common_flags
 )
 
-target_include_directories(msgpu_processor
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/src
-)
+add_test(mode msgpu_ut_mode)
+add_dependencies(check msgpu_ut_mode)
+

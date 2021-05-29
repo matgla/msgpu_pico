@@ -16,6 +16,8 @@
 
 #pragma once 
 
+#include <array>
+
 #include <eul/functional/function.hpp>
 
 #include "io/message.hpp"

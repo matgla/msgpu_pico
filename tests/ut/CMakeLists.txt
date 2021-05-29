@@ -21,5 +21,6 @@ find_package(gtest REQUIRED)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V)
 
 add_subdirectory(io)
+add_subdirectory(mode)
 add_subdirectory(processor)
 
