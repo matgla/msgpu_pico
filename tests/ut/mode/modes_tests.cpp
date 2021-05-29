@@ -124,11 +124,11 @@ TEST(ModesShould, RegisterModes)
     };
 
     EXPECT_CALL(mocka, process(a));
-    sut.process(a);
-    sut.process(B{"Hello"});
+    EXPECT_TRUE(sut.process(a));
+    EXPECT_FALSE(sut.process(B{"Hello"}));
     C c {};
     EXPECT_CALL(mocka, process(c));
-    sut.process(c);
+    EXPECT_TRUE(sut.process(c));
  
     sut.switch_to<MockB>(&mockb);
 
@@ -142,11 +142,11 @@ TEST(ModesShould, RegisterModes)
     };
 
     EXPECT_CALL(mockb, process(a2));
-    sut.process(a2);
+    EXPECT_TRUE(sut.process(a2));
 
     EXPECT_CALL(mockb, process(b));
-    sut.process(b);
-    sut.process(C{});
+    EXPECT_TRUE(sut.process(b));
+    EXPECT_FALSE(sut.process(C{}));
 }
 
 } // namespace msgpu::mode

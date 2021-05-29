@@ -22,16 +22,33 @@
 namespace msgpu::mode 
 {
 
+/// @brief Class to collect all graphic processing methods 
+///
+/// @details 
+///   Only one mode may be selected (i.e TextMode 80x30, Graphic Mode 320x240).
+///   All available modes are stored in variant, for memory sharing.
+///   Each byte is valuable in devices with low memory size. 
+///   Class is also responsible for dispatching messages only if it's supported by specific mode.
 template <typename... SupportedModes>
 class Modes 
 {
 public:
+
+    /// @brief Changes selected mode to different.
+    ///
+    /// @tparam Mode - new mode to be used 
+    /// @param Args... - arguments needed to call Mode constructor
     template <typename Mode, typename... Args>
     void switch_to(Args&&... args)
     {
         mode_.template emplace<Mode>(args...);
     }
 
+    /// @brief Forwards message to mode only if it's supported. 
+    ///
+    /// @param message - message to be processed 
+    /// 
+    /// @returns true - if message was processed, false - if message is not supported in specific mode 
     template <typename Message>
     bool process(const Message& message)
     {
@@ -53,15 +70,21 @@ private:
     std::variant<std::monostate, SupportedModes...> mode_;
 };
 
+/// @brief Constructs Modes object with DSL form 
 template <typename... SupportedModes>
 struct ModesFactory
 {
+
+    /// @brief Register mode type for further object construction
+    ///
+    /// @tparam Mode - registered type for object creation
     template <typename Mode>
     constexpr static ModesFactory<SupportedModes..., Mode> add_mode()
     {
         return {};
     }
 
+    /// @brief Creates Mode object with all registered types.
     constexpr static Modes<SupportedModes...> create() 
     {
         return Modes<SupportedModes...>{};
