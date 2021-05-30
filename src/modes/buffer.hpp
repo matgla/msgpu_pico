@@ -262,7 +262,6 @@ public:
         return  &buffer_[height];
     }
 
-
     constexpr static std::size_t size() 
     {
         return height;

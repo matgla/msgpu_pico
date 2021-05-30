@@ -16,28 +16,30 @@
 
 #pragma once 
 
-#include "messages/clear_screen.hpp"
-
 namespace msgpu::mode 
 {
 
+template <typename Configuration, bool uses_color_palette>struct BufferTypeGeneratorImpl;
+
 template <typename Configuration>
-class ModeBase : public Buffer<Configuration>
+struct BufferTypeGenerator 
 {
-public:
-    virtual ~ModeBase() = default; 
-
-    void clear(const ClearScreen&)
-    {
-
-    }
-
-    void render();
-
-protected: 
-
-    
+    using type = typename BufferTypeGeneratorImpl<Configuration, Configuration::uses_color_palette>::type;
 };
+
+template <typename Configuration> 
+struct BufferTypeGeneratorImpl<Configuration, true> 
+{
+    using type = modes::Buffer<Configuration::resolution_width, Configuration::resolution_height, Configuration::bits_per_pixel>;
+};
+
+template <typename Configuration>
+struct BufferTypeGeneratorImpl<Configuration, false>
+{
+    using type = std::array<std::array<typename Configuration::ColorType, Configuration::resolution_width>, Configuration::resolution_width>;
+};
+
+t
 
 } // namespace msgpu::mode
 
