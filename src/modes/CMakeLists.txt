@@ -14,25 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_modes)
+add_library(msgpu_modes INTERFACE)
 
 target_sources(msgpu_modes
-    PUBLIC
+    INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/buffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/colors.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mode_base.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/types.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/text_mode.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/80x30_16.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/text/40x30_16.hpp
-
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/modes.cpp
 )
 
 target_link_libraries(msgpu_modes
-    PUBLIC 
+    INTERFACE 
         msgui 
         msgpu_interface
         msgpu_arch
@@ -42,13 +38,14 @@ target_link_libraries(msgpu_modes
         eul_math
 )
 
-target_compile_options(msgpu_modes PUBLIC
+target_compile_options(msgpu_modes INTERFACE 
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
     $<$<CONFIG:DEBUG>:-Og -g>
     $<$<CONFIG:RELEASE>:-Os>
 )
 
 target_include_directories(msgpu_modes 
-    PUBLIC 
+    INTERFACE 
         ${PROJECT_SOURCE_DIR}/src
 )
+

@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace vga 
+namespace msgpu 
 {
 
 Vga::Vga(modes::Modes mode) 
@@ -54,5 +54,4 @@ Vga& get_vga()
     return vga;
 }
 
-} // namespace vga
-
+} // namespace msgpu 

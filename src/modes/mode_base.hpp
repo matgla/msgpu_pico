@@ -65,6 +65,7 @@ public:
 
     void clear()
     {
+
         mutex_enter_blocking(&mutex_);
         for (auto& line : get_writable_frame())
         {

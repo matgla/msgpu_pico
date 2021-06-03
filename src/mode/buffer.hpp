@@ -26,6 +26,8 @@
 namespace msgpu::mode 
 {
 
+namespace details 
+{
 template <std::size_t bits_per_pixel, typename T>
 constexpr std::size_t pixels_in_type()
 {
@@ -267,5 +269,5 @@ private:
     LineType buffer_[height];
 };
 
-} // namespace msgpu::mode
+} // namespace msgpu::mode 
 

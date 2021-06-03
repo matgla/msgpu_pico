@@ -49,14 +49,23 @@
 #include "mode/modes.hpp"
 #include "io/usart_point.hpp"
 
+#include "mode/3d_graphic_mode.hpp"
 
+#include "modes/graphic/320x240_256.hpp"
 
+using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
-static auto mode = msgpu::mode::ModesFactory<>()
+static auto modes = msgpu::mode::ModesFactory<>()
+    .add_mode<DualBuffered3DGraphic_320x240_256>()
     .create();
 
 namespace msgpu 
 {
+
+std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
+{
+    modes.fill_line(buffer, line);
+}
 
 static processor::MessageProcessor proc;
 static io::UsartPoint usart_io_data; 
@@ -79,6 +88,12 @@ void process_frame()
 {
 }
 
+template <typename MessageType> 
+void register_handler()
+{
+    msgpu::proc.register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+}
+
 int main() 
 {
     msgpu::initialize_board();
@@ -86,21 +101,26 @@ int main()
     msgpu::initialize_signal_generator();
 
     msgpu::usart_io.process_event(msgpu::io::init{});
+
+    register_handler<BeginPrimitives>();
+    register_handler<EndPrimitives>();
+    register_handler<WriteVertex>();
+    register_handler<ClearScreen>();
+
     hal::set_usart_handler([]{
         msgpu::usart_io.process_event(msgpu::io::dma_finished{});
-        printf("DMA finished\n");
-        if (msgpu::usart_io_data.pop())
-        {
-            printf("Got data\n");
-        }
-    });
+     });
+
+    modes.switch_to<DualBuffered3DGraphic_320x240_256>();
     
     while (true)
     {
         process_frame();
-//        msgpu::sleep_ms(1000);
-//        static int i = 0;
-//        printf("Working %d\n", ++i);
+        auto message = msgpu::usart_io_data.pop();
+        if (message)
+        {
+            msgpu::proc.process_message(*message);
+        }
     }
 
     msgpu::deinitialize_signal_generator();

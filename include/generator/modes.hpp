@@ -17,7 +17,7 @@
 
 #pragma once 
 
-namespace vga::modes 
+namespace msgpu::modes 
 {
 
 enum class Modes
@@ -30,5 +30,5 @@ enum class Modes
     Graphic_320x240_12bit = 12
 };
 
-} // namespace vga::modes
+} // namespace msgpu::modes
 

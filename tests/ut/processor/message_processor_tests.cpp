@@ -49,12 +49,12 @@ bool operator==(const A& a, const A& b)
 
 struct AHandler
 {
-    MOCK_METHOD1(process_a, void(const A& a));
+    MOCK_METHOD1(process_a, bool(const A& a));
 };
 
 struct BHandler
 {
-    MOCK_METHOD1(process_b, void(const B& a));
+    MOCK_METHOD1(process_b, bool(const B& a));
 };
 
 TEST(MessageProcessorShould, RegisterMessages)

@@ -21,7 +21,7 @@
 
 #include "modes.hpp"
 
-namespace vga::modes::graphic 
+namespace msgpu::modes::graphic 
 {
 
 class Graphic_320x240_256
@@ -81,4 +81,4 @@ public:
 
 };
 
-} // namespace vga::modes::graphic
+} // namespace msgpu::modes::graphic

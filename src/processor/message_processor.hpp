@@ -31,7 +31,7 @@ namespace processor
 template <typename BindedType, typename MsgType>
 struct HandlerBinder 
 {
-    typedef void (BindedType::*fun)(const MsgType& payload);
+    typedef bool (BindedType::*fun)(const MsgType& payload);
     
     /// @brief Constructs binder object 
     ///
@@ -44,9 +44,9 @@ struct HandlerBinder
     /// @brief Calls handling function 
     ///
     /// @param payload - pointer to payload which will be converted to \ref MsgType 
-    void operator()(const void* payload) const
+    bool operator()(const void* payload) const
     {
-        (self_->*f_)(*static_cast<const MsgType*>(payload));
+        return (self_->*f_)(*static_cast<const MsgType*>(payload));
     }
 
 private:
@@ -78,7 +78,7 @@ public:
 
 protected:
 
-    using HandlerType = eul::function<void(const void*), 2*sizeof(void*)>;
+    using HandlerType = eul::function<bool(const void*), 2*sizeof(void*)>;
 
     std::array<HandlerType, 255> handlers_;
 };

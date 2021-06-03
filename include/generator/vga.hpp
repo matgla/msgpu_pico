@@ -24,7 +24,7 @@
 
 #include "config.hpp"
 
-namespace vga
+namespace msgpu 
 {
 
 class Vga
@@ -43,4 +43,5 @@ public:
 
 Vga& get_vga();
 
-} // namespace vga
+} // namespace msgpu
+
