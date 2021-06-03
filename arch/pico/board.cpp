@@ -33,6 +33,8 @@
 #include <hardware/irq.h>
 #include <eul/container/static_deque.hpp>
 
+#include "hal_dma.hpp"
+
 extern const struct scanvideo_pio_program video_24mhz_composable;
 
 static struct mutex frame_logic_mutex;
@@ -78,7 +80,7 @@ void initialize_uart()
 }
 
 
-UsartHandler usart_dma_handler;
+hal::UsartHandler usart_dma_handler;
 
 void set_usart_dma_buffer(void* buffer, bool trigger)
 {

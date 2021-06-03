@@ -33,8 +33,8 @@ static int serial_port_id;
 static std::unique_ptr<std::thread> rendering_thread;
 static termios old_tio; 
 
-static uint16_t resolution_width = 640;
-static uint16_t resolution_height = 480;
+static uint16_t resolution_width = 320;
+static uint16_t resolution_height = 240;
 
 void render_loop()
 {

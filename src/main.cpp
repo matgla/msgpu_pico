@@ -16,7 +16,7 @@
 
 #include <unistd.h>
 
-#include "modes/modes.hpp"
+#include <boost/sml.hpp>
 
 #include "processor/message_processor.hpp"
 
@@ -46,22 +46,32 @@
 
 #include "qspi.hpp"
 
-static vga::Mode mode; 
- 
+#include "mode/modes.hpp"
+#include "io/usart_point.hpp"
+
+
+
+
+static auto mode = msgpu::mode::ModesFactory<>()
+    .create();
+
 namespace msgpu 
 {
 
-std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
-{
-    return mode.fill_scanline(buffer, line);
-}
+static processor::MessageProcessor proc;
+static io::UsartPoint usart_io_data; 
+static boost::sml::sm<io::UsartPoint> usart_io(usart_io_data);
 
 void frame_update()
 {
-    mode.render();
 }
 
-static processor::MessageProcessor proc();
+std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
+{
+    std::memset(buffer.data(), 0, buffer.size());
+    static_cast<void>(line);
+    return 0;
+}
 
 } // namespace msgpu
 
@@ -75,8 +85,14 @@ int main()
  
     msgpu::initialize_signal_generator();
 
-
+    msgpu::usart_io.process_event(msgpu::io::init{});
     hal::set_usart_handler([]{
+        msgpu::usart_io.process_event(msgpu::io::dma_finished{});
+        printf("DMA finished\n");
+        if (msgpu::usart_io_data.pop())
+        {
+            printf("Got data\n");
+        }
     });
     
     while (true)

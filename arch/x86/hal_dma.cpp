@@ -35,26 +35,35 @@ static UsartHandler handler;
 static std::size_t size_to_receive;
 static void* buffer;
 static uint32_t crc;
+static bool trigger_;
 } // namespace
 
 void reset_dma_crc()
 {
-
+    crc = 0;
 }
 
 void set_usart_dma_buffer(void* buffer, bool trigger)
 {
-
+    buffer = buffer;
+    trigger_ = trigger;
 }
 
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
+    size_to_receive = size; 
+    trigger_ = trigger;
 }
 
 void set_usart_handler(const UsartHandler& h)
 {
     handler = h;
     static std::thread t([]{
+        while (!trigger_)
+        {
+        }
+
+        trigger_ = false;
         std::vector<uint8_t> buf; 
         std::size_t i = 0;
         while (i < size_to_receive)
@@ -64,7 +73,7 @@ void set_usart_handler(const UsartHandler& h)
             crc = calculate_crc<uint16_t, ccit_polynomial, 0, false>(std::span<const uint8_t>(&byte, 1), crc);
             ++i;
         }
-        std::memcpy(buffer, buf.data(), size_to_receive);
+        //std::memcpy(buffer, buf.data(), size_to_receive);
 
         if (handler) 
         {

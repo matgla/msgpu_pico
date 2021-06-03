@@ -17,7 +17,7 @@
 find_package(msgui REQUIRED)
 
 add_subdirectory(io)
-add_subdirectory(modes)
+#add_subdirectory(modes)
 add_subdirectory(mode)
 add_subdirectory(processor)
 
@@ -39,10 +39,11 @@ target_compile_options(msgpu
 
 target_link_libraries(msgpu 
     PRIVATE 
+        msgpu_io
         msgpu_interface 
         msgpu_arch 
         msgpu_processor
-        msgpu_modes
+        msgpu_mode
 )
 
 if (NOT USE_SIMULATION)
