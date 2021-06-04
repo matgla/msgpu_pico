@@ -38,10 +38,10 @@ void Vga::setup()
 
 }
 
-std::size_t Vga::fill_scanline_buffer(std::span<uint32_t> line, 
-    std::span<const uint16_t> scanline_buffer)
+std::size_t Vga::display_line(std::span<uint32_t> line, 
+    std::span<const uint8_t> scanline_buffer)
 {
-    std::transform(scanline_buffer.begin(), scanline_buffer.end(), line.begin(), [](uint16_t color) {
+    std::transform(scanline_buffer.begin(), scanline_buffer.end(), line.begin(), [](uint8_t color) {
         return color; // TODO: transform?
     });
     return 0;

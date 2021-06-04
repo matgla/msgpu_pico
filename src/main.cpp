@@ -62,10 +62,6 @@ static auto modes = msgpu::mode::ModesFactory<>()
 namespace msgpu 
 {
 
-std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
-{
-    modes.fill_line(buffer, line);
-}
 
 static processor::MessageProcessor proc;
 static io::UsartPoint usart_io_data; 
@@ -75,11 +71,18 @@ void frame_update()
 {
 }
 
-std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
+//std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
+//{
+    //std::memset(buffer.data(), 0, buffer.size());
+    
+    //auto line_to_draw = modes.get_line(line);
+    //vga::
+    //return 0;
+//}
+
+std::span<const uint8_t> get_scanline(std::size_t line)
 {
-    std::memset(buffer.data(), 0, buffer.size());
-    static_cast<void>(line);
-    return 0;
+    return ::modes.get_line(line);
 }
 
 } // namespace msgpu

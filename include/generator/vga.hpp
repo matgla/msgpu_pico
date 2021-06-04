@@ -36,8 +36,7 @@ public:
 
     void setup();
 
-    static std::size_t __time_critical_func(fill_scanline_buffer)(
-        std::span<uint32_t> line, std::span<const uint16_t> scanline_buffer);
+    static std::size_t display_line(std::span<uint32_t> to_display, std::span<const uint8_t> source);
 
 };
 

@@ -33,6 +33,8 @@ void deinitialize_signal_generator();
 
 std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line);
 
+std::span<const uint8_t> get_scanline(std::size_t line);
+
 void frame_update();
 
 uint8_t read_byte();

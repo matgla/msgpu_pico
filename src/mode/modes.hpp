@@ -16,7 +16,10 @@
 
 #pragma once 
 
+#include <cstdint>
 #include <variant>
+#include <span>
+#include <type_traits>
 
 
 namespace msgpu::mode 
@@ -63,6 +66,26 @@ public:
                 return true;
             }
             return false;
+        }, mode_);
+    }
+
+    /// @brief Get line buffer from mode 
+    ///
+    /// @param line - line which should be filled
+    ///
+    /// @returns std::span<uint8_t> buffer with line data
+    std::span<const uint8_t> get_line(std::size_t line) const
+    {
+        return std::visit([line](auto&& mode) {
+            constexpr bool has_get_line = requires() {
+                { mode.get_line(line) } -> std::convertible_to<std::span<const uint8_t>>;
+            };
+
+            if constexpr (has_get_line)
+            {
+                return mode.get_line(line);
+            }
+            return std::span<const uint8_t>{};
         }, mode_);
     }
 
