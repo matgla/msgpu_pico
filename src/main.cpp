@@ -71,15 +71,6 @@ void frame_update()
 {
 }
 
-//std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line)
-//{
-    //std::memset(buffer.data(), 0, buffer.size());
-    
-    //auto line_to_draw = modes.get_line(line);
-    //vga::
-    //return 0;
-//}
-
 std::span<const uint8_t> get_scanline(std::size_t line)
 {
     return ::modes.get_line(line);
@@ -109,6 +100,7 @@ int main()
     register_handler<EndPrimitives>();
     register_handler<WriteVertex>();
     register_handler<ClearScreen>();
+    register_handler<SwapBuffer>();
 
     hal::set_usart_handler([]{
         msgpu::usart_io.process_event(msgpu::io::dma_finished{});
@@ -118,7 +110,6 @@ int main()
     
     while (true)
     {
-        process_frame();
         auto message = msgpu::usart_io_data.pop();
         if (message)
         {

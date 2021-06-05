@@ -99,7 +99,7 @@ struct const_type_wrapper
 template <std::size_t width, std::size_t bits_per_pixel>
 class LineBuffer
 {
-    using T = uint32_t;
+    using T = uint8_t;
 
     using SelfType = LineBuffer<width, bits_per_pixel>;
 
@@ -141,6 +141,53 @@ public:
         return wrapper;
  
     }
+
+    struct const_iterator 
+    {
+        const_iterator(std::size_t pos, const SelfType& self) 
+            : pos_(pos)
+            , self_(self)
+        {
+        }
+
+        const_iterator __time_critical_func(operator++)(int) 
+        {
+            iterator prev = *this; 
+            pos_ += 1; 
+            return prev;
+        }
+        
+        const_iterator& __time_critical_func(operator++)()
+        {
+            ++pos_;
+            return *this;
+        }
+
+        const_iterator __time_critical_func(operator-)(int decr)
+        {
+            return iterator(pos_ - decr, self_);
+        }
+
+        type_wrapper<const T> __time_critical_func(operator*)() const
+        {
+            return self_[pos_]; 
+        }
+
+        bool __time_critical_func(operator==)(const const_iterator& it) const
+        {
+            return it.pos_ == pos_; 
+        }
+
+        bool __time_critical_func(operator!=)(const const_iterator& it) const 
+        {
+            return it.pos_ != pos_;
+        }
+
+        private:
+            std::size_t pos_;
+            const SelfType& self_;
+    };
+
 
     struct iterator 
     {
@@ -196,6 +243,16 @@ public:
     iterator end()
     {
         return iterator(width, *this);
+    }
+
+    const_iterator begin() const 
+    {
+        return const_iterator(0, *this);
+    }
+
+    const_iterator end() const 
+    {
+        return const_iterator(width, *this);
     }
 
     constexpr static std::size_t size()

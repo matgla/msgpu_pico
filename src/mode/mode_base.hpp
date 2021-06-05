@@ -19,6 +19,7 @@
 #include "mode/framebuffer.hpp"
 
 #include "messages/clear_screen.hpp"
+#include "messages/swap_buffer.hpp"
 
 namespace msgpu::mode 
 {
@@ -47,9 +48,18 @@ public:
         }
     }
 
-    void fill_line(std::span<uint32_t> buffer, std::size_t line)
+    void process(const SwapBuffer&)
+    {
+        if (BufferSize == 1) return;
+        buffer_.switch_to_next_write_buffer();
+        buffer_.switch_to_next_read_buffer();
+    }
+
+    std::span<const uint8_t> get_line(std::size_t line_number) const 
     {
         const auto& frame = buffer_.get_readable_frame();
+        const auto& line = frame[line_number];
+        return std::span<const uint8_t>(line.begin(), line.end());
     }
 
     void render();

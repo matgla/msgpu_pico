@@ -35,50 +35,30 @@ public:
     constexpr static std::size_t width = resolution_width;
     constexpr static std::size_t height = resolution_height;
 
-    constexpr static bool uses_color_palette = true;
+    constexpr static bool uses_color_palette = false;
     constexpr static std::size_t bits_per_pixel = 8;
 
     constexpr static Modes mode = Modes::Graphic_320x240_12bit;
     constexpr static bool double_buffered = true;
     
     enum Color : ColorType {
-        black = 0x0, 
-        blue = 0x1,
-        green = 0x2,
-        cyan = 0x3, 
-        red = 0x4, 
-        mageta = 0x5,
-        orange = 0x6, 
-        grey = 0x7, 
-        dark_grey = 0x8,
-        bright_blue = 0x9,
-        bright_green = 0xa, 
-        bright_cyan = 0xb, 
-        bright_red = 0xc, 
-        bright_magneta = 0xd, 
-        yellow = 0xe, 
-        white = 0xf
+        black = 0x00, 
+        blue = 0x03,
+        green = 0x1c,
+        cyan = 0x12, 
+        red = 0xc0, 
+        mageta = 0xee,
+        orange = 0xdd, 
+        grey = 0x12, 
+        dark_grey = 0x77,
+        bright_blue = 0x66,
+        bright_green = 0xf6, 
+        bright_cyan = 0xf6, 
+        bright_red = 0x2f, 
+        bright_magneta = 0xff, 
+        yellow = 0xff, 
+        white = 0xff
     };
-
-    static inline std::array<uint16_t, 256> color_palette = {
-        0x000, // black         0x00
-        0xc00, // blue          0x01
-        0x0c0, // green         0x02
-        0xcc0, // cyan          0x03
-        0x00c, // red           0x04
-        0xc0c, // magneta       0x05
-        0x08c, // orange        0x06
-        0xbbb, // grey          0x07
-        0x777, // dark grey     0x08
-        0xf66, // bright blue   0x09
-        0x6f6, // bright green  0x0a
-        0xff6, // bright cyan   0x0b
-        0x22f, // bright red    0x0c
-        0xf6f, // bright magneta 0x0d
-        0x0ff, // yellow        0x0e
-        0xfff  // white         0x0f
-    };
-
 };
 
 } // namespace msgpu::modes::graphic

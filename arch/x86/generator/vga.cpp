@@ -26,7 +26,10 @@ namespace msgpu
 
 Vga::Vga(modes::Modes mode) 
 {
-   
+    if (mode == modes::Modes::Graphic_320x240_12bit)
+    {
+        set_resolution(320, 240);
+    }
 }
 
 void Vga::change_mode(modes::Modes mode)
@@ -50,7 +53,6 @@ std::size_t Vga::display_line(std::span<uint32_t> line,
 Vga& get_vga()
 {
     static Vga vga(modes::Modes::Graphic_320x240_12bit);
-    msgpu::set_resolution(320, 240);
     return vga;
 }
 
