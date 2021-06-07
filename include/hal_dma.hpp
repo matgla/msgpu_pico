@@ -15,6 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once 
 
+#include <cstdint>
+
 #include <eul/functional/function.hpp>
 
 namespace hal 
@@ -30,5 +32,7 @@ void set_usart_handler(const UsartHandler& handler);
 void set_dma_mode(uint32_t mode);
 
 uint32_t get_dma_crc();
+
+void enable_dma();
 
 }

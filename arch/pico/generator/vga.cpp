@@ -29,7 +29,7 @@
 
 #include "board.hpp"
 
-namespace vga
+namespace msgpu 
 {
 
 namespace 
@@ -82,9 +82,9 @@ void Vga::change_mode(modes::Modes mode)
     setup();
 }
 
-std::size_t Vga::fill_scanline_buffer(std::span<uint32_t> line, std::span<const uint16_t> scanline_buffer)
+std::size_t Vga::display_line(std::span<uint32_t> line, std::span<const uint8_t> scanline_buffer)
 {
-    const uint16_t* current_line = scanline_buffer.data();
+    const uint8_t* current_line = scanline_buffer.data();
 
     static uint32_t postamble[] = {
         0x0000u | (COMPOSABLE_EOL_ALIGN << 16)
@@ -112,10 +112,11 @@ Vga& get_vga()
     return vga;
 }
 
-} // namespace vga
+} // namespace msgpu 
+
 void start_vga()
 {
-    vga::get_vga().setup();
+    msgpu::get_vga().setup();
 }
 
 

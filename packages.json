@@ -4,7 +4,7 @@
         {
             "link": "https://github.com/raspberrypi/pico-sdk.git",
             "type": "git",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "directory": "pico-sdk",
             "target": "pico-sdk",
             "options": {
@@ -30,6 +30,18 @@
             "version": "main",
             "directory": "msgpu_interface",
             "target": "msgpu_interface",
+            "options": {
+                "cmake_variables": {
+                    "DISABLE_TESTS": "ON"
+                }
+            }
+        },
+        {
+            "link": "https://github.com/matgla/msos_dl.git",
+            "type": "git",
+            "version": "main",
+            "directory": "msos_dl",
+            "target": "msos_dl",
             "options": {
                 "cmake_variables": {
                     "DISABLE_TESTS": "ON"

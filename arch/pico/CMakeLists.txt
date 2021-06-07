@@ -20,6 +20,7 @@ target_sources(msgpu_arch
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/qspi.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.cpp
 )
 
 target_include_directories(msgpu_arch 

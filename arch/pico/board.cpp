@@ -35,6 +35,8 @@
 
 #include "hal_dma.hpp"
 
+#include "generator/vga.hpp"
+
 extern const struct scanvideo_pio_program video_24mhz_composable;
 
 static struct mutex frame_logic_mutex;
@@ -42,6 +44,8 @@ static struct semaphore video_setup_complete;
 
 namespace msgpu 
 {
+
+#include <cstdio>
 
 static uint32_t res_width = 320;
 static uint32_t res_height = 240;
@@ -55,11 +59,6 @@ void on_uart_rx()
         uart_putc(uart0, uart_getc(uart0));
     }
 }
-
-static int dma_channel;
-constexpr int dma_size = 16;
-
-const int dma_prio = 0x10;
 
 void initialize_uart()
 {
@@ -80,82 +79,11 @@ void initialize_uart()
 }
 
 
-hal::UsartHandler usart_dma_handler;
-
-void set_usart_dma_buffer(void* buffer, bool trigger)
-{
-    dma_channel_set_write_addr(dma_channel, buffer, trigger);  
-}
-
-void set_usart_dma_transfer_count(std::size_t size, bool trigger)
-{
-    printf("Setting dma count %d\n", size);
-    dma_channel_set_trans_count(dma_channel, size, trigger);
-    printf("Transfer count %d\n", dma_hw->ch[dma_channel].transfer_count);
-}
-
-void set_usart_handler(const UsartHandler& handler)
-{
-    usart_dma_handler = handler;
-}
-
-void dma_handler()
-{
-    dma_hw->ints0 = 1 << dma_channel;
-    if (usart_dma_handler)
-    {
-        usart_dma_handler();
-    }
-}
-
-void reset_dma_crc() 
-{
-    dma_hw->sniff_data = 0x0u;
-}
-
-void set_dma_mode(uint32_t mode)
-{
-    dma_sniffer_enable(dma_channel, mode, true); 
-}
-
-uint32_t get_dma_crc() 
-{
-    return dma_hw->sniff_data;
-}
-
-void enable_dma()
-{
-    dma_channel = dma_claim_unused_channel(true);
-    
-    dma_channel_config c = dma_channel_get_default_config(dma_channel);
-    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-    channel_config_set_dreq(&c, DREQ_UART0_RX + 2 * uart_get_index(uart0));
-    channel_config_set_read_increment(&c, false);
-    channel_config_set_write_increment(&c, true);
-
-    irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);  
-    irq_set_enabled(DMA_IRQ_1, true);
-    irq_set_priority(DMA_IRQ_1, dma_prio);
-    dma_channel_set_irq1_enabled(dma_channel, true);
-   
-
-    dma_channel_configure( 
-        dma_channel, 
-        &c, 
-        nullptr, 
-        &uart_get_hw(uart0)->dr, 
-        0,
-        false 
-    );
-
-    dma_sniffer_enable(dma_channel, 0x2, true);
-}
-
 void initialize_board()
 {
     set_sys_clock_khz(250000, true);
     stdio_init_all();
-    enable_dma();
+    hal::enable_dma();
     initialize_uart();
 
 
@@ -166,7 +94,8 @@ void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int 
 {
     int l = scanvideo_scanline_number(dest->scanline_id);
 
-    std::size_t size = fill_scanline(std::span<uint32_t>(dest->data, dest->data_max), l);
+    auto line = get_scanline(l);
+    std::size_t size = get_vga().display_line(std::span<uint32_t>(dest->data, dest->data_max), line);
 
     dest->data_used = size;
     dest->status = SCANLINE_OK;

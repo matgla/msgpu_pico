@@ -16,8 +16,6 @@
 
 #include "io/usart_point.hpp"
 
-#include <iostream>
-
 #include "hal_dma.hpp"
 
 namespace msgpu::io 
