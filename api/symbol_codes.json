@@ -1,0 +1,10 @@
+{
+    "exported": {
+        "unused": 0,
+        "main": 1 
+    },
+    "libc": {
+        "printf": 100,
+        "puts": 101
+    }
+}

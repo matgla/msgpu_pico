@@ -16,7 +16,7 @@
 
 #include <unistd.h>
 
-//#include <boost/sml.hpp>
+#include <boost/sml.hpp>
 
 #include "processor/message_processor.hpp"
 
@@ -47,11 +47,20 @@
 #include "qspi.hpp"
 
 #include "mode/modes.hpp"
-//#include "io/usart_point.hpp"
+#include "io/usart_point.hpp"
 
 #include "mode/3d_graphic_mode.hpp"
 
 #include "modes/graphic/320x240_256.hpp"
+
+#include <msos/dynamic_linker/dynamic_linker.hpp>
+#include <msos/dynamic_linker/environment.hpp>
+
+#include <eul/error/error_code.hpp>
+
+#include "symbol_codes.h"
+
+
 
 using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
@@ -63,9 +72,15 @@ namespace msgpu
 {
 
 
-//static processor::MessageProcessor proc;
-//static io::UsartPoint usart_io_data; 
-//static boost::sml::sm<io::UsartPoint> usart_io(usart_io_data);
+static processor::MessageProcessor proc;
+static io::UsartPoint usart_io_data; 
+static boost::sml::sm<io::UsartPoint> usart_io(usart_io_data);
+static msos::dl::DynamicLinker dynamic_linker;
+
+//static std::size_t get_lot_at(std::size_t address)
+//{
+//    return dynamic_linker.get_lot_for_module_at(address);
+//}
 
 void frame_update()
 {
@@ -73,9 +88,9 @@ void frame_update()
 
 std::span<const uint8_t> get_scanline(std::size_t line)
 {
-//\    return ::modes.get_line(line);
-    static_cast<void>(line);
-    return std::span<const uint8_t>();
+    return ::modes.get_line(line);
+//    static_cast<void>(line);
+//    return std::span<const uint8_t>();
 }
 
 } // namespace msgpu
@@ -87,7 +102,18 @@ void process_frame()
 template <typename MessageType> 
 void register_handler()
 {
-    //msgpu::proc.register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+    msgpu::proc.register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+}
+
+static msos::dl::Environment env {
+    msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf}
+};
+
+int exec(const std::size_t* module_address)
+{
+    eul::error::error_code ec;
+    const auto* module = msgpu::dynamic_linker.load_module(module_address, msos::dl::LoadingModeCopyText, env, ec);
+    return module->execute();
 }
 
 int main() 
@@ -96,7 +122,7 @@ int main()
  
     msgpu::initialize_signal_generator();
 
-    //msgpu::usart_io.process_event(msgpu::io::init{});
+    msgpu::usart_io.process_event(msgpu::io::init{});
 
     register_handler<BeginPrimitives>();
     register_handler<EndPrimitives>();
@@ -105,21 +131,24 @@ int main()
     register_handler<SwapBuffer>();
 
     hal::set_usart_handler([]{
-        //msgpu::usart_io.process_event(msgpu::io::dma_finished{});
+        msgpu::usart_io.process_event(msgpu::io::dma_finished{});
      });
 
-    //modes.switch_to<DualBuffered3DGraphic_320x240_256>();
+    modes.switch_to<DualBuffered3DGraphic_320x240_256>();
    
-    printf("Sizeof: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::FrameBufferType::BufferType));
-    printf("Sizeof mode: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256));
-    printf("Sizeof base: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::Base));
+  //  printf("Sizeof: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::FrameBufferType::BufferType));
+  //  printf("Sizeof mode: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256));
+  //  printf("Sizeof base: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::Base));
+    printf("Loading module\n");
+    exec(reinterpret_cast<const std::size_t*>(0x10040000));
+    //exec(reinterpret_cast<const std::size_t*>(
     while (true)
     {
-        //auto message = msgpu::usart_io_data.pop();
-        //if (message)
-        //{
-            //msgpu::proc.process_message(*message);
-        //}
+        auto message = msgpu::usart_io_data.pop();
+        if (message)
+        {
+            msgpu::proc.process_message(*message);
+        }
     }
 
     msgpu::deinitialize_signal_generator();

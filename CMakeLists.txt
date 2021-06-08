@@ -50,6 +50,11 @@ if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     find_package(pico-extras REQUIRED)
     include (external/pico_extras_import)
     pico_sdk_init()
+    set (arch "ARM")
+    set (MSOS_DYNAMIC_LINKER_ARCH "armv-7m")
+else ()
+    set (arch "x86_64")
+    set (MSOS_DYNAMIC_LINKER_ARCH "x86_64")
 endif ()
 
 
@@ -61,7 +66,7 @@ add_library(common_flags INTERFACE)
 target_compile_options(common_flags
     INTERFACE 
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a -Wfloat-equal -Wshadow -Wundef -Wpointer-arith -Wcast-align -Wconversion -Wall
-    -Wpedantic -Wextra -Werror>
+    -Wpedantic -Wextra -Werror -fno-exceptions>
     $<$<CONFIG:DEBUG>:-Og -g> 
     $<$<CONFIG:RELEASE>:-Os>
 )
@@ -79,12 +84,16 @@ add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=8
 )
 find_package(msgpu_interface)
 
+set (MSOS_DYNAMIC_LINKER_API_FILE ${PROJECT_SOURCE_DIR}/api/symbol_codes.json)
+
 find_package(msos_dl REQUIRED)
 
 add_subdirectory(arch)
 
 add_subdirectory(include)
 add_subdirectory(src)
+
+add_subdirectory(lib)
 
 if (ENABLE_TESTS)
     message(STATUS "Testing: enabled")
