@@ -30,7 +30,8 @@ namespace msgpu::mode
 template <typename Configuration, std::size_t BufferSize>
 class GraphicMode3D : public ModeBase<Configuration, BufferSize>
 {
-public: 
+public:
+    using Base = ModeBase<Configuration, BufferSize>;
     using ModeBase<Configuration, BufferSize>::process;
 
     void process(const BeginPrimitives& )

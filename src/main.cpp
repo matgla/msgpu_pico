@@ -16,7 +16,7 @@
 
 #include <unistd.h>
 
-#include <boost/sml.hpp>
+//#include <boost/sml.hpp>
 
 #include "processor/message_processor.hpp"
 
@@ -47,7 +47,7 @@
 #include "qspi.hpp"
 
 #include "mode/modes.hpp"
-#include "io/usart_point.hpp"
+//#include "io/usart_point.hpp"
 
 #include "mode/3d_graphic_mode.hpp"
 
@@ -63,9 +63,9 @@ namespace msgpu
 {
 
 
-static processor::MessageProcessor proc;
-static io::UsartPoint usart_io_data; 
-static boost::sml::sm<io::UsartPoint> usart_io(usart_io_data);
+//static processor::MessageProcessor proc;
+//static io::UsartPoint usart_io_data; 
+//static boost::sml::sm<io::UsartPoint> usart_io(usart_io_data);
 
 void frame_update()
 {
@@ -73,7 +73,9 @@ void frame_update()
 
 std::span<const uint8_t> get_scanline(std::size_t line)
 {
-    return ::modes.get_line(line);
+//\    return ::modes.get_line(line);
+    static_cast<void>(line);
+    return std::span<const uint8_t>();
 }
 
 } // namespace msgpu
@@ -85,7 +87,7 @@ void process_frame()
 template <typename MessageType> 
 void register_handler()
 {
-    msgpu::proc.register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+    //msgpu::proc.register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
 }
 
 int main() 
@@ -94,7 +96,7 @@ int main()
  
     msgpu::initialize_signal_generator();
 
-    msgpu::usart_io.process_event(msgpu::io::init{});
+    //msgpu::usart_io.process_event(msgpu::io::init{});
 
     register_handler<BeginPrimitives>();
     register_handler<EndPrimitives>();
@@ -103,18 +105,21 @@ int main()
     register_handler<SwapBuffer>();
 
     hal::set_usart_handler([]{
-        msgpu::usart_io.process_event(msgpu::io::dma_finished{});
+        //msgpu::usart_io.process_event(msgpu::io::dma_finished{});
      });
 
-    modes.switch_to<DualBuffered3DGraphic_320x240_256>();
-    
+    //modes.switch_to<DualBuffered3DGraphic_320x240_256>();
+   
+    printf("Sizeof: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::FrameBufferType::BufferType));
+    printf("Sizeof mode: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256));
+    printf("Sizeof base: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::Base));
     while (true)
     {
-        auto message = msgpu::usart_io_data.pop();
-        if (message)
-        {
-            msgpu::proc.process_message(*message);
-        }
+        //auto message = msgpu::usart_io_data.pop();
+        //if (message)
+        //{
+            //msgpu::proc.process_message(*message);
+        //}
     }
 
     msgpu::deinitialize_signal_generator();

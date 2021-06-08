@@ -32,7 +32,7 @@ find_package(SFML 2 REQUIRED graphics)
 
 target_link_libraries(msgpu_arch 
     PUBLIC
-        msgpu_interface
+        msgpu_arch_interface
     PRIVATE
         eul_crc
         sfml-graphics

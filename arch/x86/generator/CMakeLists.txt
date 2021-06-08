@@ -25,7 +25,7 @@ target_link_libraries(msgpu_generator
     PRIVATE 
         msgui 
     PUBLIC
-        msgpu_interface 
+        msgpu_arch_interface 
         msgpu_generator_interface
 )
 

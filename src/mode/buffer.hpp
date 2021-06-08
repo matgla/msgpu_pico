@@ -99,7 +99,7 @@ struct const_type_wrapper
 template <std::size_t width, std::size_t bits_per_pixel>
 class LineBuffer
 {
-    using T = uint8_t;
+    using T = uint32_t;
 
     using SelfType = LineBuffer<width, bits_per_pixel>;
 

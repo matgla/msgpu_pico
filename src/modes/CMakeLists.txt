@@ -30,7 +30,7 @@ target_sources(msgpu_modes
 target_link_libraries(msgpu_modes
     INTERFACE 
         msgui 
-        msgpu_interface
+        msgpu_arch_interface
         msgpu_arch
         msgpu_generator_interface
         msgpu_generator

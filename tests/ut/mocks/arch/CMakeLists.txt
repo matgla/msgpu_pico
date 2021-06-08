@@ -36,6 +36,6 @@ target_include_directories(msgpu_arch
 
 target_link_libraries(msgpu_arch 
     PUBLIC 
-        msgpu_interface
+        msgpu_arch_interface
         gmock
 )

@@ -27,6 +27,7 @@ struct BufferTypeGeneratorImpl;
 template <typename Configuration>
 struct BufferTypeGenerator
 {
+    using line_type  = typename BufferTypeGeneratorImpl<Configuration, Configuration::uses_color_palette>::line_type;
     using type = typename BufferTypeGeneratorImpl<Configuration, Configuration::uses_color_palette>::type;
 };
 
@@ -39,7 +40,8 @@ struct BufferTypeGeneratorImpl<Configuration, true>
 template <typename Configuration>
 struct BufferTypeGeneratorImpl<Configuration, false>
 {
-    using type = std::array<std::array<typename Configuration::ColorType, Configuration::resolution_width>, Configuration::resolution_width>;
+    using line_type = std::array<typename Configuration::ColorType, Configuration::resolution_width>;
+    using type = std::array<line_type, Configuration::resolution_height>;
 };
 
 
@@ -54,7 +56,7 @@ public:
     }
 
     using BufferType = typename BufferTypeGenerator<Configuration>::type;
-
+    using line_type = typename BufferTypeGenerator<Configuration>::line_type;
     BufferType& get_writable_frame() 
     {
         return framebuffer_[write_index_];
@@ -92,8 +94,7 @@ public:
 private:
     std::size_t write_index_;
     std::size_t read_index_;
-    BufferType framebuffer_[2]; 
+    BufferType framebuffer_[N]; 
 };
-
 } // namespace msgpu::mode
 

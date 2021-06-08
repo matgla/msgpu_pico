@@ -25,10 +25,12 @@ namespace msgpu::mode
 {
 
 template <typename Configuration, std::size_t BufferSize>
-class ModeBase : public FrameBuffer<Configuration, BufferSize>
+class ModeBase 
 {
 public:
     virtual ~ModeBase() = default; 
+
+    using FrameBufferType = FrameBuffer<Configuration, BufferSize>;
 
     ModeBase()
     {
@@ -66,7 +68,7 @@ public:
 
 protected: 
 
-    FrameBuffer<Configuration, BufferSize> buffer_;
+    FrameBufferType buffer_;
 };
 
 } // namespace msgpu::mode

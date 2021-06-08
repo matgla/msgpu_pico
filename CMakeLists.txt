@@ -53,8 +53,6 @@ if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
 endif ()
 
 
-set (HAS_CXX20_FLAG ON CACHE INTERNAL "" FORCE)
-
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 20)
 
@@ -80,6 +78,9 @@ add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=8
     -DPICO_SCANVIDEO_PLANE1_VARIABLE_FRAGMENT_DMA=1
 )
 find_package(msgpu_interface)
+
+find_package(msos_dl REQUIRED)
+
 add_subdirectory(arch)
 
 add_subdirectory(include)
