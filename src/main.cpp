@@ -151,7 +151,10 @@ int main()
         printf("Waiting\n");
     }
     printf("Loading module\n");
-    //msos::dl::DynamicLinker ddl;
+    msos::dl::DynamicLinker ddl;
+    std::unique_ptr<uint32_t> t(new uint32_t);
+    std::vector<uint32_t> v;
+    void* test = malloc(10000);
     //dynamic_linker = &ddl;
     exec(reinterpret_cast<const std::size_t*>(0x10032000));
     //exec(reinterpret_cast<const std::size_t*>(
