@@ -43,6 +43,7 @@ target_link_libraries(msgpu_arch
     PRIVATE
         eul_container
         msgpu_arch_pico_qspi
+        msgpu_generator
 )
 
 

@@ -40,18 +40,18 @@ target_compile_options(msgpu
 target_link_libraries(msgpu 
     PRIVATE 
         msos_dynamic_linker
-        msgpu_io
+  #      msgpu_io
         msgpu_arch_interface 
         msgpu_arch 
-        msgpu_processor
-        msgpu_mode
-        msgpu_modes
+#        msgpu_processor
+#        msgpu_mode
+#        msgpu_modes
 )
 add_dependencies(msgpu api_generator)
 if (NOT USE_SIMULATION)
 
-pico_enable_stdio_usb(msgpu 1)
-pico_enable_stdio_uart(msgpu 0)
+pico_enable_stdio_usb(msgpu 0)
+pico_enable_stdio_uart(msgpu 1)
 
 pico_add_extra_outputs(msgpu)
 
