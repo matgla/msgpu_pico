@@ -72,6 +72,7 @@ namespace msgpu
 {
 
 
+static msos::dl::DynamicLinker dynamic_linker;
 //static processor::MessageProcessor proc;
 //static io::UsartPoint usart_io_data; 
 //static boost::sml::sm<io::UsartPoint> usart_io(usart_io_data);
@@ -104,17 +105,23 @@ void register_handler()
 }
 
 static msos::dl::Environment env {
-    msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf}
+    msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf},
+    msos::dl::SymbolAddress{SymbolCode::libc_puts, &puts}
 };
-msos::dl::DynamicLinker* dynamic_linker;
 int exec(const std::size_t* module_address)
 {
     eul::error::error_code ec;
 
 
-    //const auto* module = msgpu::dynamic_linker.load_module(module_address, msos::dl::LoadingModeCopyText, env, ec);
-    //return module->execute();
-    return 0;
+    const auto* module = msgpu::dynamic_linker.load_module(module_address, msos::dl::LoadingModeCopyText, env, ec);
+
+    if (ec)
+    {
+        printf("Error during exec: %s\n", ec.message().data());
+        return -1; 
+    }
+
+    return module->execute();
 }
 //    static_cast<void>(module_address);
 //    return 0;
@@ -151,11 +158,6 @@ int main()
         printf("Waiting\n");
     }
     printf("Loading module\n");
-    msos::dl::DynamicLinker ddl;
-    std::unique_ptr<uint32_t> t(new uint32_t);
-    std::vector<uint32_t> v;
-    void* test = malloc(10000);
-    //dynamic_linker = &ddl;
     exec(reinterpret_cast<const std::size_t*>(0x10032000));
     //exec(reinterpret_cast<const std::size_t*>(
     while (true)
