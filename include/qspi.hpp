@@ -38,12 +38,14 @@ public:
         QSPI_read 
     };
     static void switch_to(Mode m);
-    static void chip_select(Device d);
+    static void chip_select(Device d, bool select);
 
     static int read8_write8_blocking(DataType write_buffer, ConstDataType read_buffer);
     static int spi_read8(DataType write_buffer);
     static int spi_write8(ConstDataType read_buffer);
     static int qspi_read8(DataType write_buffer);
     static int qspi_write8(ConstDataType read_buffer);
+
+    static void switch_to_qspi_read();
 };
 

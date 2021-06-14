@@ -19,35 +19,31 @@
 #include <cstdint>
 #include <span>
 
-#include <eul/functional/function.hpp>
+#include "qspi.hpp"
 
-void process_frame();
-
-namespace msgpu 
+namespace msgpu::memory 
 {
 
-void initialize_board();
-uint8_t byte_buf();
-void initialize_signal_generator();
-void deinitialize_signal_generator();
+class QspiPSRAM
+{
+public:
+    QspiPSRAM(Qspi::Device device);
 
-std::size_t fill_scanline(std::span<uint32_t> buffer, std::size_t line);
+    bool init();
+    bool reset();
 
-std::span<const uint8_t> get_scanline(std::size_t line);
+    using DataBuffer = std::span<uint8_t>;
+    using ConstDataBuffer = std::span<const uint8_t>;
+    std::size_t write(const std::size_t address, const ConstDataBuffer data);
+    std::size_t read(const std::size_t address, DataBuffer data);
+private:
+    bool perform_post();
+    void enter_qpi_mode();
+    void exit_qpi_mode();
+   
+    Qspi::Device device_;
+    Qspi qspi_;
+};
 
-void frame_update();
+} // namespace msgpu::memory
 
-uint8_t read_byte();
-void write_bytes(std::span<const uint8_t> byte);
-
-void set_resolution(uint16_t width, uint16_t height);
-
-uint32_t get_millis();
-void sleep_ms(uint32_t time);
-void sleep_us(uint32_t time);
-
-void block_display();
-void unblock_display();
-} // namespace msgpu  
-
-void start_vga();

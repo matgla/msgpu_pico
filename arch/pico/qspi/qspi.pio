@@ -17,52 +17,39 @@
 .program spi_cpha0 
 .side_set 1 
     out pins, 1 side 0 [1] 
-    in pins, 1 side 1 [1]
-
-.program spi_cpha1 
-.side_set 1 
-    out x, 1 side 0 
-    mov pins, x side 1 [1] 
-    in pins, 1 side 0 
+    in  pins, 1 side 1 [1]
 
 .program qspi_write
 .side_set 1 
-    out pins, 4 side 0 
-    nop         side 1
+    out pins, 4 side 0 [1]
+    in  NULL, 4 side 1 [1]
 
 .program qspi_read 
 .side_set 1 
-    nop        side 0
-    in pins, 4 side 1
+    in  pins, 4      side 0 [1]
+    out NULL, 4      side 1 [1]
 
 
 % c-sdk {
 
 #include "hardware/gpio.h" 
 
-static inline void pio_qspi_init(PIO pio,
+static inline void pio_qspi_spi_init(PIO pio,
     uint32_t sm,
     uint32_t prog_offs,
     uint32_t n_bits, 
     float clkdiv,
-    bool cpha, 
-    bool cpol, 
     uint32_t pin_sck,
     uint32_t pin_mosi, 
     uint32_t pin_miso
 ) 
 {
-    pio_sm_config c = cpha ? spi_cpha1_program_get_default_config(prog_offs) :
-    spi_cpha0_program_get_default_config(prog_offs);
+    pio_sm_config c = spi_cpha0_program_get_default_config(prog_offs);
 
+    // GPIO
     sm_config_set_out_pins(&c, pin_mosi, 1);
-
     sm_config_set_in_pins(&c, pin_miso);
     sm_config_set_sideset_pins(&c, pin_sck);
-
-    sm_config_set_out_shift(&c, false, true, n_bits);
-    sm_config_set_in_shift(&c, false, true, n_bits);
-    sm_config_set_clkdiv(&c, clkdiv);
 
     pio_sm_set_pins_with_mask(pio, sm, 0, (1u << pin_sck) | (1u << pin_mosi));
     pio_sm_set_pindirs_with_mask(pio, sm, (1u << pin_sck) | (1u << pin_mosi), (1u << pin_sck) | (1u << pin_mosi) | (1u
@@ -72,77 +59,52 @@ static inline void pio_qspi_init(PIO pio,
     pio_gpio_init(pio, pin_miso);
     pio_gpio_init(pio, pin_sck);
 
-    gpio_set_outover(pin_sck, cpol ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
-
     hw_set_bits(&pio->input_sync_bypass, 1u << pin_miso);
-
-    pio_sm_init(pio, sm, prog_offs, &c);
-    pio_sm_set_enabled(pio, sm, true);
-
-}
-
-static inline void pio_qspi_init_qspi_read(
-    PIO pio,
-    uint32_t sm,
-    uint32_t prog_offs,
-    uint32_t n_bits,
-    float clkdiv,
-    bool cpha,
-    bool cpol,
-    uint32_t pin_sck,
-    uint32_t pin_io_base
-)
-{
-    pio_sm_config c = qspi_read_program_get_default_config(prog_offs);
-
-    sm_config_set_in_pins(&c, pin_io_base);
-
-    sm_config_set_sideset_pins(&c, pin_sck);
-
+    // FIFO 
+    sm_config_set_out_shift(&c, false, true, n_bits);
     sm_config_set_in_shift(&c, false, true, n_bits);
+
+    // Clock 
     sm_config_set_clkdiv(&c, clkdiv);
 
-    pio_sm_set_pins_with_mask(pio, sm, 0, 
-        (1u << pin_sck) 
-        | (1u << (pin_io_base + 0))
-        | (1u << (pin_io_base + 1))
-        | (1u << (pin_io_base + 2))
-        | (1u << (pin_io_base + 3))
-    );
-
-    pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base, 4, false);
-
-    pio_gpio_init(pio, pin_sck);
-    pio_gpio_init(pio, pin_io_base + 0);
-    pio_gpio_init(pio, pin_io_base + 1);
-    pio_gpio_init(pio, pin_io_base + 2);
-    pio_gpio_init(pio, pin_io_base + 3);
-
-    gpio_set_outover(pin_sck, cpol ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
-
-    hw_set_bits(&pio->input_sync_bypass, 
-        (1u <<   (pin_io_base + 0)) 
-        | (1u << (pin_io_base + 1))
-        | (1u << (pin_io_base + 2))
-        | (1u << (pin_io_base + 3))
-    );
 
     pio_sm_init(pio, sm, prog_offs, &c);
     pio_sm_set_enabled(pio, sm, true);
+
 }
 
-static inline void pio_qspi_init_qspi_write(
+static inline void pio_qspi_set_spi(PIO pio, uint32_t sm, uint32_t pin_sck, uint32_t pin_mosi, uint32_t pin_miso)
+{
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_mosi, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_miso, 1, false);
+ 
+    }
+
+static inline void __time_critical_func(pio_qspi_set_qspi_read)(PIO pio, uint32_t sm, uint32_t pin_sck, uint32_t pin_base)
+{
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, 4, false);
+}
+
+static inline void pio_qspi_set_qspi_write(PIO pio, uint32_t sm, uint32_t pin_sck, uint32_t pin_base)
+{
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, 4, true);
+}
+
+static inline void pio_qspi_disable(PIO pio, uint32_t sm)
+{
+}
+
+static inline void pio_qspi_qspi_write_init(
     PIO pio,
     uint32_t sm,
     uint32_t prog_offs,
     uint32_t n_bits,
     float clkdiv,
-    bool cpha,
-    bool cpol,
     uint32_t pin_sck,
     uint32_t pin_io_base
 )
 {
+    // GPIO 
     pio_gpio_init(pio, pin_sck);
     for (uint32_t i = 0; i < 4; ++i)
     {
@@ -151,27 +113,73 @@ static inline void pio_qspi_init_qspi_write(
 
     pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
     pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base, 4, true);
-
+    pio_sm_set_pins_with_mask(pio, sm, 0, (1u << pin_sck));
+ 
     pio_sm_config c = qspi_write_program_get_default_config(prog_offs);
 
     sm_config_set_out_pins(&c, pin_io_base, 4);
+    //sm_config_set_in_pins(&c, pin_io_base);
+ 
     sm_config_set_sideset_pins(&c, pin_sck);
+
+    // FIFO
     sm_config_set_out_shift(&c, false, true, n_bits);
-    
-    sm_config_set_clkdiv(&c, clkdiv);
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    sm_config_set_in_shift(&c, false, true, n_bits);
    
-//    pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
-//    pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base, 1, true);
-//    pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base + 1, 1, true);
+    // Clock
+    sm_config_set_clkdiv(&c, clkdiv);
 
-
-    gpio_set_outover(pin_sck, cpol ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
 
     pio_sm_init(pio, sm, prog_offs, &c);
     pio_sm_set_enabled(pio, sm, true);
 }
 
+static inline void pio_qspi_qspi_read_init(
+    PIO pio,
+    uint32_t sm,
+    uint32_t prog_offs,
+    uint32_t n_bits,
+    float clkdiv,
+    uint32_t pin_sck,
+    uint32_t pin_io_base
+)
+{
+    // GPIO 
+    pio_gpio_init(pio, pin_sck);
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        pio_gpio_init(pio, pin_io_base + i);
+    }
+
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_io_base, 4, false);
+    pio_sm_set_pins_with_mask(pio, sm, 0, (1u << pin_sck));
+
+    pio_sm_config c = qspi_write_program_get_default_config(prog_offs);
+
+    //sm_config_set_out_pins(&c, pin_io_base, 4);
+    sm_config_set_in_pins(&c, pin_io_base);
+ 
+    sm_config_set_sideset_pins(&c, pin_sck);
+
+    // FIFO
+    sm_config_set_in_shift(&c, false, true, n_bits);
+    sm_config_set_out_shift(&c, false, true, n_bits);
+   
+    // Clock
+    sm_config_set_clkdiv(&c, clkdiv);
+
+    hw_set_bits(&pio->input_sync_bypass, 1u << pin_io_base);
+    hw_set_bits(&pio->input_sync_bypass, 1u << (pin_io_base + 1));
+    hw_set_bits(&pio->input_sync_bypass, 1u << (pin_io_base + 2 ));
+    hw_set_bits(&pio->input_sync_bypass, 1u << (pin_io_base + 3 ));
+
+
+
+
+    pio_sm_init(pio, sm, prog_offs, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
 
 
 %}

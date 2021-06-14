@@ -60,13 +60,15 @@
 
 #include "symbol_codes.h"
 
-
+#include "pico/stdlib.h"
 
 //using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
 //static auto modes = msgpu::mode::ModesFactory<>()
 //    .add_mode<DualBuffered3DGraphic_320x240_256>()
 //    .create();
+
+#include "memory/psram.hpp"
 
 namespace msgpu 
 {
@@ -151,24 +153,91 @@ int main()
   //  printf("Sizeof: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::FrameBufferType::BufferType));
   //  printf("Sizeof mode: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256));
   //  printf("Sizeof base: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::Base));
-    std::size_t i = 0;
-    for (;i < 2; ++i)
-    {
-        msgpu::sleep_ms(1000);
-        printf("Waiting\n");
-    }
-    printf("Loading module\n");
-    exec(reinterpret_cast<const std::size_t*>(0x10032000));
     //exec(reinterpret_cast<const std::size_t*>(
+    //
+    printf("Testing QSPI module\n");
+  //      Qspi qspi;
+  //  qspi.init();
+  //  qspi.switch_to(Qspi::Mode::SPI);
+
+  //  qspi.chip_select(Qspi::Device::Ram, false);
+
+  //  sleep_us(200);
+  //  uint8_t reset_en[] = {0x66};
+   
+  //  qspi.chip_select(Qspi::Device::Ram, true);
+  //  qspi.spi_write8(reset_en);
+  //  qspi.chip_select(Qspi::Device::Ram, false);
+  //  uint8_t reset_cmd[] = {0x99};
+  //  qspi.chip_select(Qspi::Device::Ram, true);
+  //  qspi.spi_write8(reset_cmd);
+  //  qspi.chip_select(Qspi::Device::Ram, false);
+  //  sleep_us(100);
+
+  //  qspi.chip_select(Qspi::Device::Ram, true);
+
+  //  uint8_t read_eid[] = {0x9f, 0x00, 0x00, 0x00};
+  //  uint8_t eid[8] = {};
+  //  qspi.spi_write8(read_eid);
+  //  qspi.spi_read8(eid);
+  //  qspi.chip_select(Qspi::Device::Ram, false);
+
+  //  printf("EID: ");
+  //  for (auto b : eid)
+  //  {
+  //      printf("0x%x, ", b);
+  //  }
+  //  printf("\n");
+    msgpu::memory::QspiPSRAM framebuffer(Qspi::Device::Ram);
+    if (!framebuffer.init())
+    {
+        printf("QSPI initialization error\n");
+        while (true) {}
+    }
     while (true)
     {
-        msgpu::sleep_ms(1000);
+        msgpu::sleep_ms(100);
         printf("Working\n");
+        static uint8_t i = 0;
+        const uint8_t buffer[] = {0x09, ++i, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23};
+        framebuffer.write(0x0, buffer);
+
+        uint8_t readed[sizeof(buffer)];
+        framebuffer.read(0x0, readed);
+
+        printf("Readed: { ");
+        for (auto b : readed)
+        {
+            printf("0x%x, ", b);
+        }
+        printf(" }\n");
+//        static uint8_t byte = 1;
+//        uint8_t command[] = {0x02, 0x00, 0x00, 0x00, 0xaa, 0xab, 0xfa, 0xce, byte++};
+
+//        qspi.chip_select(Qspi::Device::Ram, true);
+//        qspi.spi_write8(command);
+//        qspi.chip_select(Qspi::Device::Ram, false);
+//        uint8_t tmp[9] = {0x03, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff};
+//        uint8_t readed[9] = {};
+//        sleep_us(5);
+//        qspi.chip_select(Qspi::Device::Ram, true);
+//        qspi.read8_write8_blocking(readed, tmp);
+//        qspi.chip_select(Qspi::Device::Ram, false);
+
+//        printf("Readed: ");
+//        for (const auto b : readed)
+//        {
+//            printf("0x%x, ", b);
+//        }
+//        printf ("\n");
+
+
  //       auto message = msgpu::usart_io_data.pop();
  //       if (message)
  //       {
  //           msgpu::proc.process_message(*message);
  //       }
+
     }
 
     msgpu::deinitialize_signal_generator();

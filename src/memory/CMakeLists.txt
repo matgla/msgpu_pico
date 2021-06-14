@@ -19,9 +19,11 @@ add_library(msgpu_video_ram)
 target_sources(msgpu_video_ram
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/video_ram.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/psram.hpp
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/video_ram.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/psram.cpp
 )
 
 target_compile_options(msgpu_video_ram PUBLIC
@@ -31,3 +33,8 @@ target_compile_options(msgpu_video_ram PUBLIC
 )
 
 target_include_directories(msgpu_video_ram PUBLIC ${PROJECT_SOURCE_DIR}/src)
+
+target_link_libraries(msgpu_video_ram
+    PRIVATE 
+        msgpu_arch
+)

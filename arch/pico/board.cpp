@@ -188,5 +188,9 @@ void sleep_ms(uint32_t t)
     ::sleep_ms(t);
 }
 
+void sleep_us(uint32_t t)
+{
+    ::sleep_us(t);
+}
 
 } // namespace msgpu 
