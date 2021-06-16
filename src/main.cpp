@@ -188,29 +188,38 @@ int main()
   //      printf("0x%x, ", b);
   //  }
   //  printf("\n");
-    msgpu::memory::QspiPSRAM framebuffer(Qspi::Device::Ram);
-    if (!framebuffer.init())
-    {
-        printf("QSPI initialization error\n");
-        while (true) {}
-    }
+ //   msgpu::memory::QspiPSRAM framebuffer(Qspi::Device::Ram);
+//    if (!framebuffer.init())
+//    {
+//        printf("QSPI initialization error\n");
+//        while (true) {}
+//    }
+    Qspi qspi;
+    qspi.init();
+    
     while (true)
     {
         msgpu::sleep_ms(100);
         printf("Working\n");
-        static uint8_t i = 0;
-        const uint8_t buffer[] = {0x09, ++i, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23};
-        framebuffer.write(0x0, buffer);
+        uint8_t data[] = {
+            0b10101010
+        };
+        qspi.chip_select(Qspi::Device::Ram, true);
+        qspi.spi_write8(data);
+        qspi.chip_select(Qspi::Device::Ram, false);
 
-        uint8_t readed[sizeof(buffer)];
-        framebuffer.read(0x0, readed);
+//        const uint8_t buffer[] = {0x09, ++i, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23};
+//        framebuffer.write(0x0, buffer);
 
-        printf("Readed: { ");
-        for (auto b : readed)
-        {
-            printf("0x%x, ", b);
-        }
-        printf(" }\n");
+//        uint8_t readed[sizeof(buffer)];
+//        framebuffer.read(0x0, readed);
+
+//        printf("Readed: { ");
+//        for (auto b : readed)
+//        {
+//            printf("0x%x, ", b);
+//        }
+//        printf(" }\n");
 //        static uint8_t byte = 1;
 //        uint8_t command[] = {0x02, 0x00, 0x00, 0x00, 0xaa, 0xab, 0xfa, 0xce, byte++};
 

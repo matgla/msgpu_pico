@@ -43,25 +43,27 @@ static pio_qspi_inst qspi_data = {
 
 void Qspi::init() 
 {
-    qspi_clock_program = pio_add_program(pio, &qspi_sclk_program);
+ //   qspi_clock_program = pio_add_program(pio, &qspi_sclk_program);
     qspi_data_program = pio_add_program(pio, &qspi_program);
 
     gpio_init(pin_cs);
     gpio_put(pin_cs, 1);
     gpio_set_dir(pin_cs, GPIO_OUT);
 
-    pio_qspi_init_clock(pio, 
-        clk_sm, 
-        qspi_clock_program,
-        clkdiv, 
-        pin_sck
-    );
+ //   pio_qspi_init_clock(pio, 
+ //       clk_sm, 
+ //       qspi_clock_program,
+ //       clkdiv, 
+ //       pin_sck
+ //   );
 
     pio_qspi_init_data(pio,
         data_sm,
         qspi_data_program,
         clkdiv,
-        pin_mosi 
+        pin_mosi,
+        pin_sck,
+        pin_cs
     );
 }
 

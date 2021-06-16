@@ -25,6 +25,7 @@ void __time_critical_func(pio_spi_write8_read8_blocking)(
     std::size_t len
 )
 {
+
     std::size_t tx_remain = len, rx_remain = len; 
     io_rw_8* txfifo = (io_rw_8*)&qspi->pio->txf[qspi->sm];
     io_rw_8* rxfifo = (io_rw_8*) &qspi->pio->rxf[qspi->sm];
@@ -75,15 +76,26 @@ void __time_critical_func(pio_spi_write8_blocking)(
     std::size_t len
 )
 {
+    printf("Writing command with len: %d\n", len * 8 - 1);
+    uint32_t command = (pio_encode_jmp(qspi_offset_spi_rw) << 16u)
+        | (8 * len - 1);
+
+
+
+    pio_sm_put(qspi->pio, qspi->sm, command);
+    //pio_sm_exec(qspi->pio, qspi->sm, pio_encode_jmp(qspi_offset_spi_rw));
+
+    const uint32_t* dsrc = reinterpret_cast<const uint32_t*>(src);
     std::size_t tx_remain = len, rx_remain = len; 
-    io_rw_8* txfifo = (io_rw_8*) &qspi->pio->txf[qspi->sm];
-    io_rw_8* rxfifo = (io_rw_8*) &qspi->pio->rxf[qspi->sm];
+    io_rw_32* txfifo = (io_rw_32*) &qspi->pio->txf[qspi->sm];
+    io_rw_32* rxfifo = (io_rw_32*) &qspi->pio->rxf[qspi->sm];
 
     while (tx_remain || rx_remain)
     {
         if (tx_remain && !pio_sm_is_tx_fifo_full(qspi->pio, qspi->sm)) 
         {
-            *txfifo = *src++;
+            pio_sm_put(qspi->pio, qspi->sm, *dsrc++);
+            //*txfifo = *src++;
             --tx_remain;
         }
         if (rx_remain && !pio_sm_is_rx_fifo_empty(qspi->pio, qspi->sm)) 

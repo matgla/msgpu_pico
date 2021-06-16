@@ -14,26 +14,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-.define qspi_clk_irq 7
-
-.program qspi_sclk
-.wrap_target 
-    irq qspi_clk_irq        
-    irq clear qspi_clk_irq  
-.wrap 
+// .define qspi_clk_irq 7
+// 
+// .program qspi_sclk
+// .wrap_target 
+//     irq qspi_clk_irq        
+//     irq clear qspi_clk_irq  
+// .wrap 
 
 .program qspi
 .origin 0
+.side_set 1 opt
 public wait_for_command:
-    set pins, 0b0000
-    set pindirs, 0b1111
+    set pins, 0b00000
+    set pindirs, 31 
+
+idle_wait: 
+.wrap_target
+    ;set pins, 0 side 0
+    out exec, 16 side 0
+.wrap
+    ; jmp idle_wait
 
 public spi_rw:
-    wait 0 irq qspi_clk_irq
-    out pins, 1
-    wait 1 irq qspi_clk_irq 
-    in pins, 1
-
+    out x, 16
+    ;set pins, 0
+    ;set pindirs, 0b0001
+ spi_loop:
+     out pins, 1 side 1 [1]
+     in pins, 1 side 0 
+     jmp x-- spi_loop ;side 0
+     ;set pins, 0 ;side 0 
+     jmp idle_wait ;side 0
+ 
 % c-sdk {
 
 #include "hardware/gpio.h" 
@@ -46,20 +59,20 @@ static inline void pio_qspi_init_clock(
     uint32_t pin_sck
 )
 {
-    // GPIO
-    pio_gpio_init(pio, pin_sck);
-    pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
-
-    pio_sm_config c = qspi_sclk_program_get_default_config(program_offset);
-
-    sm_config_set_sideset_pins(&c, pin_sck);
-
-    // CLOCK 
-    sm_config_set_clkdiv(&c, clkdiv);
-
-    // SM 
-    pio_sm_init(pio, sm, program_offset, &c);
-    pio_sm_set_enabled(pio, sm, true);
+//     // GPIO
+//     pio_gpio_init(pio, pin_sck);
+//     pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
+// 
+//     pio_sm_config c = qspi_sclk_program_get_default_config(program_offset);
+// 
+//     sm_config_set_sideset_pins(&c, pin_sck);
+// 
+//     // CLOCK 
+//     sm_config_set_clkdiv(&c, clkdiv);
+// 
+//     // SM 
+//     pio_sm_init(pio, sm, program_offset, &c);
+//     pio_sm_set_enabled(pio, sm, true);
 }
 
 static inline void pio_qspi_init_data(
@@ -67,10 +80,14 @@ static inline void pio_qspi_init_data(
     uint32_t sm, 
     uint32_t program_offset,
     float clkdiv,
-    uint32_t pin_base 
+    uint32_t pin_base,
+    uint32_t pin_sck,
+    uint32_t pin_cs
 )
 {
     // GPIO 
+    pio_gpio_init(pio, pin_sck);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_sck, 1, true);
     for (uint32_t i = 0; i < 4; ++i)
     {
         pio_gpio_init(pio, pin_base + i);
@@ -81,11 +98,17 @@ static inline void pio_qspi_init_data(
     pio_sm_config c = qspi_program_get_default_config(program_offset);
 
     // FIFO
-    sm_config_set_out_shift(&c, false, true, 8);
-    sm_config_set_in_shift(&c, false, true, 8);
-   
+    sm_config_set_out_shift(&c, false, true, 32);
+    sm_config_set_in_shift(&c, false, true, 32);
+  
+    // GPIO 
+
+    sm_config_set_out_pins(&c, pin_base, 4);
+    sm_config_set_in_pins(&c, pin_base);
+    sm_config_set_sideset_pins(&c, pin_sck);
+
     // Clock
-   // sm_config_set_clkdiv(&c, clkdiv);
+    sm_config_set_clkdiv(&c, clkdiv);
 
     pio_sm_init(pio, sm, program_offset, &c);
     pio_sm_set_enabled(pio, sm, true);
