@@ -30,7 +30,7 @@ struct pio_qspi_inst
     uint32_t cs_pin;
 };
 
-void pio_spi_write8_blocking(const pio_qspi_inst* spi, const uint8_t* src, std::size_t len);
+void pio_spi_write8_blocking(const pio_qspi_inst* spi, const uint8_t* src, std::size_t len, uint32_t pin_cs);
 
 void pio_spi_read8_blocking(const pio_qspi_inst* spi, uint8_t* dst, std::size_t len);
 

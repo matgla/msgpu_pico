@@ -133,7 +133,7 @@ int Qspi::spi_read8(DataType write_buffer)
 
 int Qspi::spi_write8(ConstDataType read_buffer)
 {
-    pio_spi_write8_blocking(&qspi_data, read_buffer.data(), read_buffer.size());
+    pio_spi_write8_blocking(&qspi_data, read_buffer.data(), read_buffer.size(), pin_cs);
     return read_buffer.size();
 }
 

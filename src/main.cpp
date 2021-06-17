@@ -196,17 +196,21 @@ int main()
 //    }
     Qspi qspi;
     qspi.init();
-    
+ 
     while (true)
     {
         msgpu::sleep_ms(100);
         printf("Working\n");
         uint8_t data[] = {
-            0b10101010
-        };
-        qspi.chip_select(Qspi::Device::Ram, true);
-        qspi.spi_write8(data);
-        qspi.chip_select(Qspi::Device::Ram, false);
+             0b10101010,
+             0xe7,
+             0xfa,
+             0xce
+         };
+     //    qspi.chip_select(Qspi::Device::Ram, true);
+         qspi.spi_write8(data);
+      //   qspi.chip_select(Qspi::Device::Ram, false);
+
 
 //        const uint8_t buffer[] = {0x09, ++i, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23};
 //        framebuffer.write(0x0, buffer);
