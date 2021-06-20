@@ -27,7 +27,7 @@ namespace msgpu::memory
 class QspiPSRAM
 {
 public:
-    QspiPSRAM(Qspi::Device device);
+    QspiPSRAM(Qspi& qspi);
 
     bool init();
     bool reset();
@@ -36,13 +36,12 @@ public:
     using ConstDataBuffer = std::span<const uint8_t>;
     std::size_t write(const std::size_t address, const ConstDataBuffer data);
     std::size_t read(const std::size_t address, DataBuffer data);
-private:
+//private:
     bool perform_post();
     void enter_qpi_mode();
     void exit_qpi_mode();
    
-    Qspi::Device device_;
-    Qspi qspi_;
+    Qspi& qspi_;
 };
 
 } // namespace msgpu::memory

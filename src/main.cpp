@@ -194,36 +194,52 @@ int main()
 //        printf("QSPI initialization error\n");
 //        while (true) {}
 //    }
-    Qspi qspi;
+    Qspi qspi(Qspi::Device::framebuffer, 125.f);//1.95f);
     qspi.init();
+
+    msgpu::memory::QspiPSRAM framebuffer(qspi);
+    if (!framebuffer.init())
+    {
+        printf("QSPI intialization error\n");
+    }
+ 
+    uint8_t buf[255];
+        const uint8_t buffer[] = {0xff, 0x4, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23, 0x1, 0x2, 0x3};
+        framebuffer.write(0x10, buffer);
  
     while (true)
     {
-        msgpu::sleep_ms(100);
-        printf("Working\n");
-        uint8_t data[] = {
-             0b10101010,
-             0xe7,
-             0xfa,
-             0xce
-         };
-     //    qspi.chip_select(Qspi::Device::Ram, true);
-         qspi.spi_write8(data);
-      //   qspi.chip_select(Qspi::Device::Ram, false);
+        static int i = 0;
+       
+        uint8_t readed[sizeof(buffer)] = {};
+        framebuffer.read(0x10, readed);
 
+        printf("Readed: { ");
+        for (auto b : readed)
+        {
+            printf("0x%x, ", b);
+        }
+        printf(" }\n");
 
-//        const uint8_t buffer[] = {0x09, ++i, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23};
-//        framebuffer.write(0x0, buffer);
+        uint8_t read_command[] = {0x0b, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        
+        uint8_t read_data[sizeof(read_command)] = {};
+        framebuffer.exit_qpi_mode();
+        msgpu::sleep_us(5);
+        qspi.spi_transmit(read_command, read_data);
+        msgpu::sleep_us(5);
+        framebuffer.enter_qpi_mode();
+        printf("SPI readed: { ");
+        for (auto b : read_data)
+        {
+            printf("0x%x, ", b);
+        }
+        printf(" }\n");
 
-//        uint8_t readed[sizeof(buffer)];
-//        framebuffer.read(0x0, readed);
+        static int n = 0;
+        if (n++ > 5) while (true);
+        
 
-//        printf("Readed: { ");
-//        for (auto b : readed)
-//        {
-//            printf("0x%x, ", b);
-//        }
-//        printf(" }\n");
 //        static uint8_t byte = 1;
 //        uint8_t command[] = {0x02, 0x00, 0x00, 0x00, 0xaa, 0xab, 0xfa, 0xce, byte++};
 

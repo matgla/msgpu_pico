@@ -23,22 +23,19 @@
 namespace msgpu::memory 
 {
 
-QspiPSRAM::QspiPSRAM(Qspi::Device device)
-    : device_(device)
+QspiPSRAM::QspiPSRAM(Qspi& qspi)
+    : qspi_(qspi)
 {
 }
 
 bool QspiPSRAM::init()
 {
-    qspi_.init();
-    qspi_.switch_to(Qspi::Mode::SPI);
     printf("Now under qspi mode\n");
     if (!reset())
     {
         printf("Reset failure\n");
         exit_qpi_mode();
     }
-    qspi_.switch_to(Qspi::Mode::SPI);
     if (reset())
     {
         enter_qpi_mode();
@@ -50,18 +47,12 @@ bool QspiPSRAM::init()
 bool QspiPSRAM::reset()
 {
     printf("Reset\n");
-    qspi_.chip_select(device_, false);
     msgpu::sleep_us(200); // Wait for initialization from datasheet 
 
     constexpr uint8_t reset_enable_cmd[] = {0x66};
     constexpr uint8_t reset_cmd[] = {0x99};
-
-    qspi_.chip_select(device_, true);
-    qspi_.spi_write8(reset_enable_cmd);
-    qspi_.chip_select(device_, false);
-    qspi_.chip_select(device_, true);
-    qspi_.spi_write8(reset_cmd);
-    qspi_.chip_select(device_, false);
+    qspi_.spi_write(reset_enable_cmd);
+    qspi_.spi_write(reset_cmd);
 
     msgpu::sleep_us(100);
     return perform_post();
@@ -69,51 +60,24 @@ bool QspiPSRAM::reset()
 
 std::size_t QspiPSRAM::write(const std::size_t address, const ConstDataBuffer data)
 {
-    qspi_.switch_to(Qspi::Mode::QSPI_write);
     const uint8_t write_cmd[] = {0x38, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff};
-    qspi_.chip_select(device_, true);
-    qspi_.qspi_write8(write_cmd);
-    qspi_.qspi_write8(data);
-    qspi_.chip_select(device_, false);
+    qspi_.qspi_command_write(write_cmd, data, 0);
     return data.size();
-//    exit_qpi_mode();
-
-//    qspi_.switch_to(Qspi::Mode::SPI);
-//    const uint8_t write_cmd[] = {0x02, (address >> 16) & 0xff, (address > 8) & 0xff, address & 0xff};
-//    qspi_.chip_select(device_, true);
-//    qspi_.spi_write8(write_cmd);
-//    qspi_.spi_write8(data);
-//    qspi_.chip_select(device_, false);
-
-//    enter_qpi_mode();
-//    return 0;
 }
 
 std::size_t QspiPSRAM::read(const std::size_t address, DataBuffer data)
 {
-    qspi_.switch_to(Qspi::Mode::QSPI_write);
     const uint8_t read_cmd[] = {0xeb, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff};
 
-    uint8_t wait_cycles[3];
-    qspi_.chip_select(device_, true);
-    qspi_.qspi_write8(read_cmd);
-    //qspi_.switch_to(Qspi::Mode::QSPI_read);
-    qspi_.switch_to_qspi_read();
-    qspi_.qspi_read8(wait_cycles);
-    qspi_.qspi_read8(data);
-    //msgpu::sleep_us(1);
-    qspi_.chip_select(device_, false);
+    qspi_.qspi_command_read(read_cmd, data, 6);
     return data.size();
 }
 
 bool QspiPSRAM::perform_post()
 {
-    constexpr uint8_t read_eid_cmd[] = {0x9f, 0x00, 0x00, 0x00};
-    uint8_t eid_buffer[8] = {};
-    qspi_.chip_select(device_, true);
-    qspi_.spi_write8(read_eid_cmd);
-    qspi_.spi_read8(eid_buffer);
-    qspi_.chip_select(device_, false);
+    constexpr uint8_t read_eid_cmd[] = {0x9f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t eid_buffer[sizeof(read_eid_cmd)] = {};
+    qspi_.spi_transmit(read_eid_cmd, eid_buffer);
 
     printf ("Readed EID: { ");
     for (auto b : eid_buffer)
@@ -121,26 +85,19 @@ bool QspiPSRAM::perform_post()
         printf("0x%x, ", b);
     }
     printf(" }\n");
-    return eid_buffer[0] == 0x0d && eid_buffer[1] == 0x5d;
+    return eid_buffer[4] == 0x0d && eid_buffer[5] == 0x5d;
 }
 
 void QspiPSRAM::exit_qpi_mode()
 {
     constexpr uint8_t exit_qpi_cmd[] = {0xf5};
-    qspi_.switch_to(Qspi::Mode::QSPI_write);
-    qspi_.chip_select(device_, true);
-    qspi_.qspi_write8(exit_qpi_cmd);
-    qspi_.chip_select(device_, false);
-    qspi_.switch_to(Qspi::Mode::SPI);
+    qspi_.qspi_write(exit_qpi_cmd);
 }
 
 void QspiPSRAM::enter_qpi_mode()
 {
     constexpr uint8_t enter_qpi_cmd[] = {0x35};
-    qspi_.chip_select(device_, true);
-    qspi_.spi_write8(enter_qpi_cmd);
-    qspi_.chip_select(device_, false);
-    qspi_.switch_to(Qspi::Mode::QSPI_write);
+    qspi_.spi_write(enter_qpi_cmd);
 }
 
 } // namespace msgpu::memory

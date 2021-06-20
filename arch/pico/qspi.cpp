@@ -17,135 +17,390 @@
 #include <cstdint>
 #include <cstdio> 
 
+#include <pico/stdlib.h>
+#include <hardware/pio.h>
+
+#include "qspi.pio.h"
+
 #include "qspi.hpp"
 
-#include "qspi/pio_qspi.h"
-
-constexpr uint32_t pin_sck = 18;
-constexpr uint32_t pin_mosi = 19;
-constexpr uint32_t pin_miso = 20;
-constexpr uint32_t pin_io2 = 21;
-constexpr uint32_t pin_io3 = 22;
-constexpr uint32_t pin_cs = 26;
-
-static PIO pio = pio1;
-constexpr uint32_t clk_sm = 0;
-constexpr uint32_t data_sm = 1;
-static uint32_t qspi_clock_program = 0;
-static uint32_t qspi_data_program = 0;
 float clkdiv = 125.0f;
 
-static pio_qspi_inst qspi_data = {
-    .pio = ::pio, 
-    .sm = data_sm,
-    .cs_pin = pin_cs 
+namespace 
+{
+struct PinConfig 
+{
+    const uint32_t sck;
+    const uint32_t io_base;
+    const uint32_t cs;
+    const uint32_t sm; 
+    const PIO pio;
 };
+
+constexpr PinConfig get_config(const Qspi::Device device)
+{
+    switch (device)
+    {
+        case Qspi::Device::framebuffer: 
+        {
+            return {
+                .sck = 26,
+                .io_base = 18,
+                .cs = 22,
+                .sm = 0
+            };
+        }
+    }
+    return {};
+}
+
+constexpr PIO get_pio(const Qspi::Device device)
+{
+    switch (device) 
+    {
+        case Qspi::Device::framebuffer:
+        {
+            return pio1;
+        }
+    }
+    return {};
+}
+
+volatile io_rw_8* get_tx_fifo(PIO pio, uint32_t sm)
+{
+    return reinterpret_cast<io_rw_8*>(&pio->txf[sm]);
+}
+
+volatile io_ro_8* get_rx_fifo(PIO pio, uint32_t sm)
+{
+    return reinterpret_cast<io_ro_8*>(&pio->rxf[sm]);
+}
+
+static uint32_t qspi_data_program = 0;
+constexpr int default_timeout = 10000;
+}
+
+Qspi::Qspi(const Device device, float clkdiv)
+    : device_(device)
+    , pin_sck_(get_config(device).sck)
+    , pin_base_(get_config(device).io_base)
+    , pin_cs_(get_config(device).cs)
+    , sm_(get_config(device).sm)
+    , clkdiv_(clkdiv)
+{
+}
 
 void Qspi::init() 
 {
- //   qspi_clock_program = pio_add_program(pio, &qspi_sclk_program);
-    qspi_data_program = pio_add_program(pio, &qspi_program);
+    qspi_data_program = pio_add_program(get_pio(device_), &qspi_program);
 
-    gpio_init(pin_cs);
-    gpio_put(pin_cs, 1);
-    gpio_set_dir(pin_cs, GPIO_OUT);
-
- //   pio_qspi_init_clock(pio, 
- //       clk_sm, 
- //       qspi_clock_program,
- //       clkdiv, 
- //       pin_sck
- //   );
-
-    pio_qspi_init_data(pio,
-        data_sm,
+    pio_qspi_init_data(get_pio(device_),
+        sm_,
         qspi_data_program,
-        clkdiv,
-        pin_mosi,
-        pin_sck,
-        pin_cs
+        clkdiv_,
+        pin_base_,
+        pin_sck_,
+        pin_cs_
     );
 }
 
-void __time_critical_func(Qspi::chip_select)(Device d, bool select)
+bool Qspi::spi_transmit(ConstDataType src, DataType dest)
 {
-    switch (d)
+    if (dest.size() < src.size())
     {
-        case Device::Ram:
-        {
-            if (select)
-            {
-                gpio_put(pin_cs, 0);
-            }
-            else 
-            {
-                gpio_put(pin_cs, 1);
-            }
-        } break;
-        case Device::IO:
-        {
-        } break;
+        return false;
     }
-}
 
-void Qspi::switch_to(Mode m)
-{
-    switch (m)
+    auto pio = get_pio(device_);
+
+    const uint8_t* s = src.data();
+    uint8_t* d = dest.data();
+    auto* tx = get_tx_fifo(pio, sm_);
+    auto* rx = get_rx_fifo(pio, sm_);
+
+    std::size_t tx_remain = src.size();
+    std::size_t rx_remain = src.size();
+
+    wait_until_previous_finished();
+
+    pio_sm_set_in_pins(pio, sm_, pin_base_ + 1);
+    pio_sm_put(pio, sm_, src.size() * 8 - 1);
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_spi_rw));
+
+    int timeout = default_timeout;
+    while (tx_remain || rx_remain)
     {
-        case Mode::SPI: 
+        if (tx_remain && !pio_sm_is_tx_fifo_full(pio, sm_))
         {
-//            pio_qspi_disable(qspi_read.pio, qspi_read.sm);
-            //pio_qspi_disable(qspi_write.pio, qspi_write.sm);
-//            pio_qspi_set_spi(spi.pio, spi.sm, pin_sck, pin_mosi, pin_miso);
-        } break;
-        case Mode::QSPI_write: 
+            *tx = *s++;
+            --tx_remain;
+        }
+
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio, sm_))
         {
-  //          pio_qspi_disable(qspi_read.pio, qspi_read.sm);
-            //pio_qspi_disable(spi.pio, spi.sm);
-  //          pio_qspi_set_qspi_write(qspi_write.pio, qspi_write.sm, pin_sck, pin_mosi);
-        } break;
-        case Mode::QSPI_read:
-        {
-    //        pio_qspi_disable(qspi_write.pio, qspi_write.sm);
-            ////pio_qspi_disable(spi.pio, spi.sm);
-    //        pio_qspi_set_qspi_read(qspi_read.pio, qspi_read.sm, pin_sck, pin_mosi);
-        } break;
+            *d++ = *rx;
+            --rx_remain;
+        }
+        if (--timeout == 0) return false;
     }
+    return true;
 }
 
-void __time_critical_func(Qspi::switch_to_qspi_read)()
+bool Qspi::spi_read(DataType dest)
 {
-    //pio_qspi_disable(qspi_write.pio, qspi_write.sm);
-   // pio_qspi_set_qspi_read(qspi_read.pio, qspi_read.sm, pin_sck, pin_mosi);
+    auto pio = get_pio(device_);
+    uint8_t* d = dest.data();
+    auto* tx = get_tx_fifo(pio, sm_);
+    auto* rx = get_rx_fifo(pio, sm_);
+
+    std::size_t tx_remain = dest.size();
+    std::size_t rx_remain = dest.size();
+
+    wait_until_previous_finished();
+    
+    pio_sm_set_in_pins(pio, sm_, pin_base_ + 1);
+    pio_sm_put(pio, sm_, dest.size() * 8 - 1);
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_spi_rw));
+
+    int timeout = default_timeout;
+    while (tx_remain || rx_remain)
+    {
+        if (tx_remain && !pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = 0;
+            --tx_remain;
+        }
+
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio, sm_))
+        {
+            *d++ = *rx;
+            --rx_remain;
+        }
+        if (--timeout == 0) return false;
+    }
+    return true;
 }
 
-int Qspi::read8_write8_blocking(DataType write_buffer, ConstDataType read_buffer)
+bool Qspi::spi_write(ConstDataType src)
 {
-    pio_spi_write8_read8_blocking(&qspi_data, read_buffer.data(), write_buffer.data(), write_buffer.size());
-    return write_buffer.size();
+    auto pio = get_pio(device_);
+    const uint8_t* s = src.data();
+    auto* tx = get_tx_fifo(pio, sm_);
+    auto* rx = get_rx_fifo(pio, sm_);
+
+    std::size_t tx_remain = src.size();
+    std::size_t rx_remain = src.size();
+
+    wait_until_previous_finished();
+
+    pio_sm_put(pio, sm_, src.size() * 8 - 1);
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_spi_rw));
+
+    int timeout = default_timeout;
+    while (tx_remain || rx_remain)
+    {
+        if (tx_remain && !pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = *s++;
+            --tx_remain;
+        }
+
+        if (rx_remain && !pio_sm_is_rx_fifo_empty(pio, sm_))
+        {
+            static_cast<void>(*rx);
+            --rx_remain;
+        }
+        if (--timeout == 0) return false;
+    }
+    return true;
 }
 
-int Qspi::spi_read8(DataType write_buffer)
+bool Qspi::qspi_read(DataType dest)
 {
-    pio_spi_read8_blocking(&qspi_data, write_buffer.data(), write_buffer.size());
-    return write_buffer.size();
+    auto pio = get_pio(device_);
+    uint8_t* d = dest.data();
+    auto* rx = get_rx_fifo(pio, sm_);
+
+    std::size_t rx_remain = dest.size();
+
+    wait_until_previous_finished();
+
+    pio_sm_set_in_pins(pio, sm_, pin_base_);
+    pio_sm_put(pio, sm_, dest.size() * 2 - 2);
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_r));
+
+    int timeout = default_timeout;
+    while (rx_remain)
+    {
+        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+        {
+            *d++ = *rx;
+            --rx_remain;
+        }
+        if (--timeout == 0) return false;
+    }
+    return true;
 }
 
-int Qspi::spi_write8(ConstDataType read_buffer)
+bool Qspi::qspi_write(ConstDataType src)
 {
-    pio_spi_write8_blocking(&qspi_data, read_buffer.data(), read_buffer.size(), pin_cs);
-    return read_buffer.size();
+    auto pio = get_pio(device_);
+    const uint8_t* s = src.data();
+    auto* tx = get_tx_fifo(pio, sm_);
+
+    std::size_t tx_remain = src.size();
+
+    wait_until_previous_finished();
+
+    pio_sm_put(pio, sm_, src.size() * 2 - 1);
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_w));
+
+    int timeout = default_timeout;
+    while (tx_remain)
+    {
+        if (!pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = *s++;
+            --tx_remain;
+        }
+        if (--timeout == 0) return false;
+    }
+    return true;
 }
 
-int Qspi::qspi_read8(DataType write_buffer)
+bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycles)
 {
-    pio_qspi_read8_blocking(&qspi_data, write_buffer.data(), write_buffer.size());
-    return write_buffer.size();
+    if (wait_cycles % 2 != 0) return false; 
+
+    auto pio = get_pio(device_);
+
+    auto* tx = get_tx_fifo(pio, sm_);
+    auto* rx = get_rx_fifo(pio, sm_);
+    wait_until_previous_finished();
+
+    pio_sm_set_in_pins(pio, sm_, pin_base_);
+    
+    pio_sm_put(pio, sm_, command.size() * 2 - 1);
+    pio_sm_put(pio, sm_, wait_cycles + data.size() * 2 - 1);
+
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_command_r));
+
+    int timeout = default_timeout;
+
+    std::size_t command_remain = command.size();
+    const uint8_t* s = command.data();
+    while (command_remain)
+    {
+        if (!pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = *s++;
+            --command_remain;
+        }
+        //if (--timeout == 0) return false;
+    }
+
+    timeout = default_timeout;
+    std::size_t wait_remain = wait_cycles / 2;
+
+    while (wait_remain)
+    {
+        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+        {
+            static_cast<void>(*rx);
+            --wait_remain;
+        }
+
+        //if (--timeout == 0) return false;
+    }
+
+    timeout = default_timeout; 
+    std::size_t data_remain = data.size();
+    uint8_t* d = data.data();
+
+    while (data_remain)
+    {
+        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+        {
+            *d++ = *rx; 
+            --data_remain;
+        }
+        //if (--timeout == 0) return false;
+    }
+
+    return true;
 }
 
-int Qspi::qspi_write8(ConstDataType read_buffer)
+bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data, int wait_cycles)
 {
-    pio_qspi_write8_blocking(&qspi_data, read_buffer.data(), read_buffer.size());
-    return read_buffer.size();
+    if (wait_cycles % 2 != 0) return false; 
+
+    auto pio = get_pio(device_);
+    auto* tx = get_tx_fifo(pio, sm_);
+
+    wait_until_previous_finished();
+
+    int size = command.size() * 2 + wait_cycles + data.size() * 2 - 1;
+    pio_sm_put(pio, sm_, size);
+
+    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_w));
+
+    int timeout = default_timeout;
+
+    std::size_t command_remain = command.size();
+    const uint8_t* s = command.data();
+    while (command_remain)
+    {
+        if (!pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = *s++;
+            --command_remain;
+        }
+        if (--timeout == 0) return false;
+    }
+
+    timeout = default_timeout;
+    std::size_t wait_remain = wait_cycles / 2;
+
+    while (wait_remain)
+    {
+        if (!pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = 0;
+            --wait_remain;
+        }
+
+        if (--timeout == 0) return false;
+    }
+
+    timeout = default_timeout; 
+    std::size_t data_remain = data.size();
+    const uint8_t* d = data.data();
+
+    while (data_remain)
+    {
+        if (!pio_sm_is_tx_fifo_full(pio, sm_))
+        {
+            *tx = *d++;
+            --data_remain;
+        }
+        if (--timeout == 0) return false;
+    }
+
+    return true;
+
 }
 
+bool Qspi::wait_until_previous_finished()
+{
+    const int idle_wait_start = qspi_offset_idle_wait;
+    const int idle_wait_end = qspi_offset_idle_wait_end;
+    auto pio = get_pio(device_); 
+    int timeout = 10000;
+    while (pio->sm[sm_].addr < idle_wait_start
+        || pio->sm[sm_].addr >= idle_wait_end) 
+    {
+        //if (--timeout == 0) return false;
+    }
+
+    return true;
+}

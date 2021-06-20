@@ -23,29 +23,36 @@
 class Qspi 
 {
 public:
-    static void init();
+    enum class Device : uint8_t 
+    {
+        framebuffer
+    };
+
+    Qspi(const Device device, float clkdiv);
+
+    void init();
+    
     using DataType = std::span<uint8_t>;
     using ConstDataType = std::span<const uint8_t>;
 
-    enum Device {
-        Ram, 
-        IO
-    };
+    bool spi_transmit(ConstDataType src, DataType dest);
+    bool spi_read(DataType dest);
+    bool spi_write(ConstDataType src);
 
-    enum Mode {
-        SPI,
-        QSPI_write, 
-        QSPI_read 
-    };
-    static void switch_to(Mode m);
-    static void chip_select(Device d, bool select);
+    bool qspi_read(DataType dest);
+    bool qspi_write(ConstDataType src);
 
-    static int read8_write8_blocking(DataType write_buffer, ConstDataType read_buffer);
-    static int spi_read8(DataType write_buffer);
-    static int spi_write8(ConstDataType read_buffer);
-    static int qspi_read8(DataType write_buffer);
-    static int qspi_write8(ConstDataType read_buffer);
+    bool qspi_command_read(ConstDataType command, DataType data, int wait_cycles);
 
-    static void switch_to_qspi_read();
+    bool qspi_command_write(ConstDataType command, ConstDataType data, int wait_cycles);
+
+private:
+    bool wait_until_previous_finished();
+    const Device device_;
+    const uint32_t pin_sck_;
+    const uint32_t pin_base_;
+    const uint32_t pin_cs_;
+    const uint32_t sm_;
+    const float clkdiv_;
 };
 

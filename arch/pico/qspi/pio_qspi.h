@@ -42,6 +42,8 @@ void pio_qspi_read8_blocking(const pio_qspi_inst* spi, uint8_t* dst, std::size_t
 
 void pio_qspi_write8_read8_blocking(const pio_qspi_inst* spi, const uint8_t* src, uint8_t* dst, std::size_t len);
 
+void pio_qspi_spi_command_rw(const pio_qspi_inst* spi, const uint8_t* command, std::size_t command_size, const uint8_t* data, uint8_t* readed, std::size_t data_size, int wait_cycles);
+
 
 
 
