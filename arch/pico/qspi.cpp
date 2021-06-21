@@ -392,7 +392,7 @@ bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data, int wai
 
 bool Qspi::wait_until_previous_finished()
 {
-    const int idle_wait_start = qspi_offset_idle_wait;
+    const int idle_wait_start = qspi_offset_idle_wait_loop;
     const int idle_wait_end = qspi_offset_idle_wait_end;
     auto pio = get_pio(device_); 
     int timeout = 10000;

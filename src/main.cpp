@@ -201,19 +201,22 @@ int main()
     if (!framebuffer.init())
     {
         printf("QSPI intialization error\n");
+        while (true) {}
     }
  
     uint8_t buf[255];
         const uint8_t buffer[] = {0xff, 0x4, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23, 0x1, 0x2, 0x3};
         framebuffer.write(0x10, buffer);
- 
+
+   //     framebuffer.exit_qpi_mode();
     while (true)
     {
         static int i = 0;
        
         uint8_t readed[sizeof(buffer)] = {};
-        framebuffer.read(0x10, readed);
 
+        framebuffer.enter_qpi_mode();
+        framebuffer.read(0x10, readed);
         printf("Readed: { ");
         for (auto b : readed)
         {
@@ -222,13 +225,13 @@ int main()
         printf(" }\n");
 
         uint8_t read_command[] = {0x0b, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        
+        msgpu::sleep_us(10); 
         uint8_t read_data[sizeof(read_command)] = {};
+        msgpu::sleep_us(10);
+
         framebuffer.exit_qpi_mode();
-        msgpu::sleep_us(5);
         qspi.spi_transmit(read_command, read_data);
-        msgpu::sleep_us(5);
-        framebuffer.enter_qpi_mode();
+        msgpu::sleep_us(10);
         printf("SPI readed: { ");
         for (auto b : read_data)
         {
