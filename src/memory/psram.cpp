@@ -25,6 +25,7 @@ namespace msgpu::memory
 
 QspiPSRAM::QspiPSRAM(Qspi& qspi)
     : qspi_(qspi)
+    , qspi_mode_(false)
 {
 }
 
@@ -34,7 +35,12 @@ bool QspiPSRAM::init()
     if (!reset())
     {
         printf("Reset failure\n");
+        qspi_mode_ = true;
         exit_qpi_mode();
+    }
+    else 
+    {
+        return true; 
     }
     if (reset())
     {
@@ -58,8 +64,9 @@ bool QspiPSRAM::reset()
     return perform_post();
 }
 
-std::size_t QspiPSRAM::write(const std::size_t address, const ConstDataBuffer data)
+std::size_t QspiPSRAM::write(std::size_t address, const ConstDataBuffer data)
 {
+    address += 2; // first byte is bad, so I can't use address 0
     const uint8_t write_cmd[] = {0x38, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff};
     qspi_.qspi_command_write(write_cmd, data, 0);
     return data.size();
@@ -90,12 +97,16 @@ bool QspiPSRAM::perform_post()
 
 void QspiPSRAM::exit_qpi_mode()
 {
+    if (!qspi_mode_) return;
+    qspi_mode_ = false;
     constexpr uint8_t exit_qpi_cmd[] = {0xf5};
     qspi_.qspi_write(exit_qpi_cmd);
 }
 
 void QspiPSRAM::enter_qpi_mode()
 {
+    if (qspi_mode_) return;
+    qspi_mode_ = true;
     constexpr uint8_t enter_qpi_cmd[] = {0x35};
     qspi_.spi_write(enter_qpi_cmd);
 }

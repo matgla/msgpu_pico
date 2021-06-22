@@ -34,7 +34,7 @@ public:
 
     using DataBuffer = std::span<uint8_t>;
     using ConstDataBuffer = std::span<const uint8_t>;
-    std::size_t write(const std::size_t address, const ConstDataBuffer data);
+    std::size_t write(std::size_t address, const ConstDataBuffer data);
     std::size_t read(const std::size_t address, DataBuffer data);
 //private:
     bool perform_post();
@@ -42,6 +42,7 @@ public:
     void exit_qpi_mode();
    
     Qspi& qspi_;
+    bool qspi_mode_;
 };
 
 } // namespace msgpu::memory

@@ -69,7 +69,7 @@
 //    .create();
 
 #include "memory/psram.hpp"
-
+#include <ctime>
 namespace msgpu 
 {
 
@@ -194,7 +194,7 @@ int main()
 //        printf("QSPI initialization error\n");
 //        while (true) {}
 //    }
-    Qspi qspi(Qspi::Device::framebuffer, 125.f);//1.95f);
+    Qspi qspi(Qspi::Device::framebuffer, 12.5f);//1.95f);
     qspi.init();
 
     msgpu::memory::QspiPSRAM framebuffer(qspi);
@@ -205,42 +205,85 @@ int main()
     }
  
     uint8_t buf[255];
-        const uint8_t buffer[] = {0xff, 0x4, 0x2, 0x3, 0x11, 0x22, 0x33, 0xff, 0x12, 0x23, 0x1, 0x2, 0x3};
-        framebuffer.write(0x10, buffer);
+    constexpr uint32_t addr = 0x200;
+        framebuffer.enter_qpi_mode();
+
 
    //     framebuffer.exit_qpi_mode();
     while (true)
     {
-        static int i = 0;
-       
+        static uint8_t i = 2;
+        ++i;
+        static float f = 0;
+        static float a = 0;
+        srand(time(NULL));
+       uint8_t buffer[] = {0xff, i, 0xbe, rand() % 255, rand() % 255, 0xce, 0xfa, 0xde, 0xaa, 0xbb, 0xcc, 0xee, 0xff};
+
+        framebuffer.write(addr, buffer);
         uint8_t readed[sizeof(buffer)] = {};
 
-        framebuffer.enter_qpi_mode();
-        framebuffer.read(0x10, readed);
-        printf("Readed: { ");
-        for (auto b : readed)
+        //msgpu::sleep_ms(1);
+        framebuffer.read(addr, readed);
+        a += 1.0f;
+        for (int z = 0; z < sizeof(buffer); ++z)
         {
-            printf("0x%x, ", b);
-        }
-        printf(" }\n");
+            if (readed[z] != buffer[z])
+            {
+                f += 1.0f;
 
-        uint8_t read_command[] = {0x0b, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        msgpu::sleep_us(10); 
-        uint8_t read_data[sizeof(read_command)] = {};
-        msgpu::sleep_us(10);
+                printf("Failed (%f/%f %f %%)\n", f, a, f / a * 100.f );
+                printf("Expected:  { ");
+                for (auto b : buffer)
+                {
+                    printf("0x%x, ", b);
+                }
+                printf(" }\n");
 
-        framebuffer.exit_qpi_mode();
-        qspi.spi_transmit(read_command, read_data);
-        msgpu::sleep_us(10);
-        printf("SPI readed: { ");
-        for (auto b : read_data)
-        {
-            printf("0x%x, ", b);
+                printf("Got data : { "); 
+                for (auto b : readed)
+                {
+                    printf("0x%x, ", b);
+                }
+                printf(" }\n");
+
+                uint8_t read_command[] = {0x03, (addr >> 16) & 0xff, (addr >> 8) & 0xff, (addr & 0xff), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+                uint8_t read_data[sizeof(read_command)] = {};
+                msgpu::sleep_us(10);
+
+                framebuffer.exit_qpi_mode();
+                msgpu::sleep_us(100);
+                qspi.spi_transmit(read_command, read_data);
+                msgpu::sleep_us(10);
+                printf("SPI readd: { ");
+                for (int x = 6; x < sizeof(read_data); ++x)
+                {
+                    printf("0x%x, ", read_data[x]);
+                }
+                printf(" }\n");
+
+                framebuffer.enter_qpi_mode();
+ 
+            break;
+            }
         }
-        printf(" }\n");
+  
+//        msgpu::sleep_us(10); 
+//        uint8_t read_data[sizeof(read_command)] = {};
+//        msgpu::sleep_us(10);
+
+//        framebuffer.exit_qpi_mode();
+//        msgpu::sleep_us(100);
+//        qspi.spi_transmit(read_command, read_data);
+//        msgpu::sleep_us(10);
+   //     printf("SPI readed: { ");
+   //     for (auto b : read_data)
+   //     {
+   //         printf("0x%x, ", b);
+   //     }
+   //     printf(" }\n");
 
         static int n = 0;
-        if (n++ > 5) while (true);
+       // if (n++ > 5) while (true);
         
 
 //        static uint8_t byte = 1;

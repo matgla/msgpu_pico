@@ -24,7 +24,7 @@
 
 #include "qspi.hpp"
 
-float clkdiv = 125.0f;
+float clkdiv = 31.25f;
 
 namespace 
 {
@@ -217,28 +217,28 @@ bool Qspi::spi_write(ConstDataType src)
 
 bool Qspi::qspi_read(DataType dest)
 {
-    auto pio = get_pio(device_);
-    uint8_t* d = dest.data();
-    auto* rx = get_rx_fifo(pio, sm_);
+//    auto pio = get_pio(device_);
+//    uint8_t* d = dest.data();
+//    auto* rx = get_rx_fifo(pio, sm_);
 
-    std::size_t rx_remain = dest.size();
+//    std::size_t rx_remain = dest.size();
 
-    wait_until_previous_finished();
+//    wait_until_previous_finished();
 
-    pio_sm_set_in_pins(pio, sm_, pin_base_);
-    pio_sm_put(pio, sm_, dest.size() * 2 - 2);
-    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_r));
+//    pio_sm_set_in_pins(pio, sm_, pin_base_);
+//    pio_sm_put(pio, sm_, dest.size() * 2 - 2);
+//    pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_r));
 
-    int timeout = default_timeout;
-    while (rx_remain)
-    {
-        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
-        {
-            *d++ = *rx;
-            --rx_remain;
-        }
-        if (--timeout == 0) return false;
-    }
+//    int timeout = default_timeout;
+//    while (rx_remain)
+//    {
+//        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+//        {
+//            *d++ = *rx;
+//            --rx_remain;
+//        }
+//        if (--timeout == 0) return false;
+//    }
     return true;
 }
 
@@ -280,15 +280,17 @@ bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycl
 
     pio_sm_set_in_pins(pio, sm_, pin_base_);
     
-    pio_sm_put(pio, sm_, command.size() * 2 - 1);
-    pio_sm_put(pio, sm_, wait_cycles + data.size() * 2 - 1);
+    //pio_sm_put(pio, sm_, wait_cycles + command.size() * 2 - 1);
+    //pio_sm_put(pio, sm_, data.size() * 2 - 1);
 
+    pio_sm_put(pio, sm_, data.size() * 2 + 3);
     pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_command_r));
 
     int timeout = default_timeout;
 
     std::size_t command_remain = command.size();
-    const uint8_t* s = command.data();
+    //uint8_t tmp[] = {0xeb, 0xab, 0xbc, 0xde};
+    const uint8_t* s =  command.data();
     while (command_remain)
     {
         if (!pio_sm_is_tx_fifo_full(pio, sm_))
@@ -299,23 +301,39 @@ bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycl
         //if (--timeout == 0) return false;
     }
 
+    while (pio_sm_is_tx_fifo_full(pio, sm_)) {}
+    pio_sm_put(pio, sm_, wait_cycles - 3);
     timeout = default_timeout;
     std::size_t wait_remain = wait_cycles / 2;
 
-    while (wait_remain)
-    {
-        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
-        {
-            static_cast<void>(*rx);
-            --wait_remain;
-        }
+   // while (wait_remain)
+   // {
+   //     if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+   //     {
+   //         static_cast<void>(*rx);
+   //         --wait_remain;
+   //     }
+// //       if (!pio_sm_is_tx_fifo_full(pio, sm_))
+// //       {
+// //           *tx = 0xff; 
+// //           --wait_remain;
+// //       }
 
-        //if (--timeout == 0) return false;
-    }
+   //     //if (--timeout == 0) return false;
+   // }
 
     timeout = default_timeout; 
     std::size_t data_remain = data.size();
     uint8_t* d = data.data();
+    std::size_t drop_remain = 2;
+    while (drop_remain)
+    {
+        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+        {
+            static_cast<void>(*rx);
+            drop_remain--;
+        }
+    }
 
     while (data_remain)
     {
