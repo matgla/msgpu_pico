@@ -283,7 +283,7 @@ bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycl
     //pio_sm_put(pio, sm_, wait_cycles + command.size() * 2 - 1);
     //pio_sm_put(pio, sm_, data.size() * 2 - 1);
 
-    pio_sm_put(pio, sm_, data.size() * 2 + 3);
+    pio_sm_put(pio, sm_, data.size() * 2 - 1);
     pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_command_r));
 
     int timeout = default_timeout;
@@ -302,7 +302,7 @@ bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycl
     }
 
     while (pio_sm_is_tx_fifo_full(pio, sm_)) {}
-    pio_sm_put(pio, sm_, wait_cycles - 3);
+    pio_sm_put(pio, sm_, wait_cycles + 2);
     timeout = default_timeout;
     std::size_t wait_remain = wait_cycles / 2;
 
@@ -326,14 +326,14 @@ bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycl
     std::size_t data_remain = data.size();
     uint8_t* d = data.data();
     std::size_t drop_remain = 2;
-    while (drop_remain)
-    {
-        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
-        {
-            static_cast<void>(*rx);
-            drop_remain--;
-        }
-    }
+//    while (drop_remain)
+//    {
+//        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
+//        {
+//            static_cast<void>(*rx);
+//            drop_remain--;
+//        }
+//    }
 
     while (data_remain)
     {

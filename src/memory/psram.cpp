@@ -66,7 +66,6 @@ bool QspiPSRAM::reset()
 
 std::size_t QspiPSRAM::write(std::size_t address, const ConstDataBuffer data)
 {
-    address += 2; // first byte is bad, so I can't use address 0
     const uint8_t write_cmd[] = {0x38, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff};
     qspi_.qspi_command_write(write_cmd, data, 0);
     return data.size();
