@@ -49,8 +49,8 @@ public qspi_w:
     set pindirs, 0b11111
     set pins   , 0b00000 
 qspi_w_send_loop:
-    out pins, 4 side 0 [1]
-    jmp x-- qspi_w_send_loop side 1 [1]
+    out pins, 4 side 0 
+    jmp x-- qspi_w_send_loop side 1 
     jmp idle_wait side 0
 
 ; public qspi_r:

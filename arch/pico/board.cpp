@@ -183,6 +183,11 @@ uint32_t get_millis()
     return to_ms_since_boot(get_absolute_time());
 }
 
+uint64_t get_us()
+{
+    return to_us_since_boot(get_absolute_time());
+}
+
 void sleep_ms(uint32_t t)
 {
     ::sleep_ms(t);

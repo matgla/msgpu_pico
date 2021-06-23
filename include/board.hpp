@@ -43,6 +43,7 @@ void write_bytes(std::span<const uint8_t> byte);
 void set_resolution(uint16_t width, uint16_t height);
 
 uint32_t get_millis();
+uint64_t get_us();
 void sleep_ms(uint32_t time);
 void sleep_us(uint32_t time);
 

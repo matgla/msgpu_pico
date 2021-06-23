@@ -128,6 +128,84 @@ int exec(const std::size_t* module_address)
 //    static_cast<void>(module_address);
 //    return 0;
 //}
+//
+
+static uint8_t test_data[30][1024];
+static uint8_t read_data[30][1024];
+void generate_data()
+{
+    srand(time(nullptr));
+    
+    for (auto& d : test_data)
+    {
+        for (auto& b : d)
+        {
+            b = rand() % 0xff; 
+        }
+    }
+}
+
+void benchmark(msgpu::memory::QspiPSRAM& memory)
+{
+    printf("=====Begin test=====\n");
+    uint32_t start_time = msgpu::get_us();
+    uint32_t address = 0; 
+    for (const auto& line : test_data)
+    {
+        memory.write(address, line);
+        address += 1024;
+    }
+    uint32_t write_end_time = msgpu::get_us();
+    printf("Start time: %d\n", start_time);
+    printf("Write finished: %d\n", write_end_time);
+    printf("Took %d\n", write_end_time - start_time);
+    printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(write_end_time - start_time));
+    uint32_t read_start_time = msgpu::get_us();
+    address = 0;
+    for (auto& line : read_data)
+    {
+        memory.read(address, line);
+        address += 1024;
+    }
+    uint32_t read_end_time = msgpu::get_us();
+    printf("Reading start: %d\n", read_start_time);
+    printf("Reading end: %d\n", read_end_time);
+    printf("Took %d\n", read_end_time - read_start_time);
+    printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(read_end_time - read_start_time));
+
+    printf("====Verification started====\n");
+    int success = 0;
+    int failure = 0;
+    for (int y = 0; y < 30; ++y)
+    {
+        if (y == 0)
+        {
+            printf("Data: ");
+        }
+        for (int x = 0; x < 1024; ++x)
+        {
+            if (y == 0 && x < 32) 
+            {
+                printf("0x%x, ", read_data[y][x]);
+                if (x % 16 == 0) 
+                {
+                    printf("\n");
+                }
+            }
+            if (test_data[y][x] != read_data[y][x])
+            {
+                ++failure;
+                break;
+            }
+        }
+        if (y == 0)
+        {
+            printf("\n");
+        }
+        ++success;
+    }
+    printf("Failed: %d/%d\n", failure, success);
+}
 
 int main() 
 {
@@ -194,7 +272,7 @@ int main()
 //        printf("QSPI initialization error\n");
 //        while (true) {}
 //    }
-    Qspi qspi(Qspi::Device::framebuffer, 25.f);//1.95f);
+    Qspi qspi(Qspi::Device::framebuffer, 6.0f);//1.95f);
     qspi.init();
 
     msgpu::memory::QspiPSRAM framebuffer(qspi);
@@ -203,115 +281,11 @@ int main()
         printf("QSPI intialization error\n");
         while (true) {}
     }
- 
-    uint8_t buf[255];
-    constexpr uint32_t addr = 0x200;
-        framebuffer.enter_qpi_mode();
 
-        static uint8_t i = 2;
-     uint8_t buffer[] = {0xff, i, 0xbe } ;//, rand() % 255, rand() % 255, 0xce, 0xfa, 0xde, 0xaa, 0xbb, 0xcc, 0xee, 0xff};
-
-        framebuffer.write(addr, buffer);
-   
-   //     framebuffer.exit_qpi_mode();
+    generate_data();
+    benchmark(framebuffer);
     while (true)
     {
-        ++i;
-        static float f = 0;
-        static float a = 0;
-        srand(time(NULL));
-       uint8_t readed[sizeof(buffer)] = {};
-
-        //msgpu::sleep_ms(1);
-        framebuffer.read(addr, readed);
-        a += 1.0f;
-        for (int z = 0; z < sizeof(buffer); ++z)
-        {
-            if (readed[z] != buffer[z])
-            {
-                f += 1.0f;
-
-                printf("Failed (%f/%f %f %%)\n", f, a, f / a * 100.f );
-                printf("Expected:  { ");
-                for (auto b : buffer)
-                {
-                    printf("0x%x, ", b);
-                }
-                printf(" }\n");
-
-                printf("Got data : { "); 
-                for (auto b : readed)
-                {
-                    printf("0x%x, ", b);
-                }
-                printf(" }\n");
-
-      //          uint8_t read_command[] = {0x03, (addr >> 16) & 0xff, (addr >> 8) & 0xff, (addr & 0xff), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-      //          uint8_t read_data[sizeof(read_command)] = {};
-      //          msgpu::sleep_us(10);
-
-      //          framebuffer.exit_qpi_mode();
-      //          msgpu::sleep_us(100);
-      //          qspi.spi_transmit(read_command, read_data);
-      //          msgpu::sleep_us(10);
-      //          printf("SPI readd: { ");
-      //          for (int x = 6; x < sizeof(read_data); ++x)
-      //          {
-      //              printf("0x%x, ", read_data[x]);
-      //          }
-      //          printf(" }\n");
-
-      //          framebuffer.enter_qpi_mode();
- 
-            break;
-            }
-        }
-  
-////        msgpu::sleep_us(10); 
-////        uint8_t read_data[sizeof(read_command)] = {};
-//        msgpu::sleep_us(10);
-
-//        framebuffer.exit_qpi_mode();
-//        msgpu::sleep_us(100);
-//        qspi.spi_transmit(read_command, read_data);
-//        msgpu::sleep_us(10);
-   //     printf("SPI readed: { ");
-   //     for (auto b : read_data)
-   //     {
-   //         printf("0x%x, ", b);
-   //     }
-   //     printf(" }\n");
-
-        static int n = 0;
-       // if (n++ > 5) while (true);
-        
-
-//        static uint8_t byte = 1;
-//        uint8_t command[] = {0x02, 0x00, 0x00, 0x00, 0xaa, 0xab, 0xfa, 0xce, byte++};
-
-//        qspi.chip_select(Qspi::Device::Ram, true);
-//        qspi.spi_write8(command);
-//        qspi.chip_select(Qspi::Device::Ram, false);
-//        uint8_t tmp[9] = {0x03, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff};
-//        uint8_t readed[9] = {};
-//        sleep_us(5);
-//        qspi.chip_select(Qspi::Device::Ram, true);
-//        qspi.read8_write8_blocking(readed, tmp);
-//        qspi.chip_select(Qspi::Device::Ram, false);
-
-//        printf("Readed: ");
-//        for (const auto b : readed)
-//        {
-//            printf("0x%x, ", b);
-//        }
-//        printf ("\n");
-
-
- //       auto message = msgpu::usart_io_data.pop();
- //       if (message)
- //       {
- //           msgpu::proc.process_message(*message);
- //       }
 
     }
 
