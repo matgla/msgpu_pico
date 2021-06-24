@@ -73,17 +73,18 @@ qspi_command_loop:
     out pins, 4 side 0
     jmp y-- qspi_command_loop side 1 
     out pins, 4 side 0 
-    out y, 32 side 1
+    out y, 8 side 1
     set pindirs, 0b10000 side 0
     nop side 1 
 qspi_wait_cycles: 
     nop side 0 
     jmp y-- qspi_wait_cycles side 1 
     nop side 0
+    nop side 1
 qspi_command_r_loop:
     ;set pins, 0b01111 side 0
-    in pins, 4 side 1 
-    jmp x-- qspi_command_r_loop side 0 
+    in pins, 4 side 0 
+    jmp x-- qspi_command_r_loop side 1 
     jmp idle_wait side 0
 % c-sdk {
 

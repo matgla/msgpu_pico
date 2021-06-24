@@ -46,7 +46,15 @@ public:
 
     bool qspi_command_write(ConstDataType command, ConstDataType data, int wait_cycles);
 
+    void wait_for_finish() const;
+
 private:
+    void setup_dma_write(ConstDataType src, int channel, int chain_to = -1);
+    void setup_dma_read(DataType dest, int channel, int chain_to = -1);
+    
+    void setup_dma_command_write(ConstDataType cmd, ConstDataType data);
+    void setup_dma_command_read(ConstDataType cmd, DataType data); 
+
     bool wait_until_previous_finished();
     const Device device_;
     const uint32_t pin_sck_;

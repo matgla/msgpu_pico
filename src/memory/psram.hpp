@@ -36,6 +36,7 @@ public:
     using ConstDataBuffer = std::span<const uint8_t>;
     std::size_t write(std::size_t address, const ConstDataBuffer data);
     std::size_t read(const std::size_t address, DataBuffer data);
+    void wait_for_finish() const;
 //private:
     bool perform_post();
     void enter_qpi_mode();

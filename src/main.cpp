@@ -165,6 +165,7 @@ void benchmark(msgpu::memory::QspiPSRAM& memory)
     for (auto& line : read_data)
     {
         memory.read(address, line);
+      //  memory.wait_for_finish();
         address += 1024;
     }
     uint32_t read_end_time = msgpu::get_us();
@@ -187,7 +188,7 @@ void benchmark(msgpu::memory::QspiPSRAM& memory)
             if (y == 0 && x < 32) 
             {
                 printf("0x%x, ", read_data[y][x]);
-                if (x % 16 == 0) 
+                if (x % 16 == 15) 
                 {
                     printf("\n");
                 }
@@ -195,7 +196,11 @@ void benchmark(msgpu::memory::QspiPSRAM& memory)
             if (test_data[y][x] != read_data[y][x])
             {
                 ++failure;
+                if (y == 0 && x < 32)
+                {
+                }else {
                 break;
+                }
             }
         }
         if (y == 0)
@@ -272,7 +277,7 @@ int main()
 //        printf("QSPI initialization error\n");
 //        while (true) {}
 //    }
-    Qspi qspi(Qspi::Device::framebuffer, 6.0f);//1.95f);
+    Qspi qspi(Qspi::Device::framebuffer, 3.0f);//1.95f);
     qspi.init();
 
     msgpu::memory::QspiPSRAM framebuffer(qspi);
@@ -284,6 +289,8 @@ int main()
 
     generate_data();
     benchmark(framebuffer);
+
+
     while (true)
     {
 

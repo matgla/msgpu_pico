@@ -19,6 +19,8 @@
 
 #include <pico/stdlib.h>
 #include <hardware/pio.h>
+#include <hardware/dma.h>
+#include <hardware/structs/bus_ctrl.h>
 
 #include "qspi.pio.h"
 
@@ -78,6 +80,8 @@ volatile io_ro_8* get_rx_fifo(PIO pio, uint32_t sm)
 
 static uint32_t qspi_data_program = 0;
 constexpr int default_timeout = 10000;
+static int dma_channel_1 = 0;
+static int dma_channel_2 = 0;
 }
 
 Qspi::Qspi(const Device device, float clkdiv)
@@ -102,7 +106,79 @@ void Qspi::init()
         pin_sck_,
         pin_cs_
     );
+
+    dma_channel_1 = dma_claim_unused_channel(true);
+    dma_channel_2 = dma_claim_unused_channel(true);
+    bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 }
+
+void Qspi::setup_dma_write(ConstDataType src, int channel, int chain_to) 
+{
+    dma_channel_config c = dma_channel_get_default_config(channel);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_read_increment(&c, true);
+    channel_config_set_write_increment(&c, false);
+    channel_config_set_dreq(&c, pio_get_dreq(get_pio(device_), sm_, true));
+
+    if (chain_to >= 0)
+    {
+        channel_config_set_chain_to(&c, chain_to);
+    }
+
+    dma_channel_configure( 
+        channel, 
+        &c, 
+        &get_pio(device_)->txf[sm_], 
+        src.data(),
+        src.size(),
+        false 
+    ); 
+
+}
+
+void Qspi::setup_dma_read(DataType dest, int channel, int chain_to)
+{
+    dma_channel_config c = dma_channel_get_default_config(channel);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+    channel_config_set_dreq(&c, pio_get_dreq(get_pio(device_), sm_, false));
+
+    if (chain_to >= 0)
+    {
+        channel_config_set_chain_to(&c, chain_to);
+    }
+
+    dma_channel_configure( 
+        channel, 
+        &c, 
+        dest.data(), 
+        &get_pio(device_)->rxf[sm_],
+        dest.size(),
+        false 
+    ); 
+
+
+}
+
+void Qspi::wait_for_finish() const 
+{
+    dma_channel_wait_for_finish_blocking(dma_channel_1);
+    dma_channel_wait_for_finish_blocking(dma_channel_2);
+}
+
+void Qspi::setup_dma_command_write(ConstDataType cmd, ConstDataType data)
+{
+    setup_dma_write(cmd, dma_channel_1, dma_channel_2);
+    setup_dma_write(data, dma_channel_2);
+}
+
+void Qspi::setup_dma_command_read(ConstDataType cmd, DataType data)
+{
+    setup_dma_write(cmd, dma_channel_1, dma_channel_2);
+    setup_dma_read(data, dma_channel_2);
+}
+
 
 bool Qspi::spi_transmit(ConstDataType src, DataType dest)
 {
@@ -141,7 +217,7 @@ bool Qspi::spi_transmit(ConstDataType src, DataType dest)
             *d++ = *rx;
             --rx_remain;
         }
-        if (--timeout == 0) return false;
+        //if (--timeout == 0) return false;
     }
     return true;
 }
@@ -176,7 +252,7 @@ bool Qspi::spi_read(DataType dest)
             *d++ = *rx;
             --rx_remain;
         }
-        if (--timeout == 0) return false;
+        //if (--timeout == 0) return false;
     }
     return true;
 }
@@ -210,7 +286,7 @@ bool Qspi::spi_write(ConstDataType src)
             static_cast<void>(*rx);
             --rx_remain;
         }
-        if (--timeout == 0) return false;
+        //if (--timeout == 0) return false;
     }
     return true;
 }
@@ -263,7 +339,7 @@ bool Qspi::qspi_write(ConstDataType src)
             *tx = *s++;
             --tx_remain;
         }
-        if (--timeout == 0) return false;
+        //if (--timeout == 0) return false;
     }
     return true;
 }
@@ -274,45 +350,17 @@ bool Qspi::qspi_command_read(ConstDataType command, DataType data, int wait_cycl
 
     auto pio = get_pio(device_);
 
-    auto* tx = get_tx_fifo(pio, sm_);
-    auto* rx = get_rx_fifo(pio, sm_);
     wait_until_previous_finished();
+    
+    setup_dma_write(command, dma_channel_1, dma_channel_2);
+    setup_dma_read(data, dma_channel_2);
 
     pio_sm_set_in_pins(pio, sm_, pin_base_);
     
     pio_sm_put(pio, sm_, data.size() * 2 - 1);
+
+    dma_channel_start(dma_channel_1);
     pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_command_r));
-
-    int timeout = default_timeout;
-
-    std::size_t command_remain = command.size();
-    const uint8_t* s =  command.data();
-    while (command_remain)
-    {
-        if (!pio_sm_is_tx_fifo_full(pio, sm_))
-        {
-            *tx = *s++;
-            --command_remain;
-        }
-        if (--timeout == 0) return false;
-    }
-
-    while (pio_sm_is_tx_fifo_full(pio, sm_)) {}
-    pio_sm_put(pio, sm_, wait_cycles - 2);
-    timeout = default_timeout;
-
-    std::size_t data_remain = data.size();
-    uint8_t* d = data.data();
-
-    while (data_remain)
-    {
-        if (!pio_sm_is_rx_fifo_empty(pio, sm_))
-        {
-            *d++ = *rx; 
-            --data_remain;
-        }
-        if (--timeout == 0) return false;
-    }
 
     return true;
 }
@@ -322,59 +370,18 @@ bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data, int wai
     if (wait_cycles % 2 != 0) return false; 
 
     auto pio = get_pio(device_);
-    auto* tx = get_tx_fifo(pio, sm_);
 
     wait_until_previous_finished();
 
-    int size = command.size() * 2 + wait_cycles + data.size() * 2 - 1;
+    setup_dma_write(command, dma_channel_1, dma_channel_2);
+    setup_dma_write(data, dma_channel_2);
+    const int size = command.size() * 2 + wait_cycles + data.size() * 2 - 1;
     pio_sm_put(pio, sm_, size);
 
+    dma_channel_start(dma_channel_1);
     pio_sm_exec(pio, sm_, pio_encode_jmp(qspi_offset_qspi_w));
 
-    int timeout = default_timeout;
-
-    std::size_t command_remain = command.size();
-    const uint8_t* s = command.data();
-    while (command_remain)
-    {
-        if (!pio_sm_is_tx_fifo_full(pio, sm_))
-        {
-            *tx = *s++;
-            --command_remain;
-        }
-        if (--timeout == 0) return false;
-    }
-
-    timeout = default_timeout;
-    std::size_t wait_remain = wait_cycles / 2;
-
-    while (wait_remain)
-    {
-        if (!pio_sm_is_tx_fifo_full(pio, sm_))
-        {
-            *tx = 0;
-            --wait_remain;
-        }
-
-        if (--timeout == 0) return false;
-    }
-
-    timeout = default_timeout; 
-    std::size_t data_remain = data.size();
-    const uint8_t* d = data.data();
-
-    while (data_remain)
-    {
-        if (!pio_sm_is_tx_fifo_full(pio, sm_))
-        {
-            *tx = *d++;
-            --data_remain;
-        }
-        if (--timeout == 0) return false;
-    }
-
     return true;
-
 }
 
 bool Qspi::wait_until_previous_finished()
@@ -386,7 +393,7 @@ bool Qspi::wait_until_previous_finished()
     while (pio->sm[sm_].addr < idle_wait_start
         || pio->sm[sm_].addr >= idle_wait_end) 
     {
-        if (--timeout == 0) return false;
+       // if (--timeout == 0) return false;
     }
 
     return true;

@@ -40,6 +40,7 @@ bool QspiPSRAM::init()
     }
     else 
     {
+        enter_qpi_mode();
         return true; 
     }
     if (reset())
@@ -64,6 +65,11 @@ bool QspiPSRAM::reset()
     return perform_post();
 }
 
+void QspiPSRAM::wait_for_finish() const 
+{
+    qspi_.wait_for_finish();
+}
+
 std::size_t QspiPSRAM::write(std::size_t address, const ConstDataBuffer data)
 {
     const uint8_t write_cmd[] = {0x38, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff};
@@ -73,9 +79,9 @@ std::size_t QspiPSRAM::write(std::size_t address, const ConstDataBuffer data)
 
 std::size_t QspiPSRAM::read(const std::size_t address, DataBuffer data)
 {
-    const uint8_t read_cmd[] = {0xeb, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff};
+    const uint8_t read_cmd[] = {0xeb, (address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff, 4};
 
-    qspi_.qspi_command_read(read_cmd, data, 6);
+    qspi_.qspi_command_read(read_cmd, data, 4);
     return data.size();
 }
 
