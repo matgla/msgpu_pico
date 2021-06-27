@@ -45,6 +45,7 @@
 //#include "messages/swap_buffer.hpp"
 
 #include "qspi.hpp"
+#include "arch/qspi_config.hpp"
 
 #include "mode/modes.hpp"
 //#include "io/usart_point.hpp"
@@ -59,8 +60,6 @@
 //#include <eul/error/error_code.hpp>
 
 #include "symbol_codes.h"
-
-#include "pico/stdlib.h"
 
 //using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
@@ -129,12 +128,12 @@ int exec(const std::size_t* module_address)
 //    return 0;
 //}
 //
-
-static uint8_t test_data[30][1024];
-static uint8_t read_data[30][1024];
+constexpr std::size_t benchmark_rows = 2;
+static uint8_t test_data[benchmark_rows][45240];
+static uint8_t read_data[benchmark_rows][45240];
 void generate_data()
 {
-    srand(time(nullptr));
+    srand(msgpu::get_us());
     
     for (auto& d : test_data)
     {
@@ -150,23 +149,25 @@ void benchmark(msgpu::memory::QspiPSRAM& memory)
     printf("=====Begin test=====\n");
     uint32_t start_time = msgpu::get_us();
     uint32_t address = 0; 
+    uint32_t setup_time = 0;
+    uint32_t finish_time = 0;
     for (const auto& line : test_data)
     {
         memory.write(address, line);
-        address += 1024;
+        address += sizeof(test_data[0]);
     }
     uint32_t write_end_time = msgpu::get_us();
     printf("Start time: %d\n", start_time);
     printf("Write finished: %d\n", write_end_time);
     printf("Took %d\n", write_end_time - start_time);
+    printf("Setup took %d\n", finish_time - setup_time);
     printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(write_end_time - start_time));
     uint32_t read_start_time = msgpu::get_us();
     address = 0;
     for (auto& line : read_data)
     {
         memory.read(address, line);
-      //  memory.wait_for_finish();
-        address += 1024;
+        address += sizeof(test_data[0]);
     }
     uint32_t read_end_time = msgpu::get_us();
     printf("Reading start: %d\n", read_start_time);
@@ -177,17 +178,17 @@ void benchmark(msgpu::memory::QspiPSRAM& memory)
     printf("====Verification started====\n");
     int success = 0;
     int failure = 0;
-    for (int y = 0; y < 30; ++y)
+    for (int y = 0; y < benchmark_rows; ++y)
     {
         if (y == 0)
         {
             printf("Data: ");
         }
-        for (int x = 0; x < 1024; ++x)
+        for (int x = 0; x < sizeof(test_data[0]); ++x)
         {
             if (y == 0 && x < 32) 
             {
-                printf("0x%x, ", read_data[y][x]);
+                printf("0x%x (0x%x), ", read_data[y][x], test_data[y][x]);
                 if (x % 16 == 15) 
                 {
                     printf("\n");
@@ -277,7 +278,7 @@ int main()
 //        printf("QSPI initialization error\n");
 //        while (true) {}
 //    }
-    Qspi qspi(Qspi::Device::framebuffer, 3.0f);//1.95f);
+    Qspi qspi(msgpu::framebuffer_config, 3.0f);//1.95f);
     qspi.init();
 
     msgpu::memory::QspiPSRAM framebuffer(qspi);

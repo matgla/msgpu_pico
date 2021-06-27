@@ -1,4 +1,4 @@
-# This file is part of MSGPU project.
+# This file is part of msgpu project.
 # Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,7 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(libs)
+add_library(msgpu_arch_config INTERFACE)
 
-add_subdirectory(gpu)
-add_subdirectory(ramdac)
+target_sources(msgpu_arch_config 
+    INTERFACE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/arch/qspi_config.hpp
+)
+
+target_include_directories(msgpu_arch_config
+    INTERFACE 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)

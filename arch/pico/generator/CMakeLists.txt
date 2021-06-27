@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_generator)
+add_library(msgpu_generator OBJECT)
 
 target_sources(msgpu_generator
-    PRIVATE 
+    PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/vga.cpp
 )
 
@@ -26,9 +26,10 @@ target_link_libraries(msgpu_generator
         msgui
     PUBLIC
         msgpu_generator_interface 
+        msgpu_arch_interface
 )
 
-target_include_directories(msgpu_generator
+target_include_directories(msgpu_generator SYSTEM
     PRIVATE 
         $<TARGET_PROPERTY:pico_multicore,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:pico_stdlib,INTERFACE_INCLUDE_DIRECTORIES>
@@ -40,6 +41,10 @@ target_compile_options(msgpu_generator PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
     $<$<CONFIG:DEBUG>:-Og -g>
     $<$<CONFIG:RELEASE>:-Os>
+)
+
+target_include_directories(msgpu_generator PUBLIC 
+    ${PROJECT_SOURCE_DIR}/src/gpu
 )
 
 

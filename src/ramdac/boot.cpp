@@ -14,37 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
-
-#include <cstdint>
-#include <span>
-
-#include "qspi.hpp"
-
-namespace msgpu::memory 
+class Boot
 {
 
-class QspiPSRAM
-{
-public:
-    QspiPSRAM(Qspi& qspi);
-
-    bool init();
-    bool reset();
-
-    using DataBuffer = std::span<uint8_t>;
-    using ConstDataBuffer = std::span<const uint8_t>;
-    std::size_t write(std::size_t address, const ConstDataBuffer data);
-    std::size_t read(const std::size_t address, DataBuffer data);
-    void wait_for_finish() const;
-//private:
-    bool perform_post();
-    void enter_qpi_mode();
-    void exit_qpi_mode();
-   
-    Qspi& qspi_;
-    bool qspi_mode_;
 };
-
-} // namespace msgpu::memory
 

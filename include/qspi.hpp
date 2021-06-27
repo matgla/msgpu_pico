@@ -20,15 +20,19 @@
 
 #include <span>
 
+struct QspiConfig 
+{
+    const uint32_t sck; 
+    const uint32_t io_base; 
+    const uint32_t cs; 
+    const uint32_t sm;
+    const uint32_t pio;
+};
+
 class Qspi 
 {
 public:
-    enum class Device : uint8_t 
-    {
-        framebuffer
-    };
-
-    Qspi(const Device device, float clkdiv);
+    Qspi(const QspiConfig device, float clkdiv);
 
     void init();
     
@@ -42,9 +46,9 @@ public:
     bool qspi_read(DataType dest);
     bool qspi_write(ConstDataType src);
 
-    bool qspi_command_read(ConstDataType command, DataType data, int wait_cycles);
+    bool qspi_command_read(DataType command, DataType data);
 
-    bool qspi_command_write(ConstDataType command, ConstDataType data, int wait_cycles);
+    bool qspi_command_write(ConstDataType command, ConstDataType data);
 
     void wait_for_finish() const;
 
@@ -56,11 +60,7 @@ private:
     void setup_dma_command_read(ConstDataType cmd, DataType data); 
 
     bool wait_until_previous_finished();
-    const Device device_;
-    const uint32_t pin_sck_;
-    const uint32_t pin_base_;
-    const uint32_t pin_cs_;
-    const uint32_t sm_;
+    const QspiConfig config_;
     const float clkdiv_;
 };
 

@@ -14,27 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_video_ram)
+add_library(msgpu_memory)
 
-target_sources(msgpu_video_ram
+target_sources(msgpu_memory
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/video_ram.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/psram.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/memory/psram.hpp
 
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/video_ram.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/psram.cpp
 )
 
-target_compile_options(msgpu_video_ram PUBLIC
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
-    $<$<CONFIG:DEBUG>:-Og -g>
-    $<$<CONFIG:RELEASE>:-Os>
-)
+target_include_directories(msgpu_memory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_include_directories(msgpu_video_ram PUBLIC ${PROJECT_SOURCE_DIR}/src)
-
-target_link_libraries(msgpu_video_ram
+target_link_libraries(msgpu_memory
     PRIVATE 
         msgpu_arch
+        common_flags
 )
+

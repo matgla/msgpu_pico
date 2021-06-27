@@ -90,51 +90,51 @@ void initialize_board()
     printf("Board initialized\n");
 }
 
-void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int core)
-{
-    int l = scanvideo_scanline_number(dest->scanline_id);
+//void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int core)
+//{
+//    int l = scanvideo_scanline_number(dest->scanline_id);
 
-    auto line = get_scanline(l);
-    std::size_t size = get_vga().display_line(std::span<uint32_t>(dest->data, dest->data_max), line);
+//    auto line = get_scanline(l);
+//    std::size_t size = get_vga().display_line(std::span<uint32_t>(dest->data, dest->data_max), line);
 
-    dest->data_used = size;
-    dest->status = SCANLINE_OK;
-}
+//    dest->data_used = size;
+//    dest->status = SCANLINE_OK;
+//}
 
-void __time_critical_func(render_loop)()
-{
-    int core_num = get_core_num();
-    while (true)
-    {
-        scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(true);
+//void __time_critical_func(render_loop)()
+//{
+//    int core_num = get_core_num();
+//    while (true)
+//    {
+//        scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(true);
 
-        uint32_t frame_num = scanvideo_frame_number(scanline_buffer->scanline_id);
+//        uint32_t frame_num = scanvideo_frame_number(scanline_buffer->scanline_id);
 
-        static uint32_t line = 0;
+//        static uint32_t line = 0;
 
-        if (line == res_height)
-        {
-            frame_update();
-            line = 0; 
-        }
-        ++line;
+//        if (line == res_height)
+//        {
+//            frame_update();
+//            line = 0; 
+//        }
+//        ++line;
 
-        mutex_enter_blocking(&frame_logic_mutex);
-        render_scanline(scanline_buffer, core_num);
-        mutex_exit(&frame_logic_mutex); 
-        scanvideo_end_scanline_generation(scanline_buffer);
-    }
-}
+//        mutex_enter_blocking(&frame_logic_mutex);
+//        render_scanline(scanline_buffer, core_num);
+//        mutex_exit(&frame_logic_mutex); 
+//        scanvideo_end_scanline_generation(scanline_buffer);
+//    }
+//}
 
 void core1_func()
 {
     sem_acquire_blocking(&video_setup_complete);
-    render_loop();
+    //render_loop();
 }
 
 int64_t timer_callback(alarm_id_t alarm_id, void* user_data)
 {
-    render_loop();
+    //render_loop();
     return 20;
 }
 

@@ -34,5 +34,5 @@ target_link_libraries(msgpu_processor
 
 target_include_directories(msgpu_processor
     PUBLIC
-        ${PROJECT_SOURCE_DIR}/src
+        ${PROJECT_SOURCE_DIR}/src/gpu
 )

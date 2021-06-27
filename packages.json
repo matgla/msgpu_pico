@@ -114,6 +114,16 @@
                     "sources_directory": "include"
                 }
             }
+        },
+        {
+            "target": "cmake_utils",
+            "version": "master",
+            "link": "https://github.com/matgla/CMakeUtils.git",
+            "type": "git", 
+            "directory": "cmake_utils",
+            "options": {
+                "is_cmake_library": true
+            }
         }
     ]
 }

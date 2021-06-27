@@ -36,5 +36,5 @@ target_include_directories(msgpu_generator_interface
 
 target_link_libraries(msgpu_generator_interface 
     INTERFACE 
-        msgpu_arch 
+        msgpu_config 
 )

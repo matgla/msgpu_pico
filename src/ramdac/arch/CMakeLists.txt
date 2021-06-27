@@ -1,4 +1,4 @@
-# This file is part of MSGPU project.
+# This file is part of msgpu project.
 # Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(libs)
+if (USE_SIMULATION)
+    add_subdirectory(x86)
+elseif (NOT ENABLE_TESTS) 
+    add_subdirectory(pico)
+endif ()
 
-add_subdirectory(gpu)
-add_subdirectory(ramdac)

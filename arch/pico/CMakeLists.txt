@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_arch STATIC)
+add_library(msgpu_arch OBJECT) # must be OBJECT library to make lazy linking
 
 target_sources(msgpu_arch 
     PRIVATE 
@@ -31,25 +31,62 @@ target_include_directories(msgpu_arch
 add_subdirectory(generator)
 add_subdirectory(qspi) 
 
-target_link_libraries(msgpu_arch 
+target_include_directories(msgpu_arch SYSTEM
     PUBLIC 
-        pico_stdlib
-        pico_scanvideo
-        pico_scanvideo_dpi
-        pico_multicore
-        msgpu_arch_interface
+        $<TARGET_PROPERTY:pico_stdio,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:hardware_resets,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:pico_scanvideo_dpi,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:pico_scanvideo,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:pico_multicore,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:pico_platform_headers,INTERFACE_INCLUDE_DIRECTORIES>
 
-        eul_functional 
-    PRIVATE
-        eul_container
-        msgpu_arch_pico_qspi
-        msgpu_generator
+        $<TARGET_PROPERTY:pico_stdlib_headers,INTERFACE_INCLUDE_DIRECTORIES>
+
+        $<TARGET_PROPERTY:pico_binary_info_headers,INTERFACE_INCLUDE_DIRECTORIES>
+
+        $<TARGET_PROPERTY:hardware_clocks_headers,INTERFACE_INCLUDE_DIRECTORIES>
+
+        $<TARGET_PROPERTY:hardware_irq_headers,INTERFACE_INCLUDE_DIRECTORIES>
+
+        $<TARGET_PROPERTY:hardware_pio_headers,INTERFACE_INCLUDE_DIRECTORIES>
+
+        $<TARGET_PROPERTY:hardware_dma_headers,INTERFACE_INCLUDE_DIRECTORIES>
+
+
+
 )
 
+target_link_libraries(msgpu_arch 
+    PUBLIC 
+        msgpu_arch_interface
+        eul_functional 
+
+    PRIVATE
+ 
+        msgpu_generator
+        eul_container
+        msgpu_arch_pico_qspi
+)
 
 target_compile_options(msgpu_arch PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
     $<$<CONFIG:DEBUG>:-Og -g -fvar-tracking -fvar-tracking-assignments>
     $<$<CONFIG:RELEASE>:-Os>
+)
+
+add_library (msgpu_config INTERFACE)
+target_include_directories (msgpu_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_library (msgpu_lib INTERFACE)
+target_link_libraries (msgpu_lib
+    INTERFACE 
+        pico_stdlib
+        pico_scanvideo
+        pico_scanvideo_dpi
+        hardware_irq
+        hardware_clocks
+        hardware_dma
+        pico_multicore
+        pico_runtime
 )
 
