@@ -19,6 +19,7 @@ add_library(msgpu_processor)
 target_sources(msgpu_processor
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/handler.hpp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/message_processor.cpp
 )

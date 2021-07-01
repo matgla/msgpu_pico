@@ -79,13 +79,14 @@ qspi_command_loop:
 qspi_wait_cycles: 
     nop side 0 
     jmp y-- qspi_wait_cycles side 1 
-    nop side 0
-    nop side 1
+    nop side 0 [1]
+    ; nop side 1 [1]
 qspi_command_r_loop:
     ;set pins, 0b01111 side 0
-    in pins, 4 side 0 
-    jmp x-- qspi_command_r_loop side 1 
-    jmp idle_wait side 0
+    in pins, 4 side 1
+    jmp x-- qspi_command_r_loop side 0 [1] ; in fact it's hack, there is some delay at output, which need to be
+    ; compensated, but looks like memory has no issue to work with irregular clock
+    jmp idle_wait side 0 [1]
 % c-sdk {
 
 #include "hardware/gpio.h" 
@@ -134,7 +135,8 @@ static inline void pio_qspi_init_data(
     {
         pio_gpio_init(pio, pin_base + i);
         //gpio_pull_up(pin_base + i);
-        hw_set_bits(&pio->input_sync_bypass, 1u << (pin_base + 1));
+        gpio_set_input_hysteresis_enabled(pin_base + i, false);
+        hw_set_bits(&pio->input_sync_bypass, 1u << (pin_base + i));
     }
 
     pio_sm_set_consecutive_pindirs(pio, sm, pin_base, 5, true);

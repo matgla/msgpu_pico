@@ -1,0 +1,12 @@
+/* not_message: Mode,ModeInfo */ 
+
+enum Mode 
+{
+    320x240_12bit
+};
+
+struct ChangeMode 
+{
+    Mode mode; 
+};
+

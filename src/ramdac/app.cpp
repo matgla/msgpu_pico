@@ -33,10 +33,11 @@ App::App()
 
 void App::boot()
 {
-    printf("==== RAMDAC ====\n");
+    printf("=========================\n");
+    printf("|         RAMDAC        |\n");
+    printf("=========================\n");
+
     printf("Booting procedure started.\n");
-
-
 
     qspi_.init();
     if (!framebuffer_.init())

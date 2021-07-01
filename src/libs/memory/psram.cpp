@@ -150,15 +150,23 @@ void QspiPSRAM::enter_qpi_mode()
 void QspiPSRAM::benchmark() 
 {
     printf("=====Begin test=====\n");
-    constexpr int benchmark_rows = 2;
-    uint8_t test_data[benchmark_rows][40000];
-    uint8_t read_data[benchmark_rows][40000];
+    constexpr int benchmark_rows = 20;
+    uint8_t test_data[benchmark_rows][1024] = {};
+
+    for (auto& line : test_data)
+    {
+        for (auto& byte : line)
+        {
+            byte = static_cast<uint8_t>(rand() * 255);
+        }
+    }
+    uint8_t read_data[benchmark_rows][1024];
     uint64_t start_time = msgpu::get_us();
     uint32_t address = 0; 
     for (const auto& line : test_data)
     {
-        write(address, line);
-        address += sizeof(test_data[0]);
+       write(address, line);
+       address += sizeof(test_data[0]);
     }
     wait_for_finish();
     uint64_t write_end_time = msgpu::get_us();
@@ -218,8 +226,8 @@ void QspiPSRAM::benchmark()
 bool QspiPSRAM::test()
 {
     printf("QSPI memory starting test...\n");
-    uint8_t buffer[1024*2];
-    uint8_t readed[1024*2];
+    uint8_t buffer[1024];
+    uint8_t readed[1024];
     std::size_t address = 0;
     std::size_t failed = 0;
     std::size_t executed = 0;
@@ -241,11 +249,27 @@ bool QspiPSRAM::test()
         {
             if (buffer[i] != readed[i])
             {
+                printf("Failure detected at 0x%x\n", address);
                 printf("i: %d\n", i);
-                for (int x = 0; x < 32; ++x)
+                int begin = 0;
+                int end = sizeof(buffer) - 1;
+
+                if (i > 10)
                 {
-                    printf("0x%x != 0x%x\n", buffer[x], readed[x]);
+                    begin = i - 10; 
+                }
+
+                if (i + 10 < sizeof(buffer))
+                {
+                    end = i + 10;
                 } 
+
+                for (int x = begin; x < end; ++x)
+                {
+                    printf("i %d -> 0x%x != 0x%x\n", x, buffer[x], readed[x]);
+                } 
+
+
                 failed += 1;
                 
                 return false;

@@ -253,35 +253,7 @@ bool Qspi::spi_write(ConstDataType src)
             static_cast<void>(*rx);
             --rx_remain;
         }
-        //if (--timeout == 0) return false;
     }
-    return true;
-}
-
-bool Qspi::qspi_read(DataType dest)
-{
-//    auto pio = get_pio(config_.sm);
-//    uint8_t* d = dest.data();
-//    auto* rx = get_rx_fifo(pio, config_.sm);
-
-//    std::size_t rx_remain = dest.size();
-
-//    wait_until_previous_finished();
-
-//    pio.set_in_pins(pio, config_.sm, pin_base_);
-//    pio.put(pio, config_.sm, dest.size() * 2 - 2);
-//    pio.exec(pio, config_.sm, pio_encode_jmp(qspi_offset_qspi_r));
-
-//    int timeout = default_timeout;
-//    while (rx_remain)
-//    {
-//        if (!pio_sm_is_rx_fifo_empty(pio, config_.sm))
-//        {
-//            *d++ = *rx;
-//            --rx_remain;
-//        }
-//        if (--timeout == 0) return false;
-//    }
     return true;
 }
 
@@ -306,7 +278,6 @@ bool Qspi::qspi_write(ConstDataType src)
             *tx = *s++;
             --tx_remain;
         }
-        //if (--timeout == 0) return false;
     }
     return true;
 }
@@ -315,12 +286,13 @@ bool __time_critical_func(Qspi::qspi_command_read)(DataType command, DataType da
 {
     uint8_t& wait_cycles = command.back();
     if (wait_cycles % 2 != 0) return false; 
-    wait_cycles -= 2;
+    wait_cycles -= 1;
 
     auto pio = get_pio(config_.sm);
 
     wait_until_previous_finished();
-    
+   
+    pio_sm_set_clkdiv(pio, config_.sm, 1.0f);
     setup_dma_write(command, dma_channel_1, dma_channel_2);
     setup_dma_read(data, dma_channel_2);
 
@@ -339,7 +311,8 @@ bool __time_critical_func(Qspi::qspi_command_write)(ConstDataType command, Const
     auto pio = get_pio(config_.sm);
 
     wait_until_previous_finished();
-
+    
+    pio_sm_set_clkdiv(pio, config_.sm, 1.0f);
     setup_dma_write(command, dma_channel_1, dma_channel_2);
     setup_dma_write(data, dma_channel_2);
     const int size = command.size() * 2 + data.size() * 2 - 1;
@@ -360,7 +333,6 @@ bool __time_critical_func(Qspi::wait_until_previous_finished)()
     while (pio->sm[config_.sm].addr < idle_wait_start
         || pio->sm[config_.sm].addr >= idle_wait_end) 
     {
-       // if (--timeout == 0) return false;
     }
 
     return true;
