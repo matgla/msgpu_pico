@@ -43,10 +43,11 @@ target_link_libraries(msgpu
         msos_dynamic_linker
   #      msgpu_io
         msgpu_arch_interface 
+        msgpu_arch_i2c
         msgpu_arch 
         msgpu_lib
         msgpu_memory
-        msgpu_arch_config
+        msgpu_arch_config_gpu
 #        msgpu_processor
 #        msgpu_mode
 #        msgpu_modes

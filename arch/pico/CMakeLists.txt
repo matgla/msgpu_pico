@@ -29,6 +29,7 @@ target_include_directories(msgpu_arch
 )
 
 add_subdirectory(generator)
+add_subdirectory(i2c)
 add_subdirectory(qspi) 
 
 target_include_directories(msgpu_arch SYSTEM
@@ -86,6 +87,7 @@ target_link_libraries (msgpu_lib
         hardware_irq
         hardware_clocks
         hardware_dma
+        hardware_i2c
         pico_multicore
         pico_runtime
 )

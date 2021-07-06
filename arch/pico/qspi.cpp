@@ -59,6 +59,13 @@ Qspi::Qspi(const QspiConfig config, float clkdiv)
     : config_(config)
     , clkdiv_(clkdiv)
 {
+    gpio_init(config_.sync_in);
+    gpio_init(config_.sync_out);
+    gpio_set_dir(config_.sync_in, false);
+    gpio_set_dir(config_.sync_out, true);
+
+    gpio_put(config_.sync_out, false);
+
 }
 
 void Qspi::init() 
@@ -77,6 +84,8 @@ void Qspi::init()
     dma_channel_1 = dma_claim_unused_channel(true);
     dma_channel_2 = dma_claim_unused_channel(true);
     bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
+
+    release_bus();
 }
 
 void __time_critical_func(Qspi::setup_dma_write)(ConstDataType src, int channel, int chain_to) 
@@ -146,6 +155,33 @@ void Qspi::setup_dma_command_read(ConstDataType cmd, DataType data)
     setup_dma_read(data, dma_channel_2);
 }
 
+void Qspi::acquire_bus() const
+{
+    wait_for_finish();
+    gpio_put(config_.sync_out, true);
+    while (gpio_get(config_.sync_in)) {}
+    auto pio = get_pio(config_.pio);
+
+    pio_sm_set_consecutive_pindirs(pio, config_.sm, config_.sck, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, config_.sm, config_.cs, 1, true);
+
+    pio_sm_restart(pio, config_.sm);
+    pio_sm_set_enabled(pio, config_.sm, true);
+
+}
+
+void Qspi::release_bus() const
+{
+    wait_for_finish();
+    auto pio = get_pio(config_.pio);
+
+    pio_sm_set_enabled(pio, config_.sm, false);
+    pio_sm_set_consecutive_pindirs(pio, config_.sm, config_.sck, 1, false);
+    pio_sm_set_consecutive_pindirs(pio, config_.sm, config_.io_base, 5, false);
+
+    gpio_put(config_.sync_out, false);
+}
+
 
 bool Qspi::spi_transmit(ConstDataType src, DataType dest)
 {
@@ -186,6 +222,7 @@ bool Qspi::spi_transmit(ConstDataType src, DataType dest)
         }
         //if (--timeout == 0) return false;
     }
+
     return true;
 }
 
@@ -200,7 +237,7 @@ bool Qspi::spi_read(DataType dest)
     std::size_t rx_remain = dest.size();
 
     wait_until_previous_finished();
-    
+   
     pio_sm_set_in_pins(pio, config_.sm, config_.io_base + 1);
     pio_sm_put(pio, config_.sm, dest.size() * 8 - 1);
     pio_sm_exec(pio, config_.sm, pio_encode_jmp(qspi_offset_spi_rw));
@@ -235,7 +272,7 @@ bool Qspi::spi_write(ConstDataType src)
     std::size_t rx_remain = src.size();
 
     wait_until_previous_finished();
-
+    
     pio_sm_put(pio, config_.sm, src.size() * 8 - 1);
     pio_sm_exec(pio, config_.sm, pio_encode_jmp(qspi_offset_spi_rw));
 
@@ -266,7 +303,6 @@ bool Qspi::qspi_write(ConstDataType src)
     std::size_t tx_remain = src.size();
 
     wait_until_previous_finished();
-
     pio_sm_put(pio, config_.sm, src.size() * 2 - 1);
     pio_sm_exec(pio, config_.sm, pio_encode_jmp(qspi_offset_qspi_w));
 
@@ -291,7 +327,6 @@ bool __time_critical_func(Qspi::qspi_command_read)(DataType command, DataType da
     auto pio = get_pio(config_.sm);
 
     wait_until_previous_finished();
-   
     pio_sm_set_clkdiv(pio, config_.sm, 1.0f);
     setup_dma_write(command, dma_channel_1, dma_channel_2);
     setup_dma_read(data, dma_channel_2);
@@ -302,7 +337,6 @@ bool __time_critical_func(Qspi::qspi_command_read)(DataType command, DataType da
 
     dma_channel_start(dma_channel_1);
     pio_sm_exec(pio, config_.sm, pio_encode_jmp(qspi_offset_qspi_command_r));
-
     return true;
 }
 
@@ -311,7 +345,6 @@ bool __time_critical_func(Qspi::qspi_command_write)(ConstDataType command, Const
     auto pio = get_pio(config_.sm);
 
     wait_until_previous_finished();
-    
     pio_sm_set_clkdiv(pio, config_.sm, 1.0f);
     setup_dma_write(command, dma_channel_1, dma_channel_2);
     setup_dma_write(data, dma_channel_2);
@@ -320,7 +353,6 @@ bool __time_critical_func(Qspi::qspi_command_write)(ConstDataType command, Const
 
     dma_channel_start(dma_channel_1);
     pio_sm_exec(pio, config_.sm, pio_encode_jmp(qspi_offset_qspi_w));
-
     return true;
 }
 

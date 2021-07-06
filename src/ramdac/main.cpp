@@ -26,6 +26,7 @@ int main()
     
     msgpu::App app;
     app.boot();
+    app.run();
 
     while (true)
     {

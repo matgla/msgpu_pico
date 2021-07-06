@@ -60,35 +60,6 @@ void on_uart_rx()
     }
 }
 
-void initialize_uart()
-{
-    uart_init(uart0, 230400);
-    uart_set_hw_flow(uart0, false, false);
-    uart_set_fifo_enabled(uart0, true);
-    gpio_set_function(16, GPIO_FUNC_UART);
-    gpio_set_function(17, GPIO_FUNC_UART);
- 
-  //  int UART_IRQ = UART0_IRQ;
-  //  irq_set_enabled(UART_IRQ, true);
-  //  irq_set_priority(UART_IRQ, uart_prio);
-  //  irq_set_exclusive_handler(UART_IRQ, on_frame_finished);
-   // uart_get_hw(uart0)->imsc = (1 << UART_UARTIMSC_RTIM_LSB);
-
-    //hw_write_masked(&uart_get_hw(uart0)->ifls, 0 << UART_UARTIFLS_RXIFLSEL_LSB, UART_UARTIFLS_RXIFLSEL_BITS);
-    //uart_set_irq_enables(uart0, true, true); 
-}
-
-
-void initialize_board()
-{
-    set_sys_clock_khz(250000, true);
-    stdio_init_all();
-    hal::enable_dma();
-    initialize_uart();
-
-
-    printf("Board initialized\n");
-}
 
 //void __time_critical_func(render_scanline)(scanvideo_scanline_buffer* dest, int core)
 //{

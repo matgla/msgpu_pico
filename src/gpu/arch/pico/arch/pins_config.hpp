@@ -16,27 +16,22 @@
 
 #pragma once 
 
-#include "arch/i2c.hpp"
-#include "qspi.hpp"
-
-#include "memory/psram.hpp"
+#include <cstdint> 
 
 namespace msgpu 
 {
 
-class App 
-{
-public: 
-    App();
+constexpr uint32_t qspi_sck = 26;
+constexpr uint32_t qspi_io_base = 18;
+constexpr uint32_t qspi_cs = 22; 
 
-    void boot();
-    void run();
-private:
-    bool init_framebuffer();
+constexpr uint32_t uart_tx = 0;
+constexpr uint32_t uart_rx = 1;
 
-    Qspi qspi_;
-    memory::QspiPSRAM framebuffer_;
-    I2C i2c_;
-};
+constexpr uint32_t i2c_scl = 17;
+constexpr uint32_t i2c_sda = 16; 
+
+constexpr uint32_t sync_in = 27;
+constexpr uint32_t sync_out = 28;
 
 } // namespace msgpu

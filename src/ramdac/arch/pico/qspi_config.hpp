@@ -16,27 +16,20 @@
 
 #pragma once 
 
-#include "arch/i2c.hpp"
 #include "qspi.hpp"
-
-#include "memory/psram.hpp"
+#include "pins_config.hpp"
 
 namespace msgpu 
 {
 
-class App 
-{
-public: 
-    App();
-
-    void boot();
-    void run();
-private:
-    bool init_framebuffer();
-
-    Qspi qspi_;
-    memory::QspiPSRAM framebuffer_;
-    I2C i2c_;
+constexpr QspiConfig framebuffer_config {
+    .sck = qspi_sck,
+    .io_base = qspi_io_base, 
+    .cs = qspi_cs,
+    .sm = 0,
+    .pio = 0,
+    .sync_in = sync_in,
+    .sync_out = sync_out
 };
 
 } // namespace msgpu

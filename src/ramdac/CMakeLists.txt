@@ -29,7 +29,8 @@ add_subdirectory(arch)
 target_link_libraries(msgpu_ramdac 
     PRIVATE 
         msgpu_arch
-        msgpu_arch_config
+        msgpu_arch_config_ramdac
+        msgpu_arch_i2c
         msgpu_core
         msgpu_lib
         msgpu_memory

@@ -134,12 +134,15 @@ static inline void pio_qspi_init_data(
     for (uint32_t i = 0; i < 5; ++i)
     {
         pio_gpio_init(pio, pin_base + i);
+        //gpio_set_slew_rate(pin_base + i, GPIO_SLEW_RATE_FAST);
+        //gpio_set_drive_strength(pin_base + i, GPIO_DRIVE_STRENGTH_2MA);
         //gpio_pull_up(pin_base + i);
         gpio_set_input_hysteresis_enabled(pin_base + i, false);
         hw_set_bits(&pio->input_sync_bypass, 1u << (pin_base + i));
     }
 
-    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, 5, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, 4, false);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base + 4, 1, true);
  
     pio_sm_config c = qspi_program_get_default_config(program_offset);
 

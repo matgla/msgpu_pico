@@ -27,7 +27,7 @@ namespace msgpu::memory
 class QspiPSRAM
 {
 public:
-    QspiPSRAM(Qspi& qspi);
+    QspiPSRAM(Qspi& qspi, bool qspi_mode = false);
 
     bool init();
     bool reset();
@@ -40,7 +40,7 @@ public:
 
     bool test();
     void benchmark();
-private:
+//private:
     bool perform_post();
     void enter_qpi_mode();
     void exit_qpi_mode();

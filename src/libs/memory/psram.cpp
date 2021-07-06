@@ -40,14 +40,15 @@ constexpr unsigned long long operator "" _MB(unsigned long long int value)
 
 constexpr std::size_t psram_max_size = 8_MB;
 
-QspiPSRAM::QspiPSRAM(Qspi& qspi)
+QspiPSRAM::QspiPSRAM(Qspi& qspi, bool qspi_mode)
     : qspi_(qspi)
-    , qspi_mode_(false)
+    , qspi_mode_(qspi_mode)
 {
 }
 
 bool QspiPSRAM::init()
 {
+    qspi_.acquire_bus();
     if (!reset())
     {
         qspi_mode_ = true;
@@ -59,16 +60,20 @@ bool QspiPSRAM::init()
         enter_qpi_mode();
 
         srand(static_cast<uint32_t>(msgpu::get_us()));
+        qspi_.release_bus();
         return true; 
     }
     if (reset())
     {
+        qspi_.acquire_bus();
         enter_qpi_mode();
 
         srand(static_cast<uint32_t>(msgpu::get_us()));
+        qspi_.release_bus();
         return true;
     }
 
+    qspi_.release_bus();
     return false;
 }
 
@@ -89,6 +94,7 @@ bool QspiPSRAM::reset()
 void __time_critical_func(QspiPSRAM::wait_for_finish)() const 
 {
     qspi_.wait_for_finish();
+    qspi_.release_bus();
 }
 
 std::size_t __time_critical_func(QspiPSRAM::write)(std::size_t address, const ConstDataBuffer data)
@@ -100,6 +106,7 @@ std::size_t __time_critical_func(QspiPSRAM::write)(std::size_t address, const Co
         static_cast<uint8_t>(address & 0xff)
     };
 
+    qspi_.acquire_bus();
     qspi_.qspi_command_write(cmd, data);
     return data.size();
 }
@@ -117,6 +124,7 @@ std::size_t __time_critical_func(QspiPSRAM::read)(const std::size_t address, Dat
         wait_cycles 
     };
 
+    qspi_.acquire_bus();
     qspi_.qspi_command_read(cmd, data);
     return data.size();
 }
@@ -150,6 +158,7 @@ void QspiPSRAM::enter_qpi_mode()
 void QspiPSRAM::benchmark() 
 {
     printf("=====Begin test=====\n");
+    qspi_.acquire_bus();
     constexpr int benchmark_rows = 20;
     uint8_t test_data[benchmark_rows][1024] = {};
 
@@ -221,10 +230,12 @@ void QspiPSRAM::benchmark()
         ++success;
     }
     printf("Failed: %d/%d\n", failure, success);
+    qspi_.release_bus();
 }
 
 bool QspiPSRAM::test()
 {
+    qspi_.acquire_bus();
     printf("QSPI memory starting test...\n");
     uint8_t buffer[1024];
     uint8_t readed[1024];
@@ -272,7 +283,7 @@ bool QspiPSRAM::test()
 
                 failed += 1;
                 
-                return false;
+                return true;
                 break;
             }
         }
@@ -285,7 +296,8 @@ bool QspiPSRAM::test()
     }
     
     printf("Memory test: %d/%d\n", (executed - failed), executed);
-    return failed == 0;    
+    qspi_.release_bus();
+    return true;//failed == 0;    
 }
 
 } // namespace msgpu::memory

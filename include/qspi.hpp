@@ -27,6 +27,8 @@ struct QspiConfig
     const uint32_t cs; 
     const uint32_t sm;
     const uint32_t pio;
+    const uint32_t sync_in;
+    const uint32_t sync_out;
 };
 
 class Qspi 
@@ -35,6 +37,7 @@ public:
     Qspi(const QspiConfig device, float clkdiv);
 
     void init();
+    void init_pins();
     
     using DataType = std::span<uint8_t>;
     using ConstDataType = std::span<const uint8_t>;
@@ -52,6 +55,8 @@ public:
 
     void wait_for_finish() const;
 
+    void acquire_bus() const;
+    void release_bus() const;
 private:
     void setup_dma_write(ConstDataType src, int channel, int chain_to = -1);
     void setup_dma_read(DataType dest, int channel, int chain_to = -1);

@@ -14,14 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_arch_config INTERFACE)
+add_library(msgpu_arch_config_gpu STATIC)
 
-target_sources(msgpu_arch_config 
-    INTERFACE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/arch/qspi_config.hpp
+target_sources(msgpu_arch_config_gpu 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/arch/pins_config.hpp
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp
 )
 
-target_include_directories(msgpu_arch_config
-    INTERFACE 
+target_include_directories(msgpu_arch_config_gpu
+    PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(msgpu_arch_config_gpu
+    PRIVATE 
+        msgpu_arch_interface
+        msgpu_arch
 )

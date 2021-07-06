@@ -45,7 +45,6 @@
 //#include "messages/swap_buffer.hpp"
 
 #include "qspi.hpp"
-#include "arch/qspi_config.hpp"
 
 #include "mode/modes.hpp"
 //#include "io/usart_point.hpp"
@@ -60,6 +59,9 @@
 //#include <eul/error/error_code.hpp>
 
 #include "symbol_codes.h"
+#include "arch/i2c.hpp"
+#include "arch/pins_config.hpp"
+#include "arch/qspi_config.hpp"
 
 //using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
@@ -128,173 +130,45 @@ int exec(const std::size_t* module_address)
 //    return 0;
 //}
 //
-constexpr std::size_t benchmark_rows = 2;
-static uint8_t test_data[benchmark_rows][45240];
-static uint8_t read_data[benchmark_rows][45240];
-void generate_data()
-{
-    srand(msgpu::get_us());
-    
-    for (auto& d : test_data)
-    {
-        for (auto& b : d)
-        {
-            b = rand() % 0xff; 
-        }
-    }
-}
-
-void benchmark(msgpu::memory::QspiPSRAM& memory)
-{
-    printf("=====Begin test=====\n");
-    uint32_t start_time = msgpu::get_us();
-    uint32_t address = 0; 
-    uint32_t setup_time = 0;
-    uint32_t finish_time = 0;
-    for (const auto& line : test_data)
-    {
-        memory.write(address, line);
-        address += sizeof(test_data[0]);
-    }
-    uint32_t write_end_time = msgpu::get_us();
-    printf("Start time: %d\n", start_time);
-    printf("Write finished: %d\n", write_end_time);
-    printf("Took %d\n", write_end_time - start_time);
-    printf("Setup took %d\n", finish_time - setup_time);
-    printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(write_end_time - start_time));
-    uint32_t read_start_time = msgpu::get_us();
-    address = 0;
-    for (auto& line : read_data)
-    {
-        memory.read(address, line);
-        address += sizeof(test_data[0]);
-    }
-    uint32_t read_end_time = msgpu::get_us();
-    printf("Reading start: %d\n", read_start_time);
-    printf("Reading end: %d\n", read_end_time);
-    printf("Took %d\n", read_end_time - read_start_time);
-    printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(read_end_time - read_start_time));
-
-    printf("====Verification started====\n");
-    int success = 0;
-    int failure = 0;
-    for (int y = 0; y < benchmark_rows; ++y)
-    {
-        if (y == 0)
-        {
-            printf("Data: ");
-        }
-        for (int x = 0; x < sizeof(test_data[0]); ++x)
-        {
-            if (y == 0 && x < 32) 
-            {
-                printf("0x%x (0x%x), ", read_data[y][x], test_data[y][x]);
-                if (x % 16 == 15) 
-                {
-                    printf("\n");
-                }
-            }
-            if (test_data[y][x] != read_data[y][x])
-            {
-                ++failure;
-                if (y == 0 && x < 32)
-                {
-                }else {
-                break;
-                }
-            }
-        }
-        if (y == 0)
-        {
-            printf("\n");
-        }
-        ++success;
-    }
-    printf("Failed: %d/%d\n", failure, success);
-}
-
 int main() 
 {
     msgpu::initialize_board();
- 
-    //msgpu::initialize_signal_generator();
 
-    printf("Hello from msgpu\n");
-//    msgpu::usart_io.process_event(msgpu::io::init{});
+    printf("==========================\n");
+    printf("=        MSGPU           =\n");
+    printf("==========================\n");
 
-//    register_handler<BeginPrimitives>();
-//    register_handler<EndPrimitives>();
-//    register_handler<WriteVertex>();
-//    register_handler<ClearScreen>();
-//    register_handler<SwapBuffer>();
-
-//    hal::set_usart_handler([]{
-//        msgpu::usart_io.process_event(msgpu::io::dma_finished{});
-//     });
-
-//    modes.switch_to<DualBuffered3DGraphic_320x240_256>();
-   
-  //  printf("Sizeof: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::FrameBufferType::BufferType));
-  //  printf("Sizeof mode: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256));
-  //  printf("Sizeof base: %ld\n", sizeof(DualBuffered3DGraphic_320x240_256::Base));
-    //exec(reinterpret_cast<const std::size_t*>(
-    //
-    printf("Testing QSPI module\n");
-  //      Qspi qspi;
-  //  qspi.init();
-  //  qspi.switch_to(Qspi::Mode::SPI);
-
-  //  qspi.chip_select(Qspi::Device::Ram, false);
-
-  //  sleep_us(200);
-  //  uint8_t reset_en[] = {0x66};
-   
-  //  qspi.chip_select(Qspi::Device::Ram, true);
-  //  qspi.spi_write8(reset_en);
-  //  qspi.chip_select(Qspi::Device::Ram, false);
-  //  uint8_t reset_cmd[] = {0x99};
-  //  qspi.chip_select(Qspi::Device::Ram, true);
-  //  qspi.spi_write8(reset_cmd);
-  //  qspi.chip_select(Qspi::Device::Ram, false);
-  //  sleep_us(100);
-
-  //  qspi.chip_select(Qspi::Device::Ram, true);
-
-  //  uint8_t read_eid[] = {0x9f, 0x00, 0x00, 0x00};
-  //  uint8_t eid[8] = {};
-  //  qspi.spi_write8(read_eid);
-  //  qspi.spi_read8(eid);
-  //  qspi.chip_select(Qspi::Device::Ram, false);
-
-  //  printf("EID: ");
-  //  for (auto b : eid)
-  //  {
-  //      printf("0x%x, ", b);
-  //  }
-  //  printf("\n");
- //   msgpu::memory::QspiPSRAM framebuffer(Qspi::Device::Ram);
-//    if (!framebuffer.init())
-//    {
-//        printf("QSPI initialization error\n");
-//        while (true) {}
-//    }
-    Qspi qspi(msgpu::framebuffer_config, 3.0f);//1.95f);
+    Qspi qspi(msgpu::framebuffer_config, 3.0f);
     qspi.init();
+    msgpu::memory::QspiPSRAM framebuffer(qspi, true);
+    msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
 
-    msgpu::memory::QspiPSRAM framebuffer(qspi);
-    if (!framebuffer.init())
-    {
-        printf("QSPI intialization error\n");
-        while (true) {}
-    }
-
-    generate_data();
-    benchmark(framebuffer);
-
-
+    char c;
     while (true)
     {
+        msgpu::sleep_ms(1000);
+        printf("Waiting for command: ");
+        scanf("%c", &c);
+        printf("Execute: %c\n", c);
 
+        if (c == 'w')
+        {
+            printf("Write data to memory\n");
+
+            uint8_t cmd_w[] = {0x38, 0x00, 0x00, 0x00};
+            uint8_t data[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xaa, 0xff, 0xbb, 0xee, 0xcc, 0x12};
+            //framebuffer.write(0x00, data);
+            //framebuffer.wait_for_finish();
+            qspi.acquire_bus();
+            qspi.qspi_command_write(cmd_w, data);
+            qspi.release_bus();
+            
+            uint8_t cmd[] = {0x1, 0x0, 0x0};
+            i2c.write(0x2e, cmd);
+
+        }
+        
+        printf("Working\n");
     }
 
     msgpu::deinitialize_signal_generator();

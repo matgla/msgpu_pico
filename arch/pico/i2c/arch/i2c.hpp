@@ -16,13 +16,25 @@
 
 #pragma once 
 
+#include <cstdint>
+#include <span> 
+
 namespace msgpu 
 {
 
 class I2C
 {
 public:
-    I2C(uint8_t 
+    using DataType = std::span<uint8_t>;
+    using ConstDataType = std::span<uint8_t>;
+    I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda);
+    I2C(uint32_t pin_scl, uint32_t pin_sda);
+
+    void read(DataType data);
+    void write(ConstDataType data);
+
+    void read(uint8_t address, DataType data);
+    void write(uint8_t address, ConstDataType data);
 };
 
 } // namespace msgpu

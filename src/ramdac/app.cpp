@@ -18,6 +18,7 @@
 
 #include <cstdio>
 
+#include "arch/hardware_config.hpp"
 #include "arch/qspi_config.hpp"
 
 #include "core/panic.hpp"
@@ -28,6 +29,7 @@ namespace msgpu
 App::App()
     : qspi_(framebuffer_config, 3.0f)
     , framebuffer_(qspi_)
+    , i2c_(i2c_slave_address, i2c_scl, i2c_sda)
 {
 }
 
@@ -51,6 +53,36 @@ void App::boot()
     }
 
     framebuffer_.benchmark();
+}
+
+void App::run()
+{
+    uint8_t rx_buf[3];
+
+    while (true)
+    {
+        printf("Waiting for I2C\n");
+        i2c_.read(rx_buf);
+        printf("Received data: ");
+        for (const auto byte : rx_buf)
+        {
+            printf("0x%x, ", byte);
+        }
+
+        if (rx_buf[0] == 0x1)
+        {
+            printf ("Got data, reading 16 bytes\n");
+            uint8_t buf[16];
+            framebuffer_.read(0x0, buf);
+            framebuffer_.wait_for_finish();
+            for (const auto byte : buf)
+            {
+                printf("0x%x, ", byte);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 }
 
 } // namespace msgpu

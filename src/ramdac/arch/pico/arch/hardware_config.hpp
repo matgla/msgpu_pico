@@ -16,27 +16,10 @@
 
 #pragma once 
 
-#include "arch/i2c.hpp"
-#include "qspi.hpp"
-
-#include "memory/psram.hpp"
+#include <cstdint>
 
 namespace msgpu 
 {
 
-class App 
-{
-public: 
-    App();
-
-    void boot();
-    void run();
-private:
-    bool init_framebuffer();
-
-    Qspi qspi_;
-    memory::QspiPSRAM framebuffer_;
-    I2C i2c_;
-};
-
+constexpr uint8_t i2c_slave_address = 0x2e;
 } // namespace msgpu
