@@ -134,6 +134,13 @@ int main()
 {
     msgpu::initialize_board();
 
+    while (true) 
+    {
+        msgpu::sleep_ms(1000);
+        static int i = 0;
+        printf("GPU: %d\n", i++);
+    }
+
     printf("==========================\n");
     printf("=        MSGPU           =\n");
     printf("==========================\n");

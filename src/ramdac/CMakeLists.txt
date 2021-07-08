@@ -36,4 +36,8 @@ target_link_libraries(msgpu_ramdac
         msgpu_memory
         common_flags
 )
+ 
+pico_enable_stdio_usb(msgpu_ramdac 1)
+pico_enable_stdio_uart(msgpu_ramdac 0)
+
 

@@ -41,7 +41,7 @@ void initialize_board()
     set_sys_clock_khz(250000, true);
     stdio_init_all();
     hal::enable_dma();
-    initialize_uart();
+    //initialize_uart();
 
 
     printf("Board initialized\n");
