@@ -16,20 +16,12 @@
 
 #pragma once 
 
-#include "qspi.hpp"
-#include "arch/pins_config.hpp"
+#include <cstdint>
 
-namespace msgpu 
+namespace msgpu
 {
 
-constexpr QspiConfig framebuffer_config {
-    .sck = qspi_sck,
-    .io_base = qspi_io_base, 
-    .cs = qspi_cs,
-    .sm = 0,
-    .pio = 0,
-    .sync_in = sync_in,
-    .sync_out = sync_out
-};
+constexpr uint32_t i2c_scl = 0;
+constexpr uint32_t i2c_sda = 1;
 
 } // namespace msgpu

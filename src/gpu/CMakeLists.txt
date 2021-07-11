@@ -48,13 +48,12 @@ target_link_libraries(msgpu
         msgpu_arch_config_gpu
 )
 add_dependencies(msgpu api_generator)
+
 if (NOT USE_SIMULATION)
+    pico_enable_stdio_usb(msgpu 0)
+    pico_enable_stdio_uart(msgpu 1)
 
-pico_enable_stdio_usb(msgpu 1)
-pico_enable_stdio_uart(msgpu 0)
-
-pico_add_extra_outputs(msgpu)
-
+    pico_add_extra_outputs(msgpu)
 endif()
 
 endif()

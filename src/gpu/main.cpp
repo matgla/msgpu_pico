@@ -134,18 +134,11 @@ int main()
 {
     msgpu::initialize_board();
 
-    while (true) 
-    {
-        msgpu::sleep_ms(1000);
-        static int i = 0;
-        printf("GPU: %d\n", i++);
-    }
-
     printf("==========================\n");
     printf("=        MSGPU           =\n");
     printf("==========================\n");
 
-    Qspi qspi(msgpu::framebuffer_config, 3.0f);
+    msgpu::Qspi qspi(msgpu::framebuffer_config, 3.0f);
     qspi.init();
     msgpu::memory::QspiPSRAM framebuffer(qspi, true);
     msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);

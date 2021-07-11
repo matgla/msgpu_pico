@@ -14,13 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library (msgpu_arch_pico_qspi INTERFACE)
+add_library(msgpu_arch_config_gpu STATIC)
 
-pico_generate_pio_header(msgpu_arch_pico_qspi ${CMAKE_CURRENT_LIST_DIR}/qspi.pio)
-
-target_include_directories(msgpu_arch_pico_qspi 
-    INTERFACE 
-        ${CMAKE_CURRENT_BINARY_DIR}
+target_sources(msgpu_arch_config_gpu 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/arch/pins_config.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/arch/qspi_config.hpp
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp
 )
 
+target_include_directories(msgpu_arch_config_gpu
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
+target_link_libraries(msgpu_arch_config_gpu
+    PRIVATE 
+        msgpu_arch_interface
+        msgpu_arch
+)

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 if (USE_SIMULATION)
-    add_subdirectory(x86)
+    add_subdirectory(x86-64)
 elseif (NOT ENABLE_TESTS) 
     add_subdirectory(pico)
 endif ()

@@ -17,8 +17,6 @@
 add_library(msgpu_arch_i2c)
 
 target_sources(msgpu_arch_i2c 
-    PUBLIC 
-        ${CMAKE_CURRENT_SOURCE_DIR}/arch/i2c.hpp 
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/i2c.cpp
 )
@@ -34,5 +32,10 @@ target_include_directories(msgpu_arch_i2c SYSTEM
     $<TARGET_PROPERTY:hardware_i2c,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:pico_time,INTERFACE_INCLUDE_DIRECTORIES>
 
+)
+
+target_link_libraries(msgpu_arch_i2c 
+    PUBLIC 
+        msgpu_arch_interface
 )
 

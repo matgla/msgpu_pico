@@ -14,13 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library (msgpu_arch_pico_qspi INTERFACE)
+add_library(msgpu_arch_i2c)
 
-pico_generate_pio_header(msgpu_arch_pico_qspi ${CMAKE_CURRENT_LIST_DIR}/qspi.pio)
-
-target_include_directories(msgpu_arch_pico_qspi 
-    INTERFACE 
-        ${CMAKE_CURRENT_BINARY_DIR}
+target_sources(msgpu_arch_i2c 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/i2c.cpp
 )
 
+target_include_directories(msgpu_arch_i2c
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
+target_link_libraries(msgpu_arch_i2c 
+    PUBLIC 
+        msgpu_arch_interface
+)

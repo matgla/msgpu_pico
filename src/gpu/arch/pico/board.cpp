@@ -45,7 +45,6 @@ void initialize_board()
     hal::enable_dma();
     initialize_uart();
 
-
     printf("Board initialized\n");
 }
 

@@ -179,7 +179,7 @@ void QspiPSRAM::benchmark()
     }
     wait_for_finish();
     uint64_t write_end_time = msgpu::get_us();
-    printf("Took %lld\n", write_end_time - start_time);
+    printf("Took %ld\n", write_end_time - start_time);
     printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(write_end_time - start_time));
     uint64_t read_start_time = msgpu::get_us();
     address = 0;
@@ -191,7 +191,7 @@ void QspiPSRAM::benchmark()
 
     wait_for_finish();
     uint64_t read_end_time = msgpu::get_us();
-    printf("Took %lld\n", read_end_time - read_start_time);
+    printf("Took %ld\n", read_end_time - read_start_time);
     printf("Speed: %f MB/s\n", static_cast<float>(sizeof(test_data)) / static_cast<float>(read_end_time - read_start_time));
 
     printf("====Verification started====\n");
@@ -239,13 +239,13 @@ bool QspiPSRAM::test()
     printf("QSPI memory starting test...\n");
     uint8_t buffer[1024];
     uint8_t readed[1024];
-    std::size_t address = 0;
-    std::size_t failed = 0;
-    std::size_t executed = 0;
+    uint32_t address = 0;
+    uint32_t failed = 0;
+    uint32_t executed = 0;
 
     while (address < psram_max_size) 
     {
-        for (std::size_t i = 0; i < sizeof(buffer); ++i)
+        for (uint32_t i = 0; i < sizeof(buffer); ++i)
         {
             buffer[i] = static_cast<uint8_t>(rand() * 255);
         }
@@ -256,7 +256,7 @@ bool QspiPSRAM::test()
         
         executed += 1;
 
-        for (std::size_t i = 0; i < sizeof(buffer); ++i)
+        for (uint32_t i = 0; i < sizeof(buffer); ++i)
         {
             if (buffer[i] != readed[i])
             {

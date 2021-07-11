@@ -19,6 +19,7 @@ add_subdirectory(generator)
 add_library(msgpu_arch_interface INTERFACE)
 
 target_sources(msgpu_arch_interface INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/arch/i2c.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/board.hpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/qspi.hpp

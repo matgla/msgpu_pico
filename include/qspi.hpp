@@ -20,6 +20,9 @@
 
 #include <span>
 
+namespace msgpu 
+{
+
 struct QspiConfig 
 {
     const uint32_t sck; 
@@ -68,4 +71,6 @@ private:
     const QspiConfig config_;
     const float clkdiv_;
 };
+
+} // namespace msgpu 
 

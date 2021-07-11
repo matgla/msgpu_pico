@@ -16,6 +16,7 @@
 message (STATUS "Configuring simulation")
 
 add_subdirectory(generator)
+add_subdirectory(i2c)
 
 add_library(msgpu_arch STATIC)
 
@@ -24,6 +25,7 @@ target_sources(msgpu_arch
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/qspi.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.cpp
 )
@@ -44,3 +46,4 @@ target_include_directories(msgpu_arch
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+add_library(msgpu_lib INTERFACE)

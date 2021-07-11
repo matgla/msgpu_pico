@@ -17,19 +17,19 @@
 #pragma once 
 
 #include "qspi.hpp"
-#include "arch/pins_config.hpp"
 
 namespace msgpu 
 {
 
 constexpr QspiConfig framebuffer_config {
-    .sck = qspi_sck,
-    .io_base = qspi_io_base, 
-    .cs = qspi_cs,
+    .sck = 0,
+    .io_base = 0,
+    .cs = 0, 
     .sm = 0,
     .pio = 0,
-    .sync_in = sync_in,
-    .sync_out = sync_out
+    .sync_in = 0,
+    .sync_out = 0
 };
 
 } // namespace msgpu
+
