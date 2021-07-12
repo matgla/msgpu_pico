@@ -86,6 +86,10 @@ find_package(msgpu_interface)
 
 set (MSOS_DYNAMIC_LINKER_API_FILE ${PROJECT_SOURCE_DIR}/api/symbol_codes.json)
 
+if (USE_SIMULATION)
+    set (MSOS_DL_ARCH x86_64-linux)
+endif () 
+
 find_package(msos_dl REQUIRED)
 
 add_subdirectory(arch)
