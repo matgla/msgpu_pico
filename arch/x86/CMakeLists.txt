@@ -39,6 +39,7 @@ target_link_libraries(msgpu_arch
         eul_crc
         sfml-graphics
         pthread
+        msgpu_generator
 )
 
 target_include_directories(msgpu_arch 
@@ -47,3 +48,9 @@ target_include_directories(msgpu_arch
 )
 
 add_library(msgpu_lib INTERFACE)
+
+add_library(msgpu_config INTERFACE)
+target_include_directories(msgpu_config 
+    INTERFACE 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)

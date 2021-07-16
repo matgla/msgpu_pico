@@ -51,10 +51,10 @@ if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     include (external/pico_extras_import)
     pico_sdk_init()
     set (arch "ARM")
-    set (MSOS_DYNAMIC_LINKER_ARCH "armv-6m")
+    set (MSOS_DL_ARCH "armv-6m")
 else ()
     set (arch "x86_64")
-    set (MSOS_DYNAMIC_LINKER_ARCH "x86_64")
+    set (MSOS_DL_ARCH "x86_64-linux")
 endif ()
 
 

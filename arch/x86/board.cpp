@@ -145,6 +145,15 @@ uint32_t get_millis()
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+uint64_t get_us() 
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+void sleep_us(uint32_t time)
+{
+    std::this_thread::sleep_for(std::chrono::microseconds(time));
+}
 
 } // namespace msgpu 
 

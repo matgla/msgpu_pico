@@ -165,9 +165,7 @@ int main()
             
             uint8_t cmd[] = {0x1, 0x0, 0x0};
             i2c.write(0x2e, cmd);
-
         }
-        
         printf("Working\n");
     }
 
