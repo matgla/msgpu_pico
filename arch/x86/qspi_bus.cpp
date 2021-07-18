@@ -14,39 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "board.hpp" 
+#include "qspi_bus.hpp"
 
-#include <cstdio>
-
-#include "app.hpp"
+#include "panic.hpp"
 
 namespace msgpu 
 {
 
-// TODO: to be removed
-void frame_update()
+QspiBus& QspiBus::get() 
 {
+    static QspiBus impl;
+    return impl;
 }
 
-
-// TODO: to be removed 
-std::span<const uint8_t> get_scanline(std::size_t line) 
+void QspiBus::register_device(int id, std::unique_ptr<IDevice>&& device)
 {
-    static_cast<void>(line);
-    return std::span<const uint8_t>();
+    devices_[id] = std::move(device);
+}
+
+IDevice* QspiBus::get_device(int id)
+{
+    return devices_[id].get();
+}
+
+const IDevice* QspiBus::get_device(int id) const 
+{
+    if (!devices_.contains(id))
+    {
+        panic("Can't find device id: %d, on qspi bus\n", id);
+    }
+    return devices_.at(id).get();
 }
 
 } // namespace msgpu
-
-int main() 
-{
-    msgpu::initialize_board();
-    
-    msgpu::App app;
-    app.boot();
-    app.run();
-
-    while (true)
-    {
-    }
-}

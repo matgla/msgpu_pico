@@ -17,6 +17,8 @@
 add_library(msgpu_arch OBJECT) # must be OBJECT library to make lazy linking
 
 target_sources(msgpu_arch 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/panic.hpp
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/qspi.cpp

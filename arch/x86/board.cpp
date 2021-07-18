@@ -26,6 +26,8 @@
 #include <fcntl.h>
 
 #include "generator/vga.hpp"
+#include "qspi_bus.hpp"
+#include "ips6404/ips6404.hpp"
 
 namespace msgpu 
 {
@@ -97,6 +99,8 @@ void initialize_board()
     rendering_thread.reset(new std::thread(&render_loop));
 
     serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
+
+    msgpu::QspiBus::get().register_device(0, std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer"));
 }
 
 

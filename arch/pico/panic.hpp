@@ -29,6 +29,5 @@ void panic(Args&&... args)
     printf(args...);
 
     asm inline("bkpt #0");
-
     while (true);
 }

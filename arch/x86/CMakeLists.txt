@@ -23,7 +23,10 @@ add_library(msgpu_arch STATIC)
 target_sources(msgpu_arch 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ips6404/ips6404.hpp
     PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/ips6404/ips6404.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/qspi_bus.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/qspi.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/board.cpp 
@@ -35,11 +38,13 @@ find_package(SFML 2 REQUIRED graphics)
 target_link_libraries(msgpu_arch 
     PUBLIC
         msgpu_arch_interface
+        external::sml 
     PRIVATE
         eul_crc
         sfml-graphics
         pthread
         msgpu_generator
+        rt
 )
 
 target_include_directories(msgpu_arch 

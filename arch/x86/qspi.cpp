@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "qspi.hpp"
+#include "qspi_bus.hpp"
 
 namespace msgpu 
 {
@@ -35,47 +36,46 @@ void Qspi::init_pins()
 
 bool Qspi::spi_transmit(ConstDataType src, DataType dest)
 {
-    static_cast<void>(src);
-    static_cast<void>(dest);
+    QspiBus::get().get_device(config_.io_base)->transmit(src, dest, src.size(), dest.size()); 
     return true;
 }
 
 bool Qspi::spi_read(DataType dest)
 {
-    static_cast<void>(dest);
+    QspiBus::get().get_device(config_.io_base)->read(dest, dest.size());
     return true;
 }
     
 bool Qspi::spi_write(ConstDataType src)
 {
-    static_cast<void>(src);
+    QspiBus::get().get_device(config_.io_base)->write(src, src.size());
     return true;
 }
 
 bool Qspi::qspi_read(DataType dest)
 {
-    static_cast<void>(dest);
+    QspiBus::get().get_device(config_.io_base)->read(dest, dest.size());
     return true;
 }
 
 bool Qspi::qspi_write(ConstDataType src)
 {
-    static_cast<void>(src);
+    QspiBus::get().get_device(config_.io_base)->write(src, src.size());
     return true;
 }
 
 bool Qspi::qspi_command_read(DataType command, DataType data)
 {
-    static_cast<void>(command);
-    static_cast<void>(data);
+    QspiBus::get().get_device(config_.io_base)->write(command, command.size());
+    QspiBus::get().get_device(config_.io_base)->read(data, data.size());
     return true;
 }
 
 
 bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data)
 {
-    static_cast<void>(command);
-    static_cast<void>(data);
+    QspiBus::get().get_device(config_.io_base)->write(command, command.size());
+    QspiBus::get().get_device(config_.io_base)->write(data, data.size());
     return true;
 }
 

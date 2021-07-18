@@ -14,39 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "board.hpp" 
+#pragma once 
 
 #include <cstdio>
+#include <cstdlib> 
+#include <signal.h>
 
-#include "app.hpp"
-
-namespace msgpu 
+template <typename... Args>
+void panic(Args&&... args)
 {
+    printf("******************\n");
+    printf("*     PANIC      *\n");
+    printf("******************\n");
 
-// TODO: to be removed
-void frame_update()
-{
-}
+    printf(args...);
 
-
-// TODO: to be removed 
-std::span<const uint8_t> get_scanline(std::size_t line) 
-{
-    static_cast<void>(line);
-    return std::span<const uint8_t>();
-}
-
-} // namespace msgpu
-
-int main() 
-{
-    msgpu::initialize_board();
-    
-    msgpu::App app;
-    app.boot();
-    app.run();
-
-    while (true)
-    {
-    }
+    raise(SIGTRAP);
+    while (true);
 }

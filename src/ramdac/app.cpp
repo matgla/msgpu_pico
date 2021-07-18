@@ -20,8 +20,9 @@
 
 #include "arch/hardware_config.hpp"
 #include "arch/qspi_config.hpp"
+#include "arch/pins_config.hpp"
 
-#include "core/panic.hpp"
+#include "panic.hpp"
 
 namespace msgpu 
 {
