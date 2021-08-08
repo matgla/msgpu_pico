@@ -29,6 +29,7 @@ public:
     using ConstDataType = std::span<uint8_t>;
     I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda);
     I2C(uint32_t pin_scl, uint32_t pin_sda);
+    ~I2C();
 
     void read(DataType data);
     void write(ConstDataType data);

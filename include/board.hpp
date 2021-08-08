@@ -49,6 +49,9 @@ void sleep_us(uint32_t time);
 
 void block_display();
 void unblock_display();
+
+void initialize_application_specific();
+
 } // namespace msgpu  
 
 void start_vga();

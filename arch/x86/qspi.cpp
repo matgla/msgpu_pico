@@ -15,6 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "qspi.hpp"
+
+#include <vector>
+
 #include "qspi_bus.hpp"
 
 namespace msgpu 
@@ -66,16 +69,17 @@ bool Qspi::qspi_write(ConstDataType src)
 
 bool Qspi::qspi_command_read(DataType command, DataType data)
 {
-    QspiBus::get().get_device(config_.io_base)->write(command, command.size());
-    QspiBus::get().get_device(config_.io_base)->read(data, data.size());
+    QspiBus::get().get_device(config_.io_base)->transmit(command, data, command.size(), data.size());
     return true;
 }
 
 
 bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data)
 {
-    QspiBus::get().get_device(config_.io_base)->write(command, command.size());
-    QspiBus::get().get_device(config_.io_base)->write(data, data.size());
+    std::vector<uint8_t> buffer; 
+    std::copy(command.begin(), command.end(), std::back_inserter(buffer));
+    std::copy(data.begin(), data.end(), std::back_inserter(buffer));
+    QspiBus::get().get_device(config_.io_base)->write(buffer, buffer.size());
     return true;
 }
 

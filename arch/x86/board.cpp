@@ -29,6 +29,7 @@
 #include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
 
+
 namespace msgpu 
 {
 namespace 
@@ -100,7 +101,10 @@ void initialize_board()
 
     serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
 
-    msgpu::QspiBus::get().register_device(0, std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer"));
+    msgpu::QspiBus::get().register_device(0, 
+        std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer_out"));
+
+    initialize_application_specific();
 }
 
 
