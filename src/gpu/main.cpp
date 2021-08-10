@@ -163,7 +163,7 @@ int main()
             qspi.qspi_command_write(cmd_w, data);
             qspi.release_bus();
             
-            uint8_t cmd[] = {0x1, 0x0, 0x0};
+            uint8_t cmd[] = {0x1, 0x20, 0x0};
             i2c.write(0x2e, cmd);
         }
         printf("Working\n");
