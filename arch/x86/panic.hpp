@@ -20,15 +20,14 @@
 #include <cstdlib> 
 #include <signal.h>
 
-template <typename... Args>
-void panic(Args&&... args)
-{
-    printf("******************\n");
-    printf("*     PANIC      *\n");
-    printf("******************\n");
-
-    printf(args...);
-
-    raise(SIGTRAP);
-    while (true);
+#define panic(...) \
+{ \
+    printf("******************\n"); \
+    printf("*     PANIC      *\n"); \
+    printf("******************\n"); \
+\
+    printf(__VA_ARGS__); \
+\
+    raise(SIGTRAP); \
+    while (true); \
 }

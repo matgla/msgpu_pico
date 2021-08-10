@@ -36,7 +36,6 @@ struct MemInfo
 {
     int fd; 
     std::string name;
-    void* ptr;
     sem_t* sem;
 };
 
@@ -50,31 +49,19 @@ I2C::I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda)
 {
     std::string name = std::string("i2c_") + std::to_string(slave_address) + std::string("_slave");
 
-    int fd = shm_open(name.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
-    
-    ftruncate(fd, 256);
-    void* slave_ptr = mmap(NULL, 256, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    sem_t* slave_sem = sem_open(name.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 0);
+    std::string semaphore_name = std::string("/") + name;
+
+    sem_t *sem = sem_open(semaphore_name.c_str(), O_CREAT, 0666);
+    mkfifo(name.c_str(), 0666);
+    int fd = open(name.c_str(), O_RDWR);
+
     slave_fd_map[slave_address] = MemInfo {
         .fd = fd,
-        .name = name,
-        .ptr = slave_ptr,
-        .sem = slave_sem
+        .name = name
     };
 
     my_fd = &slave_fd_map[slave_address];
 
-    std::string master_name = "i2c_master";
-    int m_fd = shm_open(master_name.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
-    ftruncate(m_fd, 256);
-    void* master_ptr = mmap(NULL, 256, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0);
-    sem_t* master_sem = sem_open(master_name.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 0); 
-    master_fd = {
-        .fd = m_fd, 
-        .name = master_name,
-        .ptr = master_ptr,
-        .sem = master_sem
-    };
 }
 
 I2C::I2C(uint32_t pin_scl, uint32_t pin_sda)
@@ -113,7 +100,8 @@ void I2C::read(DataType data)
 {
     if (!sem_wait(my_fd->sem))
     {
-        ::read(my_fd->fd, data.data(), data.size());
+        printf("I2C semaphore released\n");
+        std::memcpy(
         sem_post(my_fd->sem);
     }
 }

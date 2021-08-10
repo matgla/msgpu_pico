@@ -23,6 +23,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "panic.hpp"
+
 namespace msgpu 
 {
 namespace stubs 
@@ -44,16 +46,17 @@ IPS6404StubSm::IPS6404StubSm(SharedMemory& memory)
 void IPS6404StubSm::init()
 {
     printf("Initialize IPS6404 StateMachine\n");
+    sem_post(memory_.sem);
 }
 
 void IPS6404StubSm::read_base(const evTransmit& ev, int wait_cycles)
 {
     const std::size_t address = ev.src[1] << 16 | ev.src[2] << 8 | ev.src[3];
-    printf("Reading from 0x%x\n", address);
     const std::size_t offset = command_offset + address_offset + wait_cycles;
     sem_wait(memory_.sem);
-    printf("Semaphore unlocked for reading\n");
-    std::memcpy(ev.dest.data() + offset, &memory_.memory[address], ev.dest.size() - offset); 
+
+    std::memcpy(ev.dest.data(), &memory_.memory[address], ev.dest.size()); 
+ 
     sem_post(memory_.sem);
 }
 
@@ -77,10 +80,9 @@ void IPS6404StubSm::write(const evTransmit& ev)
     const std::size_t address = ev.src[1] << 16 | ev.src[2] << 8 | ev.src[3];
     const std::size_t offset = command_offset + address_offset;
     
-    printf("Writing at: 0x%x\n", address);
     sem_wait(memory_.sem);
-    printf("Semaphore unlocked for writing\n");
-    std::memcpy(&memory_.memory[address], ev.src.data() + offset, ev.src.size() - offset); 
+
+    std::memcpy(&memory_.memory[address], &ev.src[offset], ev.src.size() - offset); 
     sem_post(memory_.sem);
 }
 
@@ -143,10 +145,28 @@ IPS6404Stub::IPS6404Stub(std::string_view name)
 {
     printf("Allocating shared memory for: %s\n", name.data());
 
-    memory_.fd = shm_open(name.data(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
+    memory_.fd = shm_open(name.data(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    if (memory_.fd < 0)
+    {
+        panic("Can't open shared memory object: %s\n", strerror(errno));
+    }
     memory_.name = name;
-    memory_.sem = sem_open(name.data(), O_CREAT, S_IRUSR | S_IWUSR); 
+    std::string semaphore_name = "/";
+    semaphore_name += name;
+    memory_.sem = sem_open(semaphore_name.c_str(), O_CREAT, 0644, 0); 
+    if (memory_.sem == nullptr)
+    {
+        panic("Semaphore aquisition failed: %s\n", strerror(errno));
+    }
+
+    ftruncate(memory_.fd, memory_size);
     void *mem = mmap(NULL, memory_size, PROT_READ | PROT_WRITE, MAP_SHARED, memory_.fd, 0);
+
+    if (mem == MAP_FAILED)
+    {
+        panic("Memory mapping failed: %s\n", strerror(errno));
+    }
+
     memory_.memory = std::span<uint8_t>(static_cast<uint8_t*>(mem), memory_size);
 
     sm_.process_event(IPS6404StubSm::evInit{});
@@ -161,7 +181,6 @@ IPS6404Stub::~IPS6404Stub()
 
 void IPS6404Stub::init() 
 {
-    sem_post(memory_.sem);
 }
 
 void IPS6404Stub::read(const DataType &buf, std::size_t len)

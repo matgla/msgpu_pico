@@ -97,7 +97,7 @@ void render_loop()
 
 void initialize_board()
 {
-    rendering_thread.reset(new std::thread(&render_loop));
+    //rendering_thread.reset(new std::thread(&render_loop));
 
     serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
 
