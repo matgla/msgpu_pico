@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #pragma once 
 
 namespace msgpu::modes 
@@ -29,6 +28,20 @@ enum class Modes
     Graphic_320x240_16 = 11,
     Graphic_320x240_12bit = 12
 };
+
+constexpr const char* to_string(Modes m)
+{
+    switch (m)
+    {
+        case Modes::Text_80x30_16: return "Text 80x30 - 16 colors";
+        case Modes::Text_40x30_16: return "Text 40x30 - 16 colors";
+        case Modes::Text_40x30_12bit: return "Text 40x30 - RGB444";
+        case Modes::Graphic_640x480_16: return "Graphic 640x480 - 16 colors";
+        case Modes::Graphic_320x240_16: return "Graphic 320x240 - 16 colors";
+        case Modes::Graphic_320x240_12bit: return "Graphic 320x240 - RGB444";
+    }
+    return "Unknown";
+}
 
 } // namespace msgpu::modes
 

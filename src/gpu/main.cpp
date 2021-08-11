@@ -47,6 +47,7 @@
 #include "qspi.hpp"
 
 #include "mode/modes.hpp"
+#include "generator/modes.hpp"
 //#include "io/usart_point.hpp"
 
 //#include "mode/3d_graphic_mode.hpp"
@@ -149,7 +150,17 @@ int main()
         msgpu::sleep_ms(1000);
         printf("Waiting for command: ");
         scanf("%c", &c);
-        printf("Execute: %c\n", c);
+        printf("\nExecute: %c\n", c);
+
+        constexpr uint8_t set_mode_cmd = 0x02;
+
+        if (c == 'd')
+        {
+            printf("Write DEMO pattern and trigger RAMDAC to display\n");
+            const uint8_t mode = static_cast<uint8_t>(msgpu::modes::Modes::Graphic_320x240_12bit);
+            const uint8_t cmd[] = { set_mode_cmd, mode };
+            i2c.write(0x2e, cmd);    
+        }
 
         if (c == 'w')
         {

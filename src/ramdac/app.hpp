@@ -19,7 +19,9 @@
 #include "arch/i2c.hpp"
 #include "qspi.hpp"
 
+#include "generator/vga.hpp"
 #include "memory/psram.hpp"
+#include "renderer/renderer.hpp"
 
 namespace msgpu 
 {
@@ -37,6 +39,8 @@ private:
     Qspi qspi_;
     memory::QspiPSRAM framebuffer_;
     I2C i2c_;
+    generator::Vga& vga_;
+    renderer::Renderer renderer_;
 };
 
 } // namespace msgpu

@@ -19,7 +19,6 @@ find_package(msgui REQUIRED)
 add_subdirectory(arch)
 add_subdirectory(io)
 add_subdirectory(modes)
-add_subdirectory(mode)
 add_subdirectory(processor)
 
 
@@ -46,6 +45,7 @@ target_link_libraries(msgpu
         msgpu_lib
         msgpu_memory
         msgpu_arch_config_gpu
+        msgpu_mode
 )
 add_dependencies(msgpu api_generator)
 

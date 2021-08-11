@@ -31,6 +31,8 @@ App::App()
     : qspi_(framebuffer_config, 3.0f)
     , framebuffer_(qspi_)
     , i2c_(i2c_slave_address, i2c_scl, i2c_sda)
+    , vga_(generator::get_vga())
+    , renderer_(vga_)
 {
 }
 
@@ -54,6 +56,9 @@ void App::boot()
     }
 
     framebuffer_.benchmark();
+
+    printf("Initialize VGA generator\n");
+    vga_.setup();
 }
 
 void App::run()
@@ -69,18 +74,28 @@ void App::run()
         {
             printf("0x%x, ", byte);
         }
+        printf("\n");
 
-        if (rx_buf[0] == 0x1)
+        switch (rx_buf[0])
         {
-            printf ("Got data, reading 16 bytes\n");
-            uint8_t buf[16];
-            framebuffer_.read(0x0, buf);
-            framebuffer_.wait_for_finish();
-            for (const auto byte : buf)
+            case 0x01: 
             {
-                printf("0x%x, ", byte);
-            }
-            printf("\n");
+                printf ("Got data, reading 16 bytes\n");
+                uint8_t buf[16];
+                framebuffer_.read(0x0, buf);
+                framebuffer_.wait_for_finish();
+                for (const auto byte : buf)
+                {
+                    printf("0x%x, ", byte);
+                }
+                printf("\n");
+            } break;
+            case 0x02:
+            {
+                printf ("Got set mode command\n");
+                renderer_.change_mode(static_cast<modes::Modes>(rx_buf[1]));
+                printf ("New mode to set: 0x%x\n", rx_buf[1]);
+            } break;
         }
         printf("\n");
     }

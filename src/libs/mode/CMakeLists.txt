@@ -16,24 +16,26 @@
 
 add_library(msgpu_mode INTERFACE)
 
+set (include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/mode)
 target_sources(msgpu_mode
     INTERFACE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/modes.hpp
+        ${include_dir}/2d_graphic_mode.hpp
+        ${include_dir}/3d_graphic_mode.hpp
+        ${include_dir}/buffer.hpp
+        ${include_dir}/buffer_generator.hpp
+        ${include_dir}/framebuffer.hpp
+        ${include_dir}/mode_base.hpp
+        ${include_dir}/modes.hpp
+        ${include_dir}/text_mode.hpp
 )
 
 
 target_link_libraries(msgpu_mode 
-#    PUBLIC 
-#        msgpu_messages
-#        eul_functional
-#    PRIVATE 
-INTERFACE 
-    common_flags
-    )
-#        common_flags
-#)
+    INTERFACE 
+        common_flags
+)
 
 target_include_directories(msgpu_mode
     INTERFACE 
-        ${PROJECT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

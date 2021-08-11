@@ -32,8 +32,9 @@ void frame_update()
 // TODO: to be removed 
 std::span<const uint8_t> get_scanline(std::size_t line) 
 {
+    uint8_t buf[640] = {};
     static_cast<void>(line);
-    return std::span<const uint8_t>();
+    return std::span<const uint8_t>(buf);
 }
 
 } // namespace msgpu

@@ -14,46 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "generator/vga.hpp"
+#pragma once 
 
-#include "board.hpp"
+#include <cstddef> 
 
-#include <algorithm>
-#include <cstring>
-
-namespace msgpu::generator
+namespace msgpu::renderer 
 {
 
-Vga::Vga(modes::Modes mode) 
+enum class ColorSpace
 {
-    if (mode == modes::Modes::Graphic_320x240_12bit)
-    {
-        set_resolution(320, 240);
+    Palette_16,
+    Palette_256,
+    Rgb332,
+    Rgb444
+};
+
+struct ModeConfig 
+{
+    VgaModes vga_mode;
+    ColorSpace color_space;
+};
+
+constexpr ModeConfig configs[] = {
+    /* 0 320x240@8bit */ { 
+        .vga_mode = VgaModes::r320x240_60,
+        .color_space = ColorSpace::Rgb444
     }
-}
+};
 
-void Vga::change_mode(modes::Modes mode)
-{
-}
-
-void Vga::setup()
-{
-
-}
-
-std::size_t Vga::display_line(std::span<uint32_t> line, 
-    std::span<const uint8_t> scanline_buffer)
-{
-    std::transform(scanline_buffer.begin(), scanline_buffer.end(), line.begin(), [](uint8_t color) {
-        return color; // TODO: transform?
-    });
-    return 0;
-}
-
-Vga& get_vga()
-{
-    static Vga vga(modes::Modes::Graphic_320x240_12bit);
-    return vga;
-}
-
-} // namespace msgpu::generator 
+} // namespace msgpu::renderer

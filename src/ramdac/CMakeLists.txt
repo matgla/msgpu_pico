@@ -25,6 +25,7 @@ target_sources(msgpu_ramdac
 )
 
 add_subdirectory(arch)
+add_subdirectory(renderer)
 
 target_link_libraries(msgpu_ramdac 
     PRIVATE 
@@ -33,6 +34,7 @@ target_link_libraries(msgpu_ramdac
         msgpu_arch_i2c
         msgpu_lib
         msgpu_memory
+        msgpu_renderer
         common_flags
 )
 

@@ -14,6 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(memory)
-add_subdirectory(mode)
+add_library(msgpu_renderer)
+
+target_sources(msgpu_renderer
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/configs.hpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/renderer.hpp 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/renderer.cpp
+)
+
+target_link_libraries(msgpu_renderer 
+    PUBLIC
+        msgpu_generator
+    PRIVATE 
+        common_flags
+)
+
 

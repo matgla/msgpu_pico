@@ -27,7 +27,7 @@
 
 #include "board.hpp"
 
-namespace msgpu 
+namespace msgpu::generator 
 {
 
 namespace 
@@ -110,7 +110,7 @@ Vga& get_vga()
     return vga;
 }
 
-} // namespace msgpu 
+} // namespace msgpu::generator
 
 void start_vga()
 {
