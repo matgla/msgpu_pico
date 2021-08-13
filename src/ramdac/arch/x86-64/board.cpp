@@ -71,7 +71,6 @@ void render_loop()
             }
         }
         window.clear();
-        msgpu::frame_update();
         for (std::size_t line = 0; line < resolution_height ; ++line)
         {
             uint32_t line_buffer_[640]; 

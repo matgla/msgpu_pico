@@ -29,6 +29,7 @@ target_link_libraries(msgpu_processor
     PUBLIC 
         msgpu_messages
         eul_functional
+        msgpu_io
     PRIVATE 
         common_flags
 )

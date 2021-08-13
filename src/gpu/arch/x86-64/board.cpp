@@ -18,6 +18,9 @@
 
 #include <memory>
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
 
@@ -25,8 +28,30 @@
 namespace msgpu 
 {
 
+namespace 
+{
+
+static int serial_port_id;
+
+} // namespace 
+
+
 void initialize_application_specific()
 {
+    printf("Opening serial port: /tmp/msgpu_virtual_serial_0\n");
+    serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
+}
+
+uint8_t read_byte() 
+{
+    uint8_t byte; 
+    read(serial_port_id, &byte, sizeof(byte));
+    return byte;
+}
+
+void write_bytes(std::span<const uint8_t> data)
+{
+    write(serial_port_id, data.data(), data.size());
 }
 
 } // namespace msgpu

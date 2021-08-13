@@ -46,8 +46,8 @@ public:
 
     void process(const WriteVertex& )
     {
+        printf("Write vertex\n");
     }
-
 };
 
 template <typename Configuration>

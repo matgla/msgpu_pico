@@ -19,27 +19,14 @@
 #include <thread>
 #include <memory>
 
-#include <unistd.h>
-#include <termios.h> 
-#include <fcntl.h>
-
 #include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
 
 
 namespace msgpu 
 {
-namespace 
-{
-
-static int serial_port_id;
-
-}
-
 void initialize_board()
 {
-
-    serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
 
     msgpu::QspiBus::get().register_device(0, 
         std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer_out"));
@@ -47,18 +34,6 @@ void initialize_board()
     initialize_application_specific();
 }
 
-
-uint8_t read_byte() 
-{
-    uint8_t byte; 
-    read(serial_port_id, &byte, sizeof(byte));
-    return byte;
-}
-
-void write_bytes(std::span<const uint8_t> data)
-{
-    write(serial_port_id, data.data(), data.size());
-}
 
 void sleep_ms(uint32_t time)
 {

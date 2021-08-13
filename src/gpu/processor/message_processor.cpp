@@ -16,6 +16,7 @@
 
 #include "processor/message_processor.hpp"
 
+#include <cstdio>
 namespace msgpu 
 {
 namespace processor 
@@ -31,7 +32,12 @@ void MessageProcessor::process_message(const io::Message& message)
     HandlerType& handler = handlers_[message.header.id];
     if (handler)
     {
+        printf("Handle message id: %d\n", message.header.id);
         handler(message.payload.data());
+    }
+    else 
+    {
+        printf("Unhandled message id: %d\n", message.header.id);
     }
 }
 

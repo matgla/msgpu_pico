@@ -16,25 +16,26 @@
 
 #include <unistd.h>
 
-//#include <boost/sml.hpp>
+#include <boost/sml.hpp>
 
-//#include "processor/message_processor.hpp"
+#include "io/usart_point.hpp"
+#include "processor/message_processor.hpp"
 
 #include "board.hpp"
 #include "hal_dma.hpp"
 
-//#include "messages/change_mode.hpp"
-//#include "messages/set_pixel.hpp"
-//#include "messages/draw_line.hpp"
-//#include "messages/info_req.hpp"
-//#include "messages/clear_screen.hpp"
-//#include "messages/begin_primitives.hpp"
-//#include "messages/end_primitives.hpp"
-//#include "messages/write_vertex.hpp"
-//#include "messages/write_text.hpp"
-//#include "messages/set_perspective.hpp"
-//#include "messages/swap_buffer.hpp"
-//#include "messages/draw_triangle.hpp"
+#include "messages/change_mode.hpp"
+#include "messages/set_pixel.hpp"
+#include "messages/draw_line.hpp"
+#include "messages/info_req.hpp"
+#include "messages/clear_screen.hpp"
+#include "messages/begin_primitives.hpp"
+#include "messages/end_primitives.hpp"
+#include "messages/write_vertex.hpp"
+#include "messages/write_text.hpp"
+#include "messages/set_perspective.hpp"
+#include "messages/swap_buffer.hpp"
+#include "messages/draw_triangle.hpp"
 
 //#include "messages/begin_primitives.hpp"
 //#include "messages/header.hpp"
@@ -48,11 +49,14 @@
 
 #include "mode/modes.hpp"
 #include "generator/modes.hpp"
+#include "memory/vram.hpp"
+
+#include "hal_dma.hpp"
 //#include "io/usart_point.hpp"
 
-//#include "mode/3d_graphic_mode.hpp"
+#include "mode/3d_graphic_mode.hpp"
 
-//#include "modes/graphic/320x240_256.hpp"
+#include "modes/graphic/320x240_256.hpp"
 
 #include <msos/dynamic_linker/dynamic_linker.hpp>
 #include <msos/dynamic_linker/environment.hpp>
@@ -64,11 +68,11 @@
 #include "arch/pins_config.hpp"
 #include "arch/qspi_config.hpp"
 
-//using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
+using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
-//static auto modes = msgpu::mode::ModesFactory<>()
-//    .add_mode<DualBuffered3DGraphic_320x240_256>()
-//    .create();
+static auto modes = msgpu::mode::ModesFactory<>()
+    .add_mode<DualBuffered3DGraphic_320x240_256>()
+    .create();
 
 #include "memory/psram.hpp"
 #include <ctime>
@@ -85,21 +89,14 @@ static msos::dl::DynamicLinker dynamic_linker;
 //    return dynamic_linker.get_lot_for_module_at(address);
 //}
 
-void frame_update()
-{
-}
-
 
 } // namespace msgpu
 
-void process_frame()
-{
-}
 
 template <typename MessageType> 
-void register_handler()
+void register_handler(auto& proc)
 {
-    //msgpu::proc.register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+    proc.template register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
 }
 
 static msos::dl::Environment env {
@@ -125,6 +122,25 @@ int exec(const std::size_t* module_address)
 //    return 0;
 //}
 //
+//
+
+void register_messages(auto& proc)
+{
+    register_handler<ChangeMode>(proc);
+    register_handler<SetPixel>(proc);
+    register_handler<DrawLine>(proc);
+    register_handler<InfoReq>(proc);
+    register_handler<ClearScreen>(proc);
+    register_handler<BeginPrimitives>(proc);
+    register_handler<EndPrimitives>(proc);
+    register_handler<WriteVertex>(proc);
+    register_handler<WriteText>(proc);
+    register_handler<SetPerspective>(proc);
+    register_handler<SwapBuffer>(proc);
+    register_handler<DrawTriangle>(proc);
+}; 
+
+
 int main() 
 {
     msgpu::initialize_board();
@@ -135,46 +151,32 @@ int main()
 
     msgpu::Qspi qspi(msgpu::framebuffer_config, 3.0f);
     qspi.init();
-    msgpu::memory::QspiPSRAM framebuffer(qspi, true);
-    msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
+    msgpu::memory::QspiPSRAM qspi_memory(qspi, true);
+    msgpu::memory::VideoRam framebuffer(qspi_memory);
 
-    char c;
+    msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
+    modes.switch_to<DualBuffered3DGraphic_320x240_256>();
+    msgpu::processor::MessageProcessor proc;
+    register_messages(proc); 
+    
+    msgpu::io::UsartPoint usart_io_data; 
+    boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
+    usart_io.process_event(msgpu::io::init{});
+    
+    hal::set_usart_handler([&usart_io](){
+        usart_io.process_event(msgpu::io::dma_finished{});
+    });
+
     while (true)
     {
-        msgpu::sleep_ms(1000);
-        printf("Waiting for command: ");
-        scanf("%c", &c);
-        printf("\nExecute: %c\n", c);
-
-        constexpr uint8_t set_mode_cmd = 0x02;
-
-        if (c == 'd')
+        auto message = usart_io_data.pop();
+        if (message)
         {
-            printf("Write DEMO pattern and trigger RAMDAC to display\n");
-            const uint8_t mode = static_cast<uint8_t>(msgpu::modes::Modes::Graphic_320x240_12bit);
-            const uint8_t cmd[] = { set_mode_cmd, mode };
-            i2c.write(0x2e, cmd);    
+            printf("Got message\n");
+            proc.process_message(*message);
         }
-
-        if (c == 'w')
-        {
-            printf("Write data to memory\n");
-
-            uint8_t cmd_w[] = {0x38, 0x00, 0x00, 0x00};
-            uint8_t data[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xaa, 0xff, 0xbb, 0xee, 0xcc, 0x12};
-            //framebuffer.write(0x00, data);
-            //framebuffer.wait_for_finish();
-            qspi.acquire_bus();
-            qspi.qspi_command_write(cmd_w, data);
-            qspi.release_bus();
-            
-            uint8_t cmd[] = {0x1, 0x20, 0x0};
-            i2c.write(0x2e, cmd);
-        }
-        printf("Working\n");
+ 
     }
-
-    msgpu::deinitialize_signal_generator();
 } 
 
 

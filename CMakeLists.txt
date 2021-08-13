@@ -100,7 +100,6 @@ add_subdirectory(src)
 add_subdirectory(lib)
 
 if (ENABLE_TESTS)
-    message(STATUS "Testing: enabled")
     include(CTest)
     enable_testing()
     add_subdirectory(tests)

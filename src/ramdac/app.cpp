@@ -62,35 +62,6 @@ void App::boot()
     vga_.setup(&framebuffer_);
 }
 
-void test_render_box(auto& framebuffer)
-{
-    uint16_t line_buffer[640] = {};
-    for (uint16_t y = 0; y < 240; ++y)
-    {
-        for (int x = 0; x < 320; ++x)
-        {
-            if (y == 0)
-            {
-                line_buffer[x] = 0xfff;
-            }
-            else if ((y < 239 && x == 0) ||( y < 239 && x == 319))
-            {
-                line_buffer[x] = 0xfff;
-            }
-            else if (y == 239)
-            {
-                line_buffer[x] = 0xfff;
-            }
-            else 
-            {
-                line_buffer[x] = 0x000;
-            }
-        }
-        framebuffer.write_line(y, line_buffer);
-    }
-
-}
-
 void App::run()
 {
     uint8_t rx_buf[3];
@@ -117,9 +88,6 @@ void App::run()
                 printf ("Got set mode command\n");
                 renderer_.change_mode(static_cast<modes::Modes>(rx_buf[1]));
                 printf ("New mode to set: 0x%x\n", rx_buf[1]);
-
-                printf ("Render test box\n");
-                test_render_box(framebuffer_);
             } break;
         }
         printf("\n");
