@@ -27,6 +27,7 @@ target_sources(msgpu_renderer
 target_link_libraries(msgpu_renderer 
     PUBLIC
         msgpu_generator
+        msgpu_memory
     PRIVATE 
         common_flags
 )

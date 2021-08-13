@@ -21,6 +21,7 @@
 
 #include "generator/vga.hpp"
 #include "memory/psram.hpp"
+#include "memory/vram.hpp"
 #include "renderer/renderer.hpp"
 
 namespace msgpu 
@@ -37,9 +38,10 @@ private:
     bool init_framebuffer();
 
     Qspi qspi_;
-    memory::QspiPSRAM framebuffer_;
+    memory::QspiPSRAM qspi_memory_;
     I2C i2c_;
     generator::Vga& vga_;
+    memory::VideoRam framebuffer_;
     renderer::Renderer renderer_;
 };
 

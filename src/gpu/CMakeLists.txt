@@ -46,6 +46,7 @@ target_link_libraries(msgpu
         msgpu_memory
         msgpu_arch_config_gpu
         msgpu_mode
+        msgpu_generator
 )
 add_dependencies(msgpu api_generator)
 

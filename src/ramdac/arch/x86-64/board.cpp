@@ -75,8 +75,7 @@ void render_loop()
         for (std::size_t line = 0; line < resolution_height ; ++line)
         {
             uint32_t line_buffer_[640]; 
-            auto scanline = get_scanline(line);
-            msgpu::generator::get_vga().display_line(line_buffer_, scanline);
+            msgpu::generator::get_vga().display_line(line, line_buffer_);
             for (int pixel = 0; pixel < resolution_width; ++pixel)
             {
                 uint8_t r = (line_buffer_[pixel] >> 8) & 0xf;

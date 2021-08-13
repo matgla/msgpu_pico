@@ -19,37 +19,35 @@
 #include <cstdint>
 #include <span>
 
-#include "qspi.hpp"
+#include "memory/psram.hpp"
 
 namespace msgpu::memory 
 {
 
-class QspiPSRAM
+class VideoRam
 {
 public:
-    QspiPSRAM(Qspi& qspi, bool qspi_mode = false);
+    template <typename T>
+    using ConstDataType = std::span<const T>;
 
-    bool init();
-    bool reset();
+    template <typename T>
+    using DataType = std::span<T>;
 
-    using DataBuffer = std::span<uint8_t>;
-    using ConstDataBuffer = std::span<const uint8_t>;
-    std::size_t write(std::size_t address, const ConstDataBuffer data);
-    std::size_t read(const std::size_t address, DataBuffer data);
-    void wait_for_finish() const;
+    VideoRam(memory::QspiPSRAM& memory);
 
-    bool test();
-    void benchmark();
+    void set_resolution(uint16_t width, uint16_t height);
+    void set_color_space(uint8_t bits_per_pixel);
 
-    void acquire_bus();
-    void release_bus();
+    void write_line(uint16_t line, const ConstDataType<uint16_t>& data);
+    void write_line(uint16_t line, const ConstDataType<uint8_t>& data);
+
+    void read_line(uint16_t line, DataType<uint16_t> data);
+    void read_line(uint16_t line, DataType<uint8_t> data);
 private:
-    bool perform_post();
-    void enter_qpi_mode();
-    void exit_qpi_mode();
-   
-    Qspi& qspi_;
-    bool qspi_mode_;
+    uint8_t bits_per_pixel_;
+    uint16_t width_;
+    uint16_t height_;
+    memory::QspiPSRAM& memory_;
 };
 
 } // namespace msgpu::memory

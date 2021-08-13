@@ -24,6 +24,8 @@
 
 #include "config.hpp"
 
+#include "memory/vram.hpp"
+
 namespace msgpu::generator
 {
 
@@ -34,10 +36,12 @@ public:
     
     void change_mode(modes::Modes mode);
 
-    void setup();
+    void setup(memory::VideoRam* vram);
 
-    static std::size_t display_line(std::span<uint32_t> to_display, std::span<const uint8_t> source);
+    std::size_t display_line(std::size_t line, std::span<uint32_t> to_display);
 
+private:
+    memory::VideoRam* vram_;
 };
 
 Vga& get_vga();

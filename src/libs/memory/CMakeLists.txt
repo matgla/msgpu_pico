@@ -19,9 +19,12 @@ add_library(msgpu_memory)
 target_sources(msgpu_memory
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/memory/psram.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/memory/vram.hpp
+
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/psram.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vram.cpp
 )
 
 target_include_directories(msgpu_memory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

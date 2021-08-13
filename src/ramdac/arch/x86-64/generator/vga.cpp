@@ -24,7 +24,8 @@
 namespace msgpu::generator
 {
 
-Vga::Vga(modes::Modes mode) 
+Vga::Vga(modes::Modes mode)
+    : vram_(nullptr)
 {
     if (mode == modes::Modes::Graphic_320x240_12bit)
     {
@@ -36,17 +37,24 @@ void Vga::change_mode(modes::Modes mode)
 {
 }
 
-void Vga::setup()
+void Vga::setup(memory::VideoRam* vram)
 {
-
+    vram_ = vram;
 }
 
-std::size_t Vga::display_line(std::span<uint32_t> line, 
-    std::span<const uint8_t> scanline_buffer)
+std::size_t Vga::display_line(std::size_t line, std::span<uint32_t> to_display)
+    
 {
-    std::transform(scanline_buffer.begin(), scanline_buffer.end(), line.begin(), [](uint8_t color) {
+    static uint16_t buffer[320] = {};
+    if (vram_)
+    {
+        vram_->read_line(line, buffer); 
+    }
+    std::span<uint16_t> scanline_buffer(buffer);
+    std::transform(scanline_buffer.begin(), scanline_buffer.end(), to_display.begin(), [](uint16_t color) {
         return color; // TODO: transform?
     });
+
     return 0;
 }
 

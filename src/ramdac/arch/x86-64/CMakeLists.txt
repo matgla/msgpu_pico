@@ -16,6 +16,8 @@
 
 add_library(msgpu_arch_config_ramdac STATIC)
 
+add_subdirectory(generator)
+
 target_sources(msgpu_arch_config_ramdac
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/arch/pins_config.hpp
@@ -34,4 +36,5 @@ target_link_libraries(msgpu_arch_config_ramdac
     PRIVATE 
         msgpu_arch
         msgpu_arch_interface
+        msgpu_generator
 )

@@ -19,17 +19,20 @@
 #include "generator/modes.hpp"
 #include "generator/vga.hpp"
 
+#include "memory/vram.hpp"
+
 namespace msgpu::renderer
 {
 
 class Renderer
 {
 public:
-    Renderer(generator::Vga& vga);
+    Renderer(generator::Vga &vga, memory::VideoRam &framebuffer);
 
     bool change_mode(modes::Modes mode);
 private:
     generator::Vga& vga_;
+    memory::VideoRam& framebuffer_;
 };
 
 } // msgpu::renderer

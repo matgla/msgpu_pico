@@ -30,11 +30,11 @@ target_compile_options(msgpu_generator_interface INTERFACE
 target_include_directories(msgpu_generator_interface
     INTERFACE  
         ${PROJECT_SOURCE_DIR}/src
-        ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/include/generator
+        ${PROJECT_SOURCE_DIR}/src/ramdac/arch/include
 )
 
 target_link_libraries(msgpu_generator_interface 
     INTERFACE 
         msgpu_config 
+        msgpu_memory
 )

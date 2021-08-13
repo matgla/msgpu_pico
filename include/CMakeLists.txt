@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(generator)
-
 add_library(msgpu_arch_interface INTERFACE)
 
 target_sources(msgpu_arch_interface INTERFACE 

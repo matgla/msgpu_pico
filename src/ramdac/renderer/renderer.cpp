@@ -21,8 +21,9 @@
 namespace msgpu::renderer 
 {
 
-Renderer::Renderer(generator::Vga& vga)
+Renderer::Renderer(generator::Vga &vga, memory::VideoRam &framebuffer)
     : vga_(vga) 
+    , framebuffer_(framebuffer)
 {
 }
 

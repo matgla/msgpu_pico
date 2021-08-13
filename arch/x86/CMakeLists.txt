@@ -15,7 +15,6 @@
 
 message (STATUS "Configuring simulation")
 
-add_subdirectory(generator)
 add_subdirectory(i2c)
 
 add_library(msgpu_arch STATIC)

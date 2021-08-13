@@ -29,10 +29,11 @@ namespace msgpu
 
 App::App()
     : qspi_(framebuffer_config, 3.0f)
-    , framebuffer_(qspi_)
+    , qspi_memory_(qspi_)
     , i2c_(i2c_slave_address, i2c_scl, i2c_sda)
     , vga_(generator::get_vga())
-    , renderer_(vga_)
+    , framebuffer_(qspi_memory_)
+    , renderer_(vga_, framebuffer_)
 {
 }
 
@@ -45,20 +46,49 @@ void App::boot()
     printf("Booting procedure started.\n");
 
     qspi_.init();
-    if (!framebuffer_.init())
+    if (!qspi_memory_.init())
     {
         panic("FrameBuffer initialization failed\n");
     }
 
-    if (!framebuffer_.test())
+    if (!qspi_memory_.test())
     {
         panic("FrameBuffer memory test failed\n");
     }
 
-    framebuffer_.benchmark();
+    qspi_memory_.benchmark();
 
     printf("Initialize VGA generator\n");
-    vga_.setup();
+    vga_.setup(&framebuffer_);
+}
+
+void test_render_box(auto& framebuffer)
+{
+    uint16_t line_buffer[640] = {};
+    for (uint16_t y = 0; y < 240; ++y)
+    {
+        for (int x = 0; x < 320; ++x)
+        {
+            if (y == 0)
+            {
+                line_buffer[x] = 0xfff;
+            }
+            else if ((y < 239 && x == 0) ||( y < 239 && x == 319))
+            {
+                line_buffer[x] = 0xfff;
+            }
+            else if (y == 239)
+            {
+                line_buffer[x] = 0xfff;
+            }
+            else 
+            {
+                line_buffer[x] = 0x000;
+            }
+        }
+        framebuffer.write_line(y, line_buffer);
+    }
+
 }
 
 void App::run()
@@ -81,20 +111,15 @@ void App::run()
             case 0x01: 
             {
                 printf ("Got data, reading 16 bytes\n");
-                uint8_t buf[16];
-                framebuffer_.read(0x0, buf);
-                framebuffer_.wait_for_finish();
-                for (const auto byte : buf)
-                {
-                    printf("0x%x, ", byte);
-                }
-                printf("\n");
             } break;
             case 0x02:
             {
                 printf ("Got set mode command\n");
                 renderer_.change_mode(static_cast<modes::Modes>(rx_buf[1]));
                 printf ("New mode to set: 0x%x\n", rx_buf[1]);
+
+                printf ("Render test box\n");
+                test_render_box(framebuffer_);
             } break;
         }
         printf("\n");

@@ -89,12 +89,6 @@ void frame_update()
 {
 }
 
-std::span<const uint8_t> get_scanline(std::size_t line)
-{
-//    return ::modes.get_line(line);
-    static_cast<void>(line);
-    return std::span<const uint8_t>();
-}
 
 } // namespace msgpu
 

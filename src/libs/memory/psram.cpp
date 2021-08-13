@@ -300,4 +300,14 @@ bool QspiPSRAM::test()
     return true;//failed == 0;    
 }
 
+void QspiPSRAM::acquire_bus()
+{
+    qspi_.acquire_bus();
+}
+
+void QspiPSRAM::release_bus()
+{
+    qspi_.release_bus();
+}
+
 } // namespace msgpu::memory
