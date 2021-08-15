@@ -18,57 +18,59 @@
 
 #include "mode/framebuffer.hpp"
 
+#include <cstring>
+
 #include "messages/clear_screen.hpp"
 #include "messages/swap_buffer.hpp"
+
+#include "memory/vram.hpp"
+
 
 namespace msgpu::mode 
 {
 
-template <typename Configuration, std::size_t BufferSize>
+template <typename Configuration>
 class ModeBase 
 {
 public:
     virtual ~ModeBase() = default; 
 
-    using FrameBufferType = FrameBuffer<Configuration, BufferSize>;
-
-    ModeBase()
+    ModeBase(memory::VideoRam& framebuffer)
+        : buffer_id_(0)
+        , framebuffer_(framebuffer)
+        
     {
-        if (BufferSize > 1)
-        {
-            buffer_.switch_to_next_write_buffer();
-        }
+        clear_screen(); 
     }
 
     void process(const ClearScreen&)
     {
         printf("ClearScreen\n");
-        auto& frame = buffer_.get_writable_frame();
-        for (auto& line : frame) 
-        {
-            line.fill(0xf);
-        }
+        clear_screen();
     }
 
     void process(const SwapBuffer&)
     {
-        if (BufferSize == 1) return;
-        buffer_.switch_to_next_write_buffer();
-        buffer_.switch_to_next_read_buffer();
-    }
-
-    std::span<const uint8_t> get_line(std::size_t line_number) const 
-    {
-        const auto& frame = buffer_.get_readable_frame();
-        const auto& line = frame[line_number];
-        return std::span<const uint8_t>(line.begin(), line.end());
+        buffer_id_ = buffer_id_ ? 0 : 1;
+        framebuffer_.select_buffer(buffer_id_);
     }
 
     void render();
 
 protected: 
+    void clear_screen()
+    {
+        std::span<uint16_t> buf(line_buffer_.u16, Configuration::resolution_width);
+    
+        std::memset(line_buffer_.u8, 0, buf.size() * 2);
+        for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
+        {
+            framebuffer_.write_line(line, buf);
+        }
+    }
 
-    FrameBufferType buffer_;
+    uint8_t buffer_id_;
+    memory::VideoRam& framebuffer_;
 };
 
 } // namespace msgpu::mode

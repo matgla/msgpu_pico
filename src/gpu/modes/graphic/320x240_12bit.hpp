@@ -36,7 +36,7 @@ public:
     constexpr static std::size_t height = resolution_height;
 
     constexpr static bool uses_color_palette = false;
-    constexpr static std::size_t bits_per_pixel = 8;
+    constexpr static std::size_t bits_per_pixel = 12;
 
     constexpr static Modes mode = Modes::Graphic_320x240_12bit;
     constexpr static bool double_buffered = false;
