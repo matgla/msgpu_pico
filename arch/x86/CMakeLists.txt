@@ -42,7 +42,6 @@ target_link_libraries(msgpu_arch
         eul_crc
         sfml-graphics
         pthread
-        msgpu_generator
         rt
 )
 

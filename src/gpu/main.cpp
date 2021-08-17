@@ -172,7 +172,7 @@ int main()
         auto message = usart_io_data.pop();
         if (message)
         {
-            printf("Got message\n");
+            //printf("Got message\n");
             proc.process_message(*message);
         }
  

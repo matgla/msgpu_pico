@@ -16,7 +16,11 @@
 
 #pragma once 
 
+#include <array>
 #include <cstdio>
+
+#include <eul/container/static_vector.hpp>
+#include <eul/math/vector.hpp>
 
 #include "mode/mode_base.hpp"
 
@@ -27,6 +31,12 @@
 namespace msgpu::mode 
 {
 
+using Vec3 = eul::math::vector<float, 3>;
+using Triangle = eul::container::static_vector<Vec3, 3>;
+
+using Mesh = eul::container::static_vector<Triangle, 10000>;
+
+
 template <typename Configuration>
 class GraphicMode3D : public ModeBase<Configuration>
 {
@@ -35,9 +45,21 @@ public:
     using ModeBase<Configuration>::ModeBase;
     using ModeBase<Configuration>::process;
 
-    void process(const BeginPrimitives& )
+    void clear() override
     {
-        printf("Begin primitives\n");
+        printf("Clearing mesh\n");
+        mesh_.clear();
+    }
+
+    void process(const BeginPrimitives& msg)
+    {
+        printf("Begin primitives: %d\n", msg.type);
+        if (mesh_.size() == mesh_.max_size())
+        {
+            printf("Mesh buffer is full, dropping primitive\n");
+            return;
+        }
+        mesh_.push_back({});
     }
 
     void process(const EndPrimitives& )
@@ -45,10 +67,27 @@ public:
         printf("End primitives\n");
     }
 
-    void process(const WriteVertex& )
+    void process(const WriteVertex& v)
     {
-        printf("Write vertex\n");
+        if (mesh_.back().size() == mesh_.back().max_size())
+        {
+            if (mesh_.size() == mesh_.max_size())
+            {
+                return;
+            }
+            mesh_.push_back({});
+        }
+
+        mesh_.back().push_back({v.x, v.y, v.z});
     }
+
+    void render() override
+    {
+        printf("Render\n"); 
+    }
+
+protected:
+    Mesh mesh_;
 };
 
 template <typename Configuration>

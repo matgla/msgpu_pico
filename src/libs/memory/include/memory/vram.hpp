@@ -44,12 +44,22 @@ public:
     void read_line(uint16_t line, DataType<uint16_t> data);
     void read_line(uint16_t line, DataType<uint8_t> data);
 
-    void select_buffer(uint8_t buffer_id);
-    uint8_t get_current_buffer_id() const;
-    std::size_t get_address(uint16_t line) const;
+    void write_line(uint8_t buffer_id, uint16_t line, const ConstDataType<uint16_t>& data);
+    void write_line(uint8_t buffer_id, uint16_t line, const ConstDataType<uint8_t>& data);
+
+    void read_line(uint8_t buffer_id, uint16_t line, DataType<uint16_t> data);
+    void read_line(uint8_t buffer_id, uint16_t line, DataType<uint8_t> data);
+
+
+    void select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id);
+    uint8_t get_read_buffer_id() const;
+    uint8_t get_write_buffer_id() const;
 private:
+    std::size_t get_address(uint8_t buffer_id, uint16_t line) const;
+    
     uint8_t bits_per_pixel_;
-    uint8_t buffer_id_;
+    uint8_t read_buffer_id_;
+    uint8_t write_buffer_id_;
     uint16_t width_;
     uint16_t height_;
     memory::QspiPSRAM& memory_;

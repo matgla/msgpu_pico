@@ -27,7 +27,8 @@ constexpr std::size_t page_size = 1024;
 } // namespace 
 
 VideoRam::VideoRam(memory::QspiPSRAM& memory)
-    : buffer_id_(0)
+    : read_buffer_id_(0)
+    , write_buffer_id_(1)
     , memory_(memory)
 {
 }
@@ -43,14 +44,14 @@ void VideoRam::set_color_space(uint8_t bits_per_pixel)
     bits_per_pixel_ = bits_per_pixel;
 }
 
-std::size_t VideoRam::get_address(uint16_t line) const 
+std::size_t VideoRam::get_address(uint8_t buffer_id, uint16_t line) const 
 {
-    return page_size * line + page_size * height_ * buffer_id_;
+    return page_size * line + page_size * height_ * buffer_id;
 }
 
-void VideoRam::write_line(uint16_t line, const ConstDataType<uint16_t> &data)
+void VideoRam::write_line(uint8_t buffer_id, uint16_t line, const ConstDataType<uint16_t> &data)
 {
-    const std::size_t address = get_address(line);
+    const std::size_t address = get_address(buffer_id, line);
 
     // TODO: add compression 
     const ConstDataType<uint8_t> buffer(reinterpret_cast<const uint8_t*>(data.data()), data.size() * 2);
@@ -61,9 +62,9 @@ void VideoRam::write_line(uint16_t line, const ConstDataType<uint16_t> &data)
     memory_.release_bus();
 }
 
-void VideoRam::write_line(uint16_t line, const ConstDataType<uint8_t> &data)
+void VideoRam::write_line(uint8_t buffer_id, uint16_t line, const ConstDataType<uint8_t> &data)
 {
-    const std::size_t address = get_address(line);
+    const std::size_t address = get_address(buffer_id, line);
 
     memory_.acquire_bus();
     memory_.write(address, data);
@@ -72,9 +73,9 @@ void VideoRam::write_line(uint16_t line, const ConstDataType<uint8_t> &data)
     memory_.release_bus();
 }
 
-void VideoRam::read_line(uint16_t line, DataType<uint16_t> data)
+void VideoRam::read_line(uint8_t buffer_id, uint16_t line, DataType<uint16_t> data)
 {
-    const std::size_t address = get_address(line); 
+    const std::size_t address = get_address(buffer_id, line); 
     const DataType<uint8_t> buffer(reinterpret_cast<uint8_t*>(data.data()), data.size() * 2);
 
     memory_.acquire_bus();
@@ -83,9 +84,9 @@ void VideoRam::read_line(uint16_t line, DataType<uint16_t> data)
     memory_.release_bus();
 }
 
-void VideoRam::read_line(uint16_t line, DataType<uint8_t> data)
+void VideoRam::read_line(uint8_t buffer_id, uint16_t line, DataType<uint8_t> data)
 {
-    const std::size_t address = get_address(line); 
+    const std::size_t address = get_address(buffer_id, line); 
 
     memory_.acquire_bus();
     memory_.read(address, data);
@@ -93,16 +94,42 @@ void VideoRam::read_line(uint16_t line, DataType<uint8_t> data)
     memory_.release_bus();
 }
 
-void VideoRam::select_buffer(uint8_t buffer_id)
+void VideoRam::write_line(uint16_t line, const ConstDataType<uint16_t> &data)
 {
-    buffer_id_ = buffer_id;
+    write_line(write_buffer_id_, line, data);
 }
 
-uint8_t VideoRam::get_current_buffer_id() const 
+void VideoRam::write_line(uint16_t line, const ConstDataType<uint8_t> &data)
 {
-    return buffer_id_;
+    write_line(write_buffer_id_, line, data);
 }
 
+void VideoRam::read_line(uint16_t line, DataType<uint16_t> data)
+{
+    read_line(read_buffer_id_, line, data);
+}
+
+void VideoRam::read_line(uint16_t line, DataType<uint8_t> data)
+{
+    read_line(read_buffer_id_, line, data);
+}
+
+
+void VideoRam::select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id)
+{
+    read_buffer_id_ = read_buffer_id;
+    write_buffer_id_ = write_buffer_id;
+}
+
+uint8_t VideoRam::get_read_buffer_id() const 
+{
+    return read_buffer_id_;
+}
+
+uint8_t VideoRam::get_write_buffer_id() const 
+{
+    return write_buffer_id_;
+}
 
 
 } // namespace msgpu::memory

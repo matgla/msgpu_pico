@@ -43,19 +43,23 @@ public:
         clear_screen(); 
     }
 
+    virtual void clear() = 0;
     void process(const ClearScreen&)
     {
         printf("ClearScreen\n");
         clear_screen();
+        clear();
     }
 
     void process(const SwapBuffer&)
     {
+        uint8_t read_buf_id = buffer_id_;
         buffer_id_ = buffer_id_ ? 0 : 1;
-        framebuffer_.select_buffer(buffer_id_);
+        render();
+        framebuffer_.select_buffer(buffer_id_, read_buf_id);
     }
 
-    void render();
+    virtual void render() = 0;
 
 protected: 
     void clear_screen()
@@ -69,8 +73,15 @@ protected:
         }
     }
 
+    union LineBuffer 
+    {
+        uint8_t u8[1024];
+        uint16_t u16[1024/2];
+    };
+
     uint8_t buffer_id_;
     memory::VideoRam& framebuffer_;
+    LineBuffer line_buffer_;
 };
 
 } // namespace msgpu::mode

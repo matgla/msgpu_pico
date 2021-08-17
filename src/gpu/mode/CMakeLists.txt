@@ -33,6 +33,8 @@ target_sources(msgpu_mode
 target_link_libraries(msgpu_mode 
     INTERFACE 
         common_flags
+        eul_math
+        eul_container
 )
 
 target_include_directories(msgpu_mode
