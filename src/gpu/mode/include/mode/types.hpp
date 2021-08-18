@@ -16,36 +16,14 @@
 
 #pragma once 
 
-#include "mode/mode_base.hpp"
+#include <cstdint>
 
-namespace msgpu::mode 
-{
-
-template <typename Configuration>
-class GraphicMode2D : public ModeBase<Configuration>
+class fp16
 {
 public:
-    using Base = ModeBase<Configuration>;
-    using ModeBase<Configuration>::ModeBase;
-    using ModeBase<Configuration>::process;
-
-    GraphicMode2D(memory::VideoRam& framebuffer)
-        : ModeBase<Configuration>(framebuffer)
-    {
-    }
-
-protected:
-    void draw_horizontal_line(uint16_t x0, uint16_t x1, uint16_t color)
-    {
-        if (x0 > x1) std::swap(x0, x1);
-        for (std::size_t i = x0; i < x1; ++i)
-        {
-            Base::line_buffer_.u16[i] = color; 
-        }
-
-    }
-
+    constexpr fp16() : val_{0} { }
+    constexpr fp16(float val) : val_{static_cast<int16_t>(val * (1 << 12))} { }
+    constexpr operator float() const { return static_cast<float>(val_) / (1 << 12); }
+private:
+    int16_t val_;
 };
-
-} // namespace msgpu::mode
-

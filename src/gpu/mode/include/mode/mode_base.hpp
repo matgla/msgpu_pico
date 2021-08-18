@@ -64,13 +64,6 @@ public:
 protected: 
     void clear_screen()
     {
-        std::span<uint16_t> buf(line_buffer_.u16, Configuration::resolution_width);
-    
-        std::memset(line_buffer_.u8, 0, buf.size() * 2);
-        for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
-        {
-            framebuffer_.write_line(line, buf);
-        }
     }
 
     union LineBuffer 
