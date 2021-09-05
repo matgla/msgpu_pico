@@ -55,25 +55,8 @@ struct FloatTriangle
 };
 
 using Vec3 = eul::math::vector<float, 3>;
-using Triangle = eul::container::static_vector<Vertex, 3>;
-using Mesh = eul::container::static_vector<Triangle, 2048>;
-
-struct ProcessedTriangle
-{
-    uint16_t sy; 
-    uint16_t cy;
-    uint16_t by;
-
-    float sx;
-    float ex; 
-    float bx;
-
-    float dx1;
-    float dx2;
-    float dx3;
-};
-
-using ProcessedBuffer = eul::container::static_vector<ProcessedTriangle, 2048>;
+using BTriangle = eul::container::static_vector<Vertex, 3>;
+using Mesh = eul::container::static_vector<BTriangle, 2048>;
 
 template <typename Configuration>
 class GraphicMode3D : public GraphicMode2D<Configuration>
@@ -87,6 +70,7 @@ public:
     void clear() override
     {
         printf("Clearing mesh\n");
+        Base::clear();
         mesh_.clear();
     }
 
@@ -116,7 +100,8 @@ public:
             }
             mesh_.push_back({});
         }
-
+        
+        printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
         mesh_.back().push_back({v.x, v.y, v.z});
     }
 
@@ -140,19 +125,8 @@ public:
     void render() override
     {
         printf("Render\n"); 
-        triangles_.clear();
         transform_mesh();
-
-        for (uint16_t i = 0; i < Configuration::resolution_height; ++i)
-        {
-            std::memset(Base::line_buffer_.u8, 0, sizeof(Base::line_buffer_));
-            for (auto& t : triangles_)
-            {
-                step_draw(t, i);
-            }
-
-            Base::framebuffer_.write_line(i, Base::line_buffer_.u16);
-        }
+        GraphicMode2D<Configuration>::render();
     }
 
 protected:
@@ -165,113 +139,51 @@ protected:
         for (const auto& triangle : mesh_)
         {
             FloatTriangle t = convert(triangle);
-            rotate_x(t, theta);
+            printf("Before rotate {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
+                t.vertex[0].x, t.vertex[0].y, 
+                t.vertex[1].x, t.vertex[1].y, 
+                t.vertex[2].x, t.vertex[2].y);
+            //rotate_x(t, theta);
+            printf("After rotate theta %f, {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
+                t.vertex[0].x, t.vertex[0].y, 
+                t.vertex[1].x, t.vertex[1].y, 
+                t.vertex[2].x, t.vertex[2].y);
+ 
             //rotate_z(t, theta);
             for (auto& v : t.vertex)
             {
                 v.z += 3.0f;
             }
-            calculate_projection(t);
+
+            // calculate_projection(t);
+            printf("After projection {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
+                t.vertex[0].x, t.vertex[0].y, 
+                t.vertex[1].x, t.vertex[1].y, 
+                t.vertex[2].x, t.vertex[2].y);
+ 
             scale(t);
-            sort_triangle(t);
-            auto i_t = interpolate_triangle(t);
-            triangles_.push_back(i_t);
+
+            printf("Adding triangle: {y: %f, x: %f}, {y: %f, x: %f}, {y: %f, x: %f}\n", t.vertex[0].y, t.vertex[0].x, t.vertex[1].y, t.vertex[1].x, t.vertex[2].y, t.vertex[2].x); 
+            Triangle tr {
+                .a = vertex_2d {
+                    .x = static_cast<uint16_t>(t.vertex[0].x), 
+                    .y = static_cast<uint16_t>(t.vertex[0].y) 
+                },
+                .b = vertex_2d {
+                    .x = static_cast<uint16_t>(t.vertex[1].x), 
+                    .y = static_cast<uint16_t>(t.vertex[1].y) 
+                },
+                .c = vertex_2d {
+                    .x = static_cast<uint16_t>(t.vertex[2].x), 
+                    .y = static_cast<uint16_t>(t.vertex[2].y) 
+                } 
+            };
+ 
+            GraphicMode2D<Configuration>::add_triangle(tr, 0xfff);
         }
     }
 
-    ProcessedTriangle interpolate_triangle(FloatTriangle& t)
-    {
-        for (auto& v : t.vertex)
-        {
-            if (v.x < 0) v.x = 0;
-            if (v.y < 0) v.y = 0;
-        }
 
-        const auto& v = t.vertex;
-        printf("Triangle {%f %f} {%f %f} {%f %f}\n", v[0].x, v[0].y, v[1].x, v[1].y, v[2].x, v[2].y);
-
-        ProcessedTriangle r;
-        r.dx1 = 0;
-        r.dx2 = 0;
-        r.dx3 = 0;
-
-        if (v[1].y - v[0].y > 0)
-        {
-            r.dx1 = (v[1].x - v[0].x) / (v[1].y - v[0].y);
-        }
-        if (v[2].y - v[0].y > 0)
-        {
-            r.dx2 = (v[2].x - v[0].x) / (v[2].y - v[0].y);
-        }
-        if (v[2].y - v[1].y > 0)
-        {
-            r.dx3 = (v[2].x - v[1].x) / (v[2].y - v[1].y);
-        }
-
-        r.sx = v[0].x;
-        r.sy = static_cast<uint16_t>(v[0].y);
-        r.ex = r.sx;
-        r.cy = static_cast<uint16_t>(v[2].y);
-        r.bx = v[1].x; 
-        r.by = static_cast<uint16_t>(v[1].y);
-        return r;
-    }
-
-    void step_draw(ProcessedTriangle& t, std::size_t line)
-    {
-        if (line < t.sy || line >= t.cy)
-        {
-            return;
-        }
-
-//        printf("Draw line: { %f %f }\n", t.sx, t.ex);
-//        printf("Dx1: %f, dx2: %f, dx3: %f\n", t.dx1, t.dx2, t.dx3);
-        Base::draw_horizontal_line(static_cast<uint16_t>(t.sx), static_cast<uint16_t>(t.ex), 0xfff);
-
-        if (t.dx1 > t.dx2)
-        {
-            if (t.sy < t.by)
-            {
-                t.ex += t.dx1;
-            }
-            else if (t.sy == t.by)
-            {
-                t.ex = t.bx;
-            }
-            else if (t.sy <= t.cy)
-            {
-                t.ex += t.dx3;
-            }
-            t.sx += t.dx2;
-
-        }
-        else 
-        {
-            if (t.sy < t.by)
-            {
-                t.sx += t.dx1;
-            }
-            else if (t.sy == t.by)
-            {
-                t.sx = t.bx;
-                t.sy = t.sy;
-            }
-            else if (t.sy <= t.cy)
-            {
-                t.sx += t.dx3;
-            }
-            t.ex += t.dx2;
-        }
-        ++t.sy;
-    }
-
-    void sort_triangle(FloatTriangle& t)
-    {
-        auto& v = t.vertex;
-        if (v[1].y < v[0].y) std::swap(v[1], v[2]);
-        if (v[2].y < v[0].y) std::swap(v[2], v[0]);
-        if (v[2].y < v[1].y) std::swap(v[2], v[1]);
-    }
     void calculate_projection(FloatTriangle& t)
     {
         for (auto& v : t.vertex)
@@ -297,14 +209,6 @@ protected:
         {
             v.x += 1.0f;
             v.y += 1.0f;
-            if (v.x > 2.0f || v.x < 0.0f)
-            {
-                printf("X smash detected: %f\n", v.x);
-            }
-            if (v.y > 2.0f || v.y < 0.0f)
-            {
-                printf("Y smash detected: %f\n", v.y);
-            }
 
             v.x *= 0.5f * (Configuration::resolution_width - 1);
             v.y *= 0.5f * (Configuration::resolution_height - 1);
@@ -344,7 +248,7 @@ protected:
         }
     }
 
-    FloatTriangle convert(const Triangle& t)
+    FloatTriangle convert(const BTriangle& t)
     {
         return FloatTriangle {
             convert(t[0]),
@@ -362,8 +266,6 @@ protected:
 
     Matrix_4x4 projection_;
     Mesh mesh_;
-    // triangles to be rendred on 2D plane
-    ProcessedBuffer triangles_;
 };
 
 template <typename Configuration>

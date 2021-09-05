@@ -277,13 +277,23 @@ int main()
     render_triangle({t});
 
     t = {
+        . v { vertex{5, 10},
+            vertex{7, 10},
+            vertex{7, 5}
+        },
+        .font = 'O'
+    };
+    render_triangle({t});
+
+    t = {
         .v { vertex{0, 2}, 
             vertex{0, 8}, 
             vertex{8, 0} 
         },
         .font = 'X' 
     };
-    triangle t2 = {
+
+        triangle t2 = {
         .v { vertex{0, 8}, 
             vertex{8, 6}, 
             vertex{8, 0} 

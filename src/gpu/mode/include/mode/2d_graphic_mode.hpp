@@ -16,10 +16,35 @@
 
 #pragma once 
 
+#include <cmath>
+
+#include <eul/container/static_deque.hpp>
+
 #include "mode/mode_base.hpp"
+#include "mode/vertex.hpp"
 
 namespace msgpu::mode 
 {
+
+struct prepared_triangle
+{
+    float dx1;
+    float dx2;
+    float dx3;
+    float sx;
+    float ex;
+    uint16_t min_y;
+    uint16_t mid_y;
+    uint16_t max_y;
+    uint16_t color;
+};
+
+struct Triangle 
+{
+    vertex_2d a;
+    vertex_2d b;
+    vertex_2d c;
+};
 
 template <typename Configuration>
 class GraphicMode2D : public ModeBase<Configuration>
@@ -34,10 +59,90 @@ public:
     {
     }
 
+    void add_triangle(Triangle t, uint16_t color)
+    {
+        printf("Adding triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
+        sort_triangle(t);
+        printf("Sorted triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
+ 
+        if (triangles_.size() == triangles_.max_size())
+        {
+            return;
+        }
+        triangles_.emplace_back();
+
+        prepared_triangle& p = triangles_.back();
+        const float dyba = t.b.y - t.a.y;
+        const float dyca = t.c.y - t.a.y;
+        const float dycb = t.c.y - t.b.y;
+        const float dxba = t.b.x - t.a.x;
+        const float dxca = t.c.x - t.a.x;
+        const float dxcb = t.c.x - t.b.x; 
+
+        if (std::abs(dyba) > 0) p.dx1 = dxba/dyba; else p.dx1 = dxba;
+        if (std::abs(dyca) > 0) p.dx2 = dxca/dyca; else p.dx2 = dxca;
+        if (std::abs(dycb) > 0) p.dx3 = dxcb/dycb; else p.dx3 = dxcb;
+
+        if (std::abs(dyca) > 0)
+        printf("Dxca: %f, dyca: %f, div: %f\n", dxca, dyca, p.dx2);
+        // move a little to round correctly
+        p.sx = t.a.x + 0.0001f;
+        p.ex = (t.a.y < t.b.y ? t.a.x : t.b.x) - 0.0001f;
+        if (t.c.y < t.b.y)
+        {
+            std::swap(p.dx1, p.dx2);
+        }
+        p.color = color;
+        p.min_y = t.a.y;
+        p.mid_y = std::min(t.b.y, t.c.y);
+        p.max_y = std::max(t.b.y, t.c.y);
+
+        printf("dx1: %f, dx2: %f, dx3: %f\nS: %f, E: %f, min: %d, mid: %d, max: %d\n",
+            p.dx1, p.dx2, p.dx3, p.sx, p.ex, p.min_y, p.mid_y, p.max_y);
+    }
+
+    void render() override 
+    {
+        printf("2D render: %ld\n", triangles_.size());
+        for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
+        {
+            std::memset(Base::line_buffer_.u8, 0, sizeof(Base::line_buffer_));
+
+            for (auto& triangle : triangles_)
+            {
+                draw_triangle_lines(line, triangle);
+            }
+
+            Base::framebuffer_.write_line(line, Base::line_buffer_.u16);
+            while (triangles_.size())
+            {
+                if (line > triangles_.front().max_y)
+                {
+                    printf("Remove triangle in line: %d\n", line);
+                    triangles_.pop_front();
+                }
+                else 
+                {
+                    break;
+                }
+            }
+        }
+
+    }
+
+    void clear()
+    {
+        triangles_.clear();
+    }
+
 protected:
     void draw_horizontal_line(uint16_t x0, uint16_t x1, uint16_t color)
     {
         if (x0 > x1) std::swap(x0, x1);
+        if (x0 >= Configuration::resolution_width || x1 >= Configuration::resolution_width)
+        {
+            return;
+        }
         for (std::size_t i = x0; i < x1; ++i)
         {
             Base::line_buffer_.u16[i] = color; 
@@ -45,6 +150,93 @@ protected:
 
     }
 
+    void sort_triangle(Triangle& t)
+    {
+        const bool b_less_a = t.b.y < t.a.y;
+        const bool c_less_a = t.c.y < t.a.y;
+        if (b_less_a || c_less_a)
+        {
+            auto c = t;
+            if (t.b.y < t.c.y)
+            {
+                t.a = c.b;
+                t.b = c.c;
+                t.c = c.a;
+            }
+            else
+            {
+                t.a = c.c;
+                t.b = c.a;
+                t.c = c.b;
+            }
+        }
+    }
+
+    void draw_triangle_line(uint16_t line, prepared_triangle& triangle)
+    {
+        if (line < triangle.min_y || line > triangle.max_y)
+        {
+            return;
+        }
+
+        const float e_dx = line < triangle.mid_y ? triangle.dx1 : triangle.dx3;
+        const float x0 = std::min(triangle.sx, triangle.ex);
+        const float x1 = std::max(triangle.sx, triangle.ex);
+        draw_horizontal_line(static_cast<uint16_t>(round(x0)), 
+            static_cast<uint16_t>(round(x1)), triangle.color);
+        triangle.sx += triangle.dx2;
+        triangle.ex += e_dx;
+    }
+
+    void draw_triangle_lines(int line, prepared_triangle& t)
+    {
+        if (line < t.min_y || line > t.max_y)
+        {
+            return;
+        }
+
+        float s_dx = t.dx2;
+        float e_dx = line < t.mid_y ? t.dx1 : t.dx3;
+        
+        float prev_sx = t.sx;
+        float prev_ex = t.ex;
+
+
+        if (line != t.max_y && s_dx > 1)
+        {
+            prev_sx += s_dx - 1.0f;
+        }
+
+        if (line != t.max_y && e_dx > 1)
+        {
+            prev_ex += e_dx - 1.0f;
+        }
+
+        if (line != t.max_y && s_dx < -1)
+        {
+            prev_sx += s_dx + 1.0f;
+        }
+
+        if (line != t.max_y && e_dx < -1)
+        {
+            prev_ex += e_dx + 1.0f;
+        }
+
+     
+        if ((t.mid_y == t.max_y || t.mid_y == t.min_y)  && t.mid_y == line)
+        {
+            draw_horizontal_line(static_cast<uint16_t>(round(t.sx)), static_cast<uint16_t>(round(t.ex)), t.color);
+        }
+        
+        draw_horizontal_line(static_cast<uint16_t>(round(t.sx)), static_cast<uint16_t>(round(prev_sx)), t.color);
+        draw_horizontal_line(static_cast<uint16_t>(round(t.ex)), static_cast<uint16_t>(round(prev_ex)), t.color);
+
+        t.sx += s_dx;
+        t.ex += e_dx;
+    }
+
+
+    eul::container::static_deque<prepared_triangle, 4096> triangles_; 
 };
 
 } // namespace msgpu::mode
