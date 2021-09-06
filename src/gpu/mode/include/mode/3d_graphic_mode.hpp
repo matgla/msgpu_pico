@@ -7,9 +7,7 @@
 // (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
@@ -109,10 +107,10 @@ public:
     {
         const float theta = msg.view_angle / 2.0f;
         const float F = 1.0f / (tanf(theta / 180.0f * 3.14f));
-        const float a = msg.aspect;
+        const float a = -1.0f * msg.aspect;
         const float q = msg.z_far / (msg.z_far - msg.z_near);
 
-        printf ("Calculated projection: %f %f %f %f\n", a*F, F, q, -1 * msg.z_near * q);
+        //printf ("Calculated projection: %f %f %f %f\n", a*F, F, q, -1 * msg.z_near * q);
 
         projection_ = {
             { a * F,    0,                   0,    0 },
@@ -135,27 +133,26 @@ protected:
 
         static float theta = 0.0f;
         theta += 0.1f;
-        printf("Mesh size: %ld\n", mesh_.size());
         for (const auto& triangle : mesh_)
         {
             FloatTriangle t = convert(triangle);
-            printf("Before rotate {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
-                t.vertex[0].x, t.vertex[0].y, 
-                t.vertex[1].x, t.vertex[1].y, 
-                t.vertex[2].x, t.vertex[2].y);
+          //  printf("Before rotate {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
+          //      t.vertex[0].x, t.vertex[0].y, 
+          //      t.vertex[1].x, t.vertex[1].y, 
+          //      t.vertex[2].x, t.vertex[2].y);
             //rotate_x(t, theta);
-            printf("After rotate theta %f, {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
-                t.vertex[0].x, t.vertex[0].y, 
-                t.vertex[1].x, t.vertex[1].y, 
-                t.vertex[2].x, t.vertex[2].y);
+//            printf("After rotate theta %f, {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
+//                t.vertex[0].x, t.vertex[0].y, 
+//                t.vertex[1].x, t.vertex[1].y, 
+//                t.vertex[2].x, t.vertex[2].y);
  
             //rotate_z(t, theta);
             for (auto& v : t.vertex)
             {
-                v.z += 3.0f;
+                v.z += 0.0f;
             }
 
-            // calculate_projection(t);
+            calculate_projection(t);
             printf("After projection {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
                 t.vertex[0].x, t.vertex[0].y, 
                 t.vertex[1].x, t.vertex[1].y, 
@@ -163,7 +160,7 @@ protected:
  
             scale(t);
 
-            printf("Adding triangle: {y: %f, x: %f}, {y: %f, x: %f}, {y: %f, x: %f}\n", t.vertex[0].y, t.vertex[0].x, t.vertex[1].y, t.vertex[1].x, t.vertex[2].y, t.vertex[2].x); 
+            //printf("Adding triangle: {y: %f, x: %f}, {y: %f, x: %f}, {y: %f, x: %f}\n", t.vertex[0].y, t.vertex[0].x, t.vertex[1].y, t.vertex[1].x, t.vertex[2].y, t.vertex[2].x); 
             Triangle tr {
                 .a = vertex_2d {
                     .x = static_cast<uint16_t>(t.vertex[0].x), 
@@ -188,7 +185,7 @@ protected:
     {
         for (auto& v : t.vertex)
         {
-            printf("Projection %f %f %f %f\n", projection_[0][0], projection_[1][1], projection_[2][2], projection_[3][2]);
+            //printf("Projection %f %f %f %f\n", projection_[0][0], projection_[1][1], projection_[2][2], projection_[3][2]);
             v.x = projection_[0][0] * v.x;
             v.y = projection_[1][1] * v.y;
             v.z = projection_[2][2] * v.z + 1;

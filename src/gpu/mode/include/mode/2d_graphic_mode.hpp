@@ -63,7 +63,7 @@ public:
     {
         printf("Adding triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
         sort_triangle(t);
-        printf("Sorted triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
+        //printf("Sorted triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
  
         if (triangles_.size() == triangles_.max_size())
         {
@@ -83,8 +83,8 @@ public:
         if (std::abs(dyca) > 0) p.dx2 = dxca/dyca; else p.dx2 = dxca;
         if (std::abs(dycb) > 0) p.dx3 = dxcb/dycb; else p.dx3 = dxcb;
 
-        if (std::abs(dyca) > 0)
-        printf("Dxca: %f, dyca: %f, div: %f\n", dxca, dyca, p.dx2);
+        //if (std::abs(dyca) > 0)
+        //printf("Dxca: %f, dyca: %f, div: %f\n", dxca, dyca, p.dx2);
         // move a little to round correctly
         p.sx = t.a.x + 0.0001f;
         p.ex = (t.a.y < t.b.y ? t.a.x : t.b.x) - 0.0001f;
@@ -143,7 +143,7 @@ protected:
         {
             return;
         }
-        for (std::size_t i = x0; i < x1; ++i)
+        for (std::size_t i = x0; i <= x1; ++i)
         {
             Base::line_buffer_.u16[i] = color; 
         }

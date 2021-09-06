@@ -277,9 +277,9 @@ int main()
     render_triangle({t});
 
     t = {
-        . v { vertex{5, 10},
+        . v { vertex{7, 5},
             vertex{7, 10},
-            vertex{7, 5}
+            vertex{10, 5}
         },
         .font = 'O'
     };
