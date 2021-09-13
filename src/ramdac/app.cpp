@@ -89,6 +89,15 @@ void App::run()
                 renderer_.change_mode(static_cast<modes::Modes>(rx_buf[1]));
                 printf ("New mode to set: 0x%x\n", rx_buf[1]);
             } break;
+            case 0x03:
+            {
+                printf ("Switch buffer to %d\n", rx_buf[1]);
+                framebuffer_.block();
+                framebuffer_.select_buffer(rx_buf[1], rx_buf[1]);
+                framebuffer_.unblock();
+                uint8_t ack[2] = {0xac, 0x88};
+                i2c_.write(ack);
+            }
         }
         printf("\n");
     }

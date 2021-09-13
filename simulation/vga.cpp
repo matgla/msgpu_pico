@@ -34,7 +34,8 @@ namespace
     void render_loop()
     {
         static sf::RenderWindow window(sf::VideoMode(800, 600), "MSGPU SIM"); 
-
+        window.setVerticalSyncEnabled(true);
+        window.setFramerateLimit(60);
         while (window.isOpen())
         {
             const int thickness = 4;

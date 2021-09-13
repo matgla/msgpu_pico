@@ -27,6 +27,7 @@ namespace msgpu::generator
 Vga::Vga(modes::Modes mode)
     : vram_(nullptr)
 {
+    mutex_init(&vga_mutex_);
     if (mode == modes::Modes::Graphic_320x240_12bit)
     {
         set_resolution(320, 240);
@@ -56,6 +57,18 @@ std::size_t Vga::display_line(std::size_t line, std::span<uint32_t> to_display)
     });
 
     return 0;
+}
+
+void Vga::block()
+{
+    if (vram_)
+    vram_->block();
+}
+
+void Vga::unblock()
+{
+    if (vram_)
+    vram_->unblock();
 }
 
 Vga& get_vga()

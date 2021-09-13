@@ -19,6 +19,8 @@
 #include <cstdint>
 #include <span>
 
+#include "sync.hpp"
+
 #include "memory/psram.hpp"
 
 namespace msgpu::memory 
@@ -54,6 +56,9 @@ public:
     void select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id);
     uint8_t get_read_buffer_id() const;
     uint8_t get_write_buffer_id() const;
+
+    void block();
+    void unblock();
 private:
     std::size_t get_address(uint8_t buffer_id, uint16_t line) const;
     
@@ -62,6 +67,7 @@ private:
     uint8_t write_buffer_id_;
     uint16_t width_;
     uint16_t height_;
+    mutex_t mutex_;
     memory::QspiPSRAM& memory_;
 };
 

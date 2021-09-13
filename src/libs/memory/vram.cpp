@@ -16,6 +16,8 @@
 
 #include "memory/vram.hpp"
 
+#include <cstdio>
+
 namespace msgpu::memory 
 {
 
@@ -31,6 +33,7 @@ VideoRam::VideoRam(memory::QspiPSRAM& memory)
     , write_buffer_id_(1)
     , memory_(memory)
 {
+    mutex_init(&mutex_);
 }
 
 void VideoRam::set_resolution(uint16_t width, uint16_t height)
@@ -117,6 +120,7 @@ void VideoRam::read_line(uint16_t line, DataType<uint8_t> data)
 
 void VideoRam::select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id)
 {
+    printf("Switch buffer to: %d %d\n", read_buffer_id, write_buffer_id);
     read_buffer_id_ = read_buffer_id;
     write_buffer_id_ = write_buffer_id;
 }
@@ -131,5 +135,16 @@ uint8_t VideoRam::get_write_buffer_id() const
     return write_buffer_id_;
 }
 
+void VideoRam::block()
+{
+    // printf("Block\n");
+    mutex_enter_blocking(&mutex_);
+}
+
+void VideoRam::unblock()
+{
+    mutex_exit(&mutex_);
+    // printf("Unblock\n");
+}
 
 } // namespace msgpu::memory

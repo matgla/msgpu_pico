@@ -23,6 +23,7 @@
 #include "modes.hpp"
 
 #include "config.hpp"
+#include "sync.hpp"
 
 #include "memory/vram.hpp"
 
@@ -40,7 +41,10 @@ public:
 
     std::size_t display_line(std::size_t line, std::span<uint32_t> to_display);
 
+    void block();
+    void unblock();
 private:
+    mutex_t vga_mutex_;
     memory::VideoRam* vram_;
 };
 

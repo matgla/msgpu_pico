@@ -84,7 +84,7 @@ void I2C::read(DataType data)
 {
 //    if (!sem_wait(my_fd->sem))
 //    {
-    printf("I2C read\n");
+    // printf("I2C read\n");
     int fd = open(fifo_name, O_RDONLY);
     ::read(fd, data.data(), data.size());
     close(fd);
@@ -94,7 +94,7 @@ void I2C::read(DataType data)
 
 void I2C::write(ConstDataType data)
 {
-    printf("I2C write\n");
+    // printf("I2C write\n");
 //    if (!sem_wait(my_fd->sem))
 //    {
     int fd = open(fifo_name, O_WRONLY);
@@ -107,7 +107,7 @@ void I2C::write(ConstDataType data)
 
 void I2C::read(uint8_t address, DataType data)
 {
-    printf("I2C read from slave: 0x%x\n", address);
+    // printf("I2C read from slave: 0x%x\n", address);
     int fd = open(fifo_name, O_RDONLY);
     ::read(fd, data.data(), data.size());
     close(fd);
@@ -115,7 +115,7 @@ void I2C::read(uint8_t address, DataType data)
 
 void I2C::write(uint8_t address, ConstDataType data)
 {
-    printf("I2C write to slave: 0x%x\n", address);
+    // printf("I2C write to slave: 0x%x\n", address);
     int fd = open(fifo_name, O_WRONLY);
     ::write(fd, data.data(), data.size());
     close(fd);

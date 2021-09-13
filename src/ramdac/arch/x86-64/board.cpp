@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <termios.h> 
 #include <fcntl.h>
+#include <cstdio>
+#include <iostream>
 
 #include <SFML/Graphics.hpp>
 
@@ -51,15 +53,9 @@ void initialize_signal_generator()
 
 void render_loop()
 {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "MSGPU");
-    sf::Image screen;
-    sf::Texture screen_texture;
-    sf::Sprite screen_sprite;
-    
-    screen.create(640, 480, sf::Color::Black);
-    screen_texture.loadFromImage(screen);
-
-    screen_sprite.setTexture(screen_texture);
+    sf::RenderWindow window(sf::VideoMode(320, 240), "MSGPU");
+    window.setVerticalSyncEnabled(true);
+    window.setFramerateLimit(60);
     while (window.isOpen())
     {
         sf::Event ev; 
@@ -71,6 +67,14 @@ void render_loop()
             }
         }
         window.clear();
+
+        sf::Image screen;
+        sf::Texture screen_texture;
+        sf::Sprite screen_sprite;
+    
+        screen.create(320, 240, sf::Color::Black);
+ 
+        msgpu::generator::get_vga().block();
         for (std::size_t line = 0; line < resolution_height ; ++line)
         {
             uint32_t line_buffer_[640]; 
@@ -89,6 +93,11 @@ void render_loop()
                 screen.setPixel(pixel, line, color);
             }
         }
+        static int i = 0;
+        printf("Screenshot: %d.png\n", i);
+        std::string filename = std::to_string(i++) + std::string(".png");
+        screen.saveToFile(filename);
+        msgpu::generator::get_vga().unblock();
         screen_texture.loadFromImage(screen);
         screen_sprite.setTexture(screen_texture);
         window.draw(screen_sprite);

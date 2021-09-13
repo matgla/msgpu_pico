@@ -155,7 +155,7 @@ int main()
     msgpu::memory::VideoRam framebuffer(qspi_memory);
 
     msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
-    modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer);
+    modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, i2c);
     msgpu::processor::MessageProcessor proc;
     register_messages(proc); 
     

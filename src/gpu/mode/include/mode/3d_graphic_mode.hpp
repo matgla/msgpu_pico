@@ -67,14 +67,15 @@ public:
 
     void clear() override
     {
-        printf("Clearing mesh\n");
+        // printf("Clearing mesh\n");
         Base::clear();
         mesh_.clear();
     }
 
     void process(const BeginPrimitives& msg)
     {
-        printf("Begin primitives: %d\n", msg.type);
+        static_cast<void>(msg);
+        // printf("Begin primitives: %d\n", msg.type);
         if (mesh_.size() == mesh_.max_size())
         {
             printf("Mesh buffer is full, dropping primitive\n");
@@ -85,7 +86,7 @@ public:
 
     void process(const EndPrimitives& )
     {
-        printf("End primitives\n");
+        // printf("End primitives\n");
     }
 
     void process(const WriteVertex& v)
@@ -99,13 +100,13 @@ public:
             mesh_.push_back({});
         }
         
-        printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
+        // printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
         mesh_.back().push_back({v.x, v.y, v.z});
     }
 
     void process(const SetPerspective& msg)
     {
-        const float theta = msg.view_angle / 2.0f;
+        const float theta = msg.view_angle * 0.5f;
         const float F = 1.0f / (tanf(theta / 180.0f * 3.14f));
         const float a = -1.0f * msg.aspect;
         const float q = msg.z_far / (msg.z_far - msg.z_near);
@@ -122,7 +123,7 @@ public:
 
     void render() override
     {
-        printf("Render\n"); 
+        // printf("Render\n"); 
         transform_mesh();
         GraphicMode2D<Configuration>::render();
     }
@@ -133,6 +134,10 @@ protected:
 
         static float theta = 0.0f;
         theta += 0.1f;
+        if (theta > 6.23)
+        {
+            theta = 0;
+        }
         for (const auto& triangle : mesh_)
         {
             FloatTriangle t = convert(triangle);
@@ -140,39 +145,48 @@ protected:
           //      t.vertex[0].x, t.vertex[0].y, 
           //      t.vertex[1].x, t.vertex[1].y, 
           //      t.vertex[2].x, t.vertex[2].y);
-            //rotate_x(t, theta);
+            rotate_x(t, theta);
+
 //            printf("After rotate theta %f, {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
 //                t.vertex[0].x, t.vertex[0].y, 
 //                t.vertex[1].x, t.vertex[1].y, 
 //                t.vertex[2].x, t.vertex[2].y);
+  
+            rotate_z(t, theta);
  
-            //rotate_z(t, theta);
+            // printf("After scale theta %f {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
+                // t.vertex[0].x, t.vertex[0].y, 
+                // t.vertex[1].x, t.vertex[1].y, 
+                // t.vertex[2].x, t.vertex[2].y);
+ 
+
             for (auto& v : t.vertex)
             {
-                v.z += 0.0f;
+                v.z += 3.0f;
             }
 
             calculate_projection(t);
-            printf("After projection {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
-                t.vertex[0].x, t.vertex[0].y, 
-                t.vertex[1].x, t.vertex[1].y, 
-                t.vertex[2].x, t.vertex[2].y);
+            // printf("After projection {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
+                // t.vertex[0].x, t.vertex[0].y, 
+                // t.vertex[1].x, t.vertex[1].y, 
+                // t.vertex[2].x, t.vertex[2].y);
  
             scale(t);
 
             //printf("Adding triangle: {y: %f, x: %f}, {y: %f, x: %f}, {y: %f, x: %f}\n", t.vertex[0].y, t.vertex[0].x, t.vertex[1].y, t.vertex[1].x, t.vertex[2].y, t.vertex[2].x); 
             Triangle tr {
-                .a = vertex_2d {
-                    .x = static_cast<uint16_t>(t.vertex[0].x), 
-                    .y = static_cast<uint16_t>(t.vertex[0].y) 
-                },
-                .b = vertex_2d {
-                    .x = static_cast<uint16_t>(t.vertex[1].x), 
-                    .y = static_cast<uint16_t>(t.vertex[1].y) 
-                },
-                .c = vertex_2d {
-                    .x = static_cast<uint16_t>(t.vertex[2].x), 
-                    .y = static_cast<uint16_t>(t.vertex[2].y) 
+                .v = { vertex_2d {
+                        .x = static_cast<uint16_t>(t.vertex[0].x), 
+                        .y = static_cast<uint16_t>(t.vertex[0].y) 
+                    },
+                    vertex_2d {
+                        .x = static_cast<uint16_t>(t.vertex[1].x), 
+                        .y = static_cast<uint16_t>(t.vertex[1].y) 
+                    },
+                    vertex_2d {
+                        .x = static_cast<uint16_t>(t.vertex[2].x), 
+                        .y = static_cast<uint16_t>(t.vertex[2].y) 
+                    }
                 } 
             };
  
@@ -188,7 +202,7 @@ protected:
             //printf("Projection %f %f %f %f\n", projection_[0][0], projection_[1][1], projection_[2][2], projection_[3][2]);
             v.x = projection_[0][0] * v.x;
             v.y = projection_[1][1] * v.y;
-            v.z = projection_[2][2] * v.z + 1;
+            v.z = projection_[2][2] * v.z;
             float w = projection_[3][2] * v.z;
 
             if (w > 0.000001f || w < -0.000001f)
@@ -214,34 +228,43 @@ protected:
 
     void rotate_x(FloatTriangle& t, float theta)
     {
-        const float c_theta = static_cast<float>(cos(theta));
-        const float s_theta = static_cast<float>(sin(theta));
+        const float c_theta = cosf(theta);
+        const float s_theta = sinf(theta);
         for (auto& v : t.vertex)
         {
-            v.y = c_theta * v.y - s_theta * v.z;
-            v.z = s_theta * v.y + c_theta * v.z;
+            const float y = v.y;
+            const float z = v.z;
+
+            v.y = c_theta * y - s_theta * z;
+            v.z = s_theta * y + c_theta * z;
         }
     }
 
     void rotate_y(FloatTriangle& t, float theta)
     {
-        const float c_theta = static_cast<float>(cos(theta));
-        const float s_theta = static_cast<float>(sin(theta));
+        const float c_theta = cosf(theta);
+        const float s_theta = sinf(theta);
         for (auto& v : t.vertex)
         {
-            v.x = c_theta * v.x + s_theta * v.z;
-            v.z = c_theta * v.z - s_theta * v.x;
+            const float x = v.x;
+            const float z = v.z;
+ 
+            v.x = c_theta * x + s_theta * z;
+            v.z = c_theta * z - s_theta * x;
         }
     }
 
     void rotate_z(FloatTriangle& t, float theta)
     {
-        const float c_theta = static_cast<float>(cos(theta));
-        const float s_theta = static_cast<float>(sin(theta));
+        const float c_theta = cosf(theta);
+        const float s_theta = sinf(theta);
         for (auto& v : t.vertex)
         {
-            v.x = c_theta * v.x - s_theta * v.y;
-            v.y = s_theta * v.x + c_theta * v.y;
+            const float x = v.x;
+            const float y = v.y;
+ 
+            v.x = c_theta * x - s_theta * y;
+            v.y = s_theta * x + c_theta * y;
         }
     }
 

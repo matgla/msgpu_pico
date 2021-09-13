@@ -41,9 +41,7 @@ struct prepared_triangle
 
 struct Triangle 
 {
-    vertex_2d a;
-    vertex_2d b;
-    vertex_2d c;
+    vertex_2d v[3];
 };
 
 template <typename Configuration>
@@ -61,9 +59,8 @@ public:
 
     void add_triangle(Triangle t, uint16_t color)
     {
-        printf("Adding triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
         sort_triangle(t);
-        //printf("Sorted triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
+        printf("Adding triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
  
         if (triangles_.size() == triangles_.max_size())
         {
@@ -72,12 +69,12 @@ public:
         triangles_.emplace_back();
 
         prepared_triangle& p = triangles_.back();
-        const float dyba = t.b.y - t.a.y;
-        const float dyca = t.c.y - t.a.y;
-        const float dycb = t.c.y - t.b.y;
-        const float dxba = t.b.x - t.a.x;
-        const float dxca = t.c.x - t.a.x;
-        const float dxcb = t.c.x - t.b.x; 
+        const float dyba = t.v[1].y - t.v[0].y;
+        const float dyca = t.v[2].y - t.v[0].y;
+        const float dycb = t.v[2].y - t.v[1].y;
+        const float dxba = t.v[1].x - t.v[0].x;
+        const float dxca = t.v[2].x - t.v[0].x;
+        const float dxcb = t.v[2].x - t.v[1].x; 
 
         if (std::abs(dyba) > 0) p.dx1 = dxba/dyba; else p.dx1 = dxba;
         if (std::abs(dyca) > 0) p.dx2 = dxca/dyca; else p.dx2 = dxca;
@@ -86,24 +83,27 @@ public:
         //if (std::abs(dyca) > 0)
         //printf("Dxca: %f, dyca: %f, div: %f\n", dxca, dyca, p.dx2);
         // move a little to round correctly
-        p.sx = t.a.x + 0.0001f;
-        p.ex = (t.a.y < t.b.y ? t.a.x : t.b.x) - 0.0001f;
-        if (t.c.y < t.b.y)
+        p.sx = t.v[0].x + 0.0001f;
+        p.ex = (t.v[0].y < t.v[1].y ? t.v[0].x : t.v[1].x) - 0.0001f;
+        if (t.v[2].y < t.v[1].y)
         {
             std::swap(p.dx1, p.dx2);
         }
         p.color = color;
-        p.min_y = t.a.y;
-        p.mid_y = std::min(t.b.y, t.c.y);
-        p.max_y = std::max(t.b.y, t.c.y);
+        p.min_y = t.v[0].y;
+        p.mid_y = std::min(t.v[1].y, t.v[2].y);
+        p.max_y = std::max(t.v[1].y, t.v[2].y);
 
-        printf("dx1: %f, dx2: %f, dx3: %f\nS: %f, E: %f, min: %d, mid: %d, max: %d\n",
-            p.dx1, p.dx2, p.dx3, p.sx, p.ex, p.min_y, p.mid_y, p.max_y);
+        // printf("dx1: %f, dx2: %f, dx3: %f\nS: %f, E: %f, min: %d, mid: %d, max: %d\n",
+            // p.dx1, p.dx2, p.dx3, p.sx, p.ex, p.min_y, p.mid_y, p.max_y);
     }
 
     void render() override 
     {
-        printf("2D render: %ld\n", triangles_.size());
+        static int i = 0;
+        printf("Render frame: %d\n", i++);
+        this->framebuffer_.block();
+        // printf("2D render: %ld\n", triangles_.size());
         for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
         {
             std::memset(Base::line_buffer_.u8, 0, sizeof(Base::line_buffer_));
@@ -118,7 +118,7 @@ public:
             {
                 if (line > triangles_.front().max_y)
                 {
-                    printf("Remove triangle in line: %d\n", line);
+                    // printf("Remove triangle in line: %d\n", line);
                     triangles_.pop_front();
                 }
                 else 
@@ -127,6 +127,13 @@ public:
                 }
             }
         }
+
+        if (!triangles_.empty())
+        {
+            std::abort();
+        }
+        printf("Render finished\n");
+        this->framebuffer_.unblock();
 
     }
 
@@ -152,24 +159,11 @@ protected:
 
     void sort_triangle(Triangle& t)
     {
-        const bool b_less_a = t.b.y < t.a.y;
-        const bool c_less_a = t.c.y < t.a.y;
-        if (b_less_a || c_less_a)
-        {
-            auto c = t;
-            if (t.b.y < t.c.y)
-            {
-                t.a = c.b;
-                t.b = c.c;
-                t.c = c.a;
-            }
-            else
-            {
-                t.a = c.c;
-                t.b = c.a;
-                t.c = c.b;
-            }
-        }
+        std::sort(std::begin(t.v), std::end(t.v), [](const auto& a, const auto& b) {
+            return (a.y < b.y) || (a.y == b.y && a.x < b.x);
+        });
+
+
     }
 
     void draw_triangle_line(uint16_t line, prepared_triangle& triangle)
