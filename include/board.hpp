@@ -52,6 +52,8 @@ void unblock_display();
 
 void initialize_application_specific();
 
+void enable_dump();
+
 } // namespace msgpu  
 
 void start_vga();

@@ -49,7 +49,12 @@ void initialize_signal_generator()
     tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
 }
 
+static bool enable_dumping = false;
 
+void enable_dump()
+{
+    enable_dumping = true;
+}
 
 void render_loop()
 {
@@ -66,6 +71,8 @@ void render_loop()
                 window.close();
             }
         }
+
+        msgpu::generator::get_vga().block();
         window.clear();
 
         sf::Image screen;
@@ -74,8 +81,7 @@ void render_loop()
     
         screen.create(320, 240, sf::Color::Black);
  
-        msgpu::generator::get_vga().block();
-        for (std::size_t line = 0; line < resolution_height ; ++line)
+        for (std::size_t line = 0; line < resolution_height; ++line)
         {
             uint32_t line_buffer_[640]; 
             msgpu::generator::get_vga().display_line(line, line_buffer_);
@@ -93,15 +99,18 @@ void render_loop()
                 screen.setPixel(pixel, line, color);
             }
         }
-        static int i = 0;
-        printf("Screenshot: %d.png\n", i);
-        std::string filename = std::to_string(i++) + std::string(".png");
-        screen.saveToFile(filename);
-        msgpu::generator::get_vga().unblock();
+        if (enable_dumping)
+        {
+            static int i = 0;
+            printf("Screenshot: %d.png\n", i);
+            std::string filename = std::to_string(i++) + std::string(".png");
+            screen.saveToFile(filename);
+        } 
         screen_texture.loadFromImage(screen);
         screen_sprite.setTexture(screen_texture);
         window.draw(screen_sprite);
         window.display();
+        msgpu::generator::get_vga().unblock();
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);

@@ -60,7 +60,7 @@ public:
     void add_triangle(Triangle t, uint16_t color)
     {
         sort_triangle(t);
-        printf("Adding triangle: {y: %d, x: %d}, {y: %d, x: %d}, {y: %d, x: %d}\n", t.a.y, t.a.x, t.b.y, t.b.x, t.c.y, t.c.x);
+        printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x, t.v[0].y, t.v[1].x, t.v[1].y, t.v[2].x, t.v[2].y);
  
         if (triangles_.size() == triangles_.max_size())
         {
@@ -80,8 +80,6 @@ public:
         if (std::abs(dyca) > 0) p.dx2 = dxca/dyca; else p.dx2 = dxca;
         if (std::abs(dycb) > 0) p.dx3 = dxcb/dycb; else p.dx3 = dxcb;
 
-        //if (std::abs(dyca) > 0)
-        //printf("Dxca: %f, dyca: %f, div: %f\n", dxca, dyca, p.dx2);
         // move a little to round correctly
         p.sx = t.v[0].x + 0.0001f;
         p.ex = (t.v[0].y < t.v[1].y ? t.v[0].x : t.v[1].x) - 0.0001f;
@@ -94,15 +92,12 @@ public:
         p.mid_y = std::min(t.v[1].y, t.v[2].y);
         p.max_y = std::max(t.v[1].y, t.v[2].y);
 
-        // printf("dx1: %f, dx2: %f, dx3: %f\nS: %f, E: %f, min: %d, mid: %d, max: %d\n",
-            // p.dx1, p.dx2, p.dx3, p.sx, p.ex, p.min_y, p.mid_y, p.max_y);
     }
 
     void render() override 
     {
         static int i = 0;
         printf("Render frame: %d\n", i++);
-        this->framebuffer_.block();
         // printf("2D render: %ld\n", triangles_.size());
         for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
         {
@@ -112,13 +107,13 @@ public:
             {
                 draw_triangle_lines(line, triangle);
             }
-
             Base::framebuffer_.write_line(line, Base::line_buffer_.u16);
+         
             while (triangles_.size())
             {
                 if (line > triangles_.front().max_y)
                 {
-                    // printf("Remove triangle in line: %d\n", line);
+                    printf("Line: %d, Triangles: %ld\n", line, triangles_.size());
                     triangles_.pop_front();
                 }
                 else 
@@ -133,7 +128,6 @@ public:
             std::abort();
         }
         printf("Render finished\n");
-        this->framebuffer_.unblock();
 
     }
 

@@ -67,9 +67,10 @@ public:
 
     void clear() override
     {
-        // printf("Clearing mesh\n");
+        this->framebuffer_.block();
         Base::clear();
         mesh_.clear();
+        this->framebuffer_.unblock();
     }
 
     void process(const BeginPrimitives& msg)
@@ -100,7 +101,7 @@ public:
             mesh_.push_back({});
         }
         
-        // printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
+        printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
         mesh_.back().push_back({v.x, v.y, v.z});
     }
 
@@ -123,9 +124,10 @@ public:
 
     void render() override
     {
-        // printf("Render\n"); 
+        this->framebuffer_.block();
         transform_mesh();
         GraphicMode2D<Configuration>::render();
+        this->framebuffer_.unblock();
     }
 
 protected:
@@ -141,24 +143,8 @@ protected:
         for (const auto& triangle : mesh_)
         {
             FloatTriangle t = convert(triangle);
-          //  printf("Before rotate {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
-          //      t.vertex[0].x, t.vertex[0].y, 
-          //      t.vertex[1].x, t.vertex[1].y, 
-          //      t.vertex[2].x, t.vertex[2].y);
             rotate_x(t, theta);
-
-//            printf("After rotate theta %f, {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
-//                t.vertex[0].x, t.vertex[0].y, 
-//                t.vertex[1].x, t.vertex[1].y, 
-//                t.vertex[2].x, t.vertex[2].y);
-  
             rotate_z(t, theta);
- 
-            // printf("After scale theta %f {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", theta,
-                // t.vertex[0].x, t.vertex[0].y, 
-                // t.vertex[1].x, t.vertex[1].y, 
-                // t.vertex[2].x, t.vertex[2].y);
- 
 
             for (auto& v : t.vertex)
             {
@@ -166,14 +152,8 @@ protected:
             }
 
             calculate_projection(t);
-            // printf("After projection {x: %f, y: %f}, {x: %f, y: %f}, {x: %f, y: %f}\n", 
-                // t.vertex[0].x, t.vertex[0].y, 
-                // t.vertex[1].x, t.vertex[1].y, 
-                // t.vertex[2].x, t.vertex[2].y);
- 
             scale(t);
 
-            //printf("Adding triangle: {y: %f, x: %f}, {y: %f, x: %f}, {y: %f, x: %f}\n", t.vertex[0].y, t.vertex[0].x, t.vertex[1].y, t.vertex[1].x, t.vertex[2].y, t.vertex[2].x); 
             Triangle tr {
                 .v = { vertex_2d {
                         .x = static_cast<uint16_t>(t.vertex[0].x), 
@@ -199,7 +179,6 @@ protected:
     {
         for (auto& v : t.vertex)
         {
-            //printf("Projection %f %f %f %f\n", projection_[0][0], projection_[1][1], projection_[2][2], projection_[3][2]);
             v.x = projection_[0][0] * v.x;
             v.y = projection_[1][1] * v.y;
             v.z = projection_[2][2] * v.z;

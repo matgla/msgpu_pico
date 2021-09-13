@@ -137,14 +137,14 @@ uint8_t VideoRam::get_write_buffer_id() const
 
 void VideoRam::block()
 {
-    // printf("Block\n");
+    //printf("Block\n");
     mutex_enter_blocking(&mutex_);
 }
 
 void VideoRam::unblock()
 {
     mutex_exit(&mutex_);
-    // printf("Unblock\n");
+    //printf("Unblock\n");
 }
 
 } // namespace msgpu::memory
