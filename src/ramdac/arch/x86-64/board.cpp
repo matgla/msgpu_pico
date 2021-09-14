@@ -53,7 +53,7 @@ static bool enable_dumping = false;
 
 void enable_dump()
 {
-    enable_dumping = true;
+    // enable_dumping = true;
 }
 
 void render_loop()
@@ -78,7 +78,6 @@ void render_loop()
         sf::Image screen;
         sf::Texture screen_texture;
         sf::Sprite screen_sprite;
-    
         screen.create(320, 240, sf::Color::Black);
  
         for (std::size_t line = 0; line < resolution_height; ++line)

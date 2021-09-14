@@ -18,11 +18,15 @@
 
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <optional>
 
 #include <boost/sml.hpp>
 
 #include <eul/container/static_deque.hpp>
+#include <eul/crc/crc.hpp>
+
+#include "board.hpp"
 
 #include "io/message.hpp"
 
@@ -95,13 +99,37 @@ public:
                         / (wrap(&Self::store_message), &Self::prepare_for_token) = "wait_for_start_token"_s, 
             "wait_for_payload_crc"_s + event<dma_finished> [ !verify ] 
                         / (wrap(&Self::drop_message), &Self::prepare_for_token) = "wait_for_start_token"_s
-
         );
     }
 
     /// @brief Provide access to ready messages 
         /// @return Message object if it's ready to process or none if queue is empty
     std::optional<Message> pop();
+
+    template <typename T>
+    void write(const T& msg)
+    {
+        Header header;
+        header.id = T::id;
+        header.size = sizeof(T);
+
+        std::memcpy(write_buffer_, &header, sizeof(header));
+        uint16_t header_crc = calculate_crc16(std::span<const uint8_t>(write_buffer_, sizeof(Header)));
+        uint8_t* next_pos = write_buffer_ + sizeof(header);
+        std::memcpy(write_buffer_ + sizeof(header), &header_crc, sizeof(header_crc));
+        next_pos += sizeof(header_crc);
+        std::memcpy(next_pos, &msg, sizeof(T));
+        uint16_t message_crc = calculate_crc16(std::span<const uint8_t>(next_pos, sizeof(T)));
+        next_pos += sizeof(T);
+        std::memcpy(next_pos, &message_crc, sizeof(message_crc));
+
+        std::span<const uint8_t> data(write_buffer_, sizeof(Header) + sizeof(T) + 2 * sizeof(uint16_t));
+
+        constexpr uint8_t start_flag = 0x7e;
+        write_bytes(&start_flag, sizeof(start_flag));
+        write_bytes(data);
+    }
+
 private:
     // ==================== GUARDS ==================//
     /// @brief Checks if token buffer contains 0x7e, which is symbol for frame start.
@@ -168,6 +196,7 @@ private:
     uint16_t got_crc_;
     uint16_t received_crc_;
     Message* current_message_;
+    uint8_t write_buffer_[128];
     eul::container::static_deque<Message, 32> messages_;
 };
 

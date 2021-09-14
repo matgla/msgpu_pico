@@ -38,13 +38,17 @@ VideoRam::VideoRam(memory::QspiPSRAM& memory)
 
 void VideoRam::set_resolution(uint16_t width, uint16_t height)
 {
+    block();
     width_ = width;
     height_ = height;
+    unblock();
 }
 
 void VideoRam::set_color_space(uint8_t bits_per_pixel)
 {
+    block();
     bits_per_pixel_ = bits_per_pixel;
+    unblock();
 }
 
 std::size_t VideoRam::get_address(uint8_t buffer_id, uint16_t line) const 
@@ -120,7 +124,7 @@ void VideoRam::read_line(uint16_t line, DataType<uint8_t> data)
 
 void VideoRam::select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id)
 {
-    printf("Switch buffer to: %d %d\n", read_buffer_id, write_buffer_id);
+    // printf("Switch buffer to: %d %d\n", read_buffer_id, write_buffer_id);
     read_buffer_id_ = read_buffer_id;
     write_buffer_id_ = write_buffer_id;
 }

@@ -70,14 +70,14 @@ void App::run()
 
     while (true)
     {
-        printf("Waiting for I2C\n");
+        // printf("Waiting for I2C\n");
         i2c_.read(rx_buf);
-        printf("Received data: ");
-        for (const auto byte : rx_buf)
-        {
-            printf("0x%x, ", byte);
-        }
-        printf("\n");
+        // printf("Received data: ");
+        // for (const auto byte : rx_buf)
+        // {
+            // printf("0x%x, ", byte);
+        // }
+        // printf("\n");
 
         switch (rx_buf[0])
         {
@@ -93,8 +93,8 @@ void App::run()
             } break;
             case 0x03:
             {
-                printf ("Switch buffer to %d\n", rx_buf[1]);
-                msgpu::enable_dump();
+                // printf ("Switch buffer to %d\n", rx_buf[1]);
+                // msgpu::enable_dump();
                 framebuffer_.block();
                 framebuffer_.select_buffer(rx_buf[1], rx_buf[1]);
                 uint8_t ack[2] = {0xac, 0x88};
@@ -102,7 +102,7 @@ void App::run()
                 framebuffer_.unblock();
             }
         }
-        printf("\n");
+        // printf("\n");
     }
 }
 

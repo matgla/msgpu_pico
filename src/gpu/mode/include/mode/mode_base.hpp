@@ -25,6 +25,7 @@
 
 #include "memory/vram.hpp"
 
+#include "io/usart_point.hpp"
 #include "generator/vga.hpp"
 #include "arch/i2c.hpp"
 
@@ -37,10 +38,11 @@ class ModeBase
 public:
     virtual ~ModeBase() = default; 
 
-    ModeBase(memory::VideoRam& framebuffer, I2C& i2c)
+    ModeBase(memory::VideoRam& framebuffer, I2C& i2c, io::UsartPoint& point)
         : buffer_id_(1)
         , framebuffer_(framebuffer)
         , i2c_(i2c)
+        , point_(point)
         
     {
         clear_screen(); 
@@ -59,13 +61,13 @@ public:
         uint8_t read_buf_id = buffer_id_;
         buffer_id_ = buffer_id_ ? 0 : 1;
         render();
-        printf("Switch buffer to: %d %d\n", buffer_id_, read_buf_id);
+        // printf("Switch buffer to: %d %d\n", buffer_id_, read_buf_id);
         framebuffer_.block(); 
         const uint8_t cmd[] = {0x03, read_buf_id};
         this->i2c_.write(0x2e, cmd);
         uint8_t ack[2];
         this->i2c_.read(ack); 
-        printf("ACK: %x%x\n", ack[0], ack[1]);
+        // printf("ACK: %x%x\n", ack[0], ack[1]);
         framebuffer_.select_buffer(buffer_id_, read_buf_id);
         framebuffer_.unblock();
         
@@ -88,6 +90,7 @@ protected:
     memory::VideoRam& framebuffer_;
     LineBuffer line_buffer_;
     I2C& i2c_;
+    io::UsartPoint& point_;
 };
 
 } // namespace msgpu::mode

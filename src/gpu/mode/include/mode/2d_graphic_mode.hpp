@@ -60,7 +60,7 @@ public:
     void add_triangle(Triangle t, uint16_t color)
     {
         sort_triangle(t);
-        printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x, t.v[0].y, t.v[1].x, t.v[1].y, t.v[2].x, t.v[2].y);
+        // printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x, t.v[0].y, t.v[1].x, t.v[1].y, t.v[2].x, t.v[2].y);
  
         if (triangles_.size() == triangles_.max_size())
         {
@@ -96,8 +96,8 @@ public:
 
     void render() override 
     {
-        static int i = 0;
-        printf("Render frame: %d\n", i++);
+        //  static int i = 0;
+        //  printf("Render frame: %d\n", i++);
         // printf("2D render: %ld\n", triangles_.size());
         for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
         {
@@ -113,7 +113,6 @@ public:
             {
                 if (line > triangles_.front().max_y)
                 {
-                    printf("Line: %d, Triangles: %ld\n", line, triangles_.size());
                     triangles_.pop_front();
                 }
                 else 
@@ -127,7 +126,7 @@ public:
         {
             std::abort();
         }
-        printf("Render finished\n");
+        // printf("Render finished\n");
 
     }
 

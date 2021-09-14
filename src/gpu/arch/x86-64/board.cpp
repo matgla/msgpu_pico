@@ -54,6 +54,11 @@ void write_bytes(std::span<const uint8_t> data)
     write(serial_port_id, data.data(), data.size());
 }
 
+void write_bytes(const void* data, std::size_t size)
+{
+    write(serial_port_id, data, size);
+}
+
 } // namespace msgpu
 
 

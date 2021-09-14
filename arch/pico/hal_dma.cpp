@@ -52,9 +52,9 @@ void set_usart_dma_buffer(void* buffer, bool trigger)
 
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
-    printf("Setting dma count %d\n", size);
+    // printf("Setting dma count %d\n", size);
     dma_channel_set_trans_count(dma_channel, size, trigger);
-    printf("Transfer count %d\n", dma_hw->ch[dma_channel].transfer_count);
+    // printf("Transfer count %d\n", dma_hw->ch[dma_channel].transfer_count);
 }
 
 void reset_dma_crc() 

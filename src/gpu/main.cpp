@@ -155,20 +155,28 @@ int main()
     msgpu::memory::VideoRam framebuffer(qspi_memory);
 
     msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
-    modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, i2c);
+    msgpu::io::UsartPoint usart_io_data; 
+    
+    boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
+    bool dma_finished = false;
+    hal::set_usart_handler([&dma_finished](){
+        dma_finished = true;
+    });
+
+   
+    modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, i2c, usart_io_data);
     msgpu::processor::MessageProcessor proc;
     register_messages(proc); 
     
-    msgpu::io::UsartPoint usart_io_data; 
-    boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
     usart_io.process_event(msgpu::io::init{});
     
-    hal::set_usart_handler([&usart_io](){
-        usart_io.process_event(msgpu::io::dma_finished{});
-    });
-
     while (true)
     {
+        if (dma_finished)
+        {
+            dma_finished = false;
+            usart_io.process_event(msgpu::io::dma_finished{});
+        }
         auto message = usart_io_data.pop();
         if (message)
         {

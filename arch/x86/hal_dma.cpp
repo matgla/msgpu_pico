@@ -21,6 +21,9 @@
 #include <cstring>
 #include <vector>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <iostream>
 
 #include <eul/crc/crc.hpp>
 
@@ -36,6 +39,8 @@ static std::size_t size_to_receive;
 static void* buffer_ptr;
 static uint32_t crc;
 static bool trigger_;
+static std::mutex mutex_;
+static std::condition_variable cv;
 } // namespace
 
 void reset_dma_crc()
@@ -45,14 +50,22 @@ void reset_dma_crc()
 
 void set_usart_dma_buffer(void* buffer, bool trigger)
 {
+    {
+    std::unique_lock l(mutex_);
     buffer_ptr = buffer;
     trigger_ = trigger;
+    } 
+    cv.notify_one();
 }
 
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
+    {
+    std::unique_lock l(mutex_);
     size_to_receive = size; 
     trigger_ = trigger;
+    } 
+    cv.notify_one();
 }
 
 void set_usart_handler(const UsartHandler& h)
@@ -61,10 +74,9 @@ void set_usart_handler(const UsartHandler& h)
     static std::thread t([]{
         while (true)
         {
-            while (!trigger_)
-            {
-            }
-            
+            std::unique_lock lk(mutex_);
+            if (!trigger_)
+                cv.wait(lk, [] { return trigger_; });
             trigger_ = false;
             std::vector<uint8_t> buf; 
             std::size_t i = 0;
@@ -80,7 +92,8 @@ void set_usart_handler(const UsartHandler& h)
 
             if (handler) 
             {
-                crc = calculate_crc16(buf); 
+                crc = calculate_crc16(buf);
+                lk.unlock(); 
                 handler();
             }
         }

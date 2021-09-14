@@ -16,7 +16,10 @@
 
 #include "io/usart_point.hpp"
 
+#include "messages/ack.hpp"
+
 #include "hal_dma.hpp"
+
 
 namespace msgpu::io 
 {
@@ -72,11 +75,15 @@ void UsartPoint::prepare_for_crc()
 void UsartPoint::store_message() 
 {
     current_message_->received = true;
+    // printf("Acking %d\n", current_message_->payload.at(0));    
+    write(Ack{});
 }
 
 void UsartPoint::drop_message()
 {
     messages_.pop_back();
+    // printf("Drop -> ACK\n"); 
+    write(Ack{});
 }
 
 // GUARDS 

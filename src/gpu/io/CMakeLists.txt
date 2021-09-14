@@ -40,6 +40,7 @@ target_link_libraries(msgpu_io
         msgpu_arch
     PUBLIC
         eul_container
+        eul_crc
         external::sml 
         msgpu_messages
 )

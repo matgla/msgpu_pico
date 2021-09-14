@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <cmath>
+#include <chrono>
+#include <iostream>
 
 #include <eul/container/static_vector.hpp>
 #include <eul/math/vector.hpp>
@@ -26,6 +28,7 @@
 #include "mode/2d_graphic_mode.hpp"
 #include "mode/types.hpp"
 
+#include "messages/ack.hpp"
 #include "messages/begin_primitives.hpp"
 #include "messages/end_primitives.hpp"
 #include "messages/write_vertex.hpp"
@@ -101,7 +104,7 @@ public:
             mesh_.push_back({});
         }
         
-        printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
+        // printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
         mesh_.back().push_back({v.x, v.y, v.z});
     }
 
@@ -124,10 +127,20 @@ public:
 
     void render() override
     {
+        auto start = std::chrono::high_resolution_clock::now();
         this->framebuffer_.block();
+        auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        std::cout << "Block took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
+
         transform_mesh();
+        elapsed = std::chrono::high_resolution_clock::now() - start;
+        std::cout << "transform mesh took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
+
+
         GraphicMode2D<Configuration>::render();
         this->framebuffer_.unblock();
+        elapsed = std::chrono::high_resolution_clock::now() - start;
+        std::cout << "Render took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
     }
 
 protected:

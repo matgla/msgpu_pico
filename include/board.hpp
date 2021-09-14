@@ -39,6 +39,7 @@ void frame_update();
 
 uint8_t read_byte();
 void write_bytes(std::span<const uint8_t> byte);
+void write_bytes(const void* data, std::size_t size);
 
 void set_resolution(uint16_t width, uint16_t height);
 
