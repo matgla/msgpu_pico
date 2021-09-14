@@ -20,14 +20,14 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
 
+#include "hal_dma.hpp"
 
-namespace msgpu 
-{
-
+#include <gperftools/profiler.h>
 namespace 
 {
 
@@ -36,10 +36,24 @@ static int serial_port_id;
 } // namespace 
 
 
+void exit_handler(int sig)
+{
+    static_cast<void>(sig);
+     
+    hal::close_usart();
+    close(serial_port_id);
+    ProfilerStop();
+    exit(0);
+}
+
+namespace msgpu 
+{
+
 void initialize_application_specific()
 {
     printf("Opening serial port: /tmp/msgpu_virtual_serial_0\n");
     serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
+    signal(SIGINT, exit_handler);
 }
 
 uint8_t read_byte() 

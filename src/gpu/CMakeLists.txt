@@ -11,8 +11,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 find_package(msgui REQUIRED)
 
@@ -48,6 +47,7 @@ target_link_libraries(msgpu
         msgpu_mode
         msgpu_generator
         msgpu_processor
+        profiler
 )
 add_dependencies(msgpu api_generator)
 

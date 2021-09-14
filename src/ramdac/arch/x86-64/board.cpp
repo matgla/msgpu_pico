@@ -19,15 +19,29 @@
 #include <memory>
 #include <thread>
 
-#include <unistd.h>
-#include <termios.h> 
-#include <fcntl.h>
 #include <cstdio>
 #include <iostream>
+
+#include <fcntl.h>
+#include <signal.h>
+#include <termios.h> 
+#include <unistd.h>
 
 #include <SFML/Graphics.hpp>
 
 #include "generator/vga.hpp"
+
+static std::unique_ptr<std::thread> rendering_thread;
+
+bool close_loop = false;
+void exit_handler(int sig)
+{
+    static_cast<void>(sig);
+    printf("Received signal\n");
+    close_loop = true;
+    if (rendering_thread) rendering_thread->join();
+    exit(0);
+}
 
 namespace msgpu 
 {
@@ -35,7 +49,6 @@ namespace msgpu
 static uint16_t resolution_width = 320;
 static uint16_t resolution_height = 240;
 
-static std::unique_ptr<std::thread> rendering_thread;
 static termios old_tio; 
 
 void initialize_signal_generator()
@@ -63,6 +76,10 @@ void render_loop()
     window.setFramerateLimit(60);
     while (window.isOpen())
     {
+        if (close_loop)
+        {
+            return;
+        }
         sf::Event ev; 
         while (window.pollEvent(ev))
         {
@@ -131,6 +148,7 @@ void deinitialize_signal_generator()
 
 void initialize_application_specific()
 {
+    signal(SIGINT, exit_handler);
     rendering_thread.reset(new std::thread(&render_loop));
 }
 

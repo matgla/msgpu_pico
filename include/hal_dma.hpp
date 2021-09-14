@@ -34,5 +34,5 @@ void set_dma_mode(uint32_t mode);
 uint32_t get_dma_crc();
 
 void enable_dma();
-
+void close_usart();
 }

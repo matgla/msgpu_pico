@@ -37,6 +37,7 @@
 #include "messages/swap_buffer.hpp"
 #include "messages/draw_triangle.hpp"
 
+#include <gperftools/profiler.h>
 //#include "messages/begin_primitives.hpp"
 //#include "messages/header.hpp"
 //#include "messages/end_primitives.hpp"
@@ -143,6 +144,7 @@ void register_messages(auto& proc)
 
 int main() 
 {
+    ProfilerStart("gpu_profile.log");
     msgpu::initialize_board();
 
     printf("==========================\n");

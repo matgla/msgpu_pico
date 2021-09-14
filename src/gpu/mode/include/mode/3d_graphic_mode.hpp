@@ -138,8 +138,8 @@ public:
 
 
         GraphicMode2D<Configuration>::render();
-        this->framebuffer_.unblock();
         elapsed = std::chrono::high_resolution_clock::now() - start;
+        this->framebuffer_.unblock();
         std::cout << "Render took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
     }
 

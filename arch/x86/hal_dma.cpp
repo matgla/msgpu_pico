@@ -21,7 +21,10 @@
 #include <cstring>
 #include <vector>
 #include <thread>
+#include <memory>
 #include <mutex>
+#include <future>
+#include <optional>
 #include <condition_variable>
 #include <iostream>
 
@@ -41,6 +44,8 @@ static uint32_t crc;
 static bool trigger_;
 static std::mutex mutex_;
 static std::condition_variable cv;
+static std::unique_ptr<std::thread> t;
+static bool stop_usart = false;
 } // namespace
 
 void reset_dma_crc()
@@ -71,17 +76,31 @@ void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 void set_usart_handler(const UsartHandler& h)
 {
     handler = h;
-    static std::thread t([]{
+    stop_usart = false;
+    t.reset(new std::thread([]{
         while (true)
         {
+            if (stop_usart) 
+            {
+                return;
+            }
             std::unique_lock lk(mutex_);
-            if (!trigger_)
-                cv.wait(lk, [] { return trigger_; });
+            if(!cv.wait_for(lk, std::chrono::milliseconds(100), [] { return trigger_; }))
+            {
+                continue;
+            }
+            
             trigger_ = false;
             std::vector<uint8_t> buf; 
             std::size_t i = 0;
             while (i < size_to_receive)
             {
+                if (stop_usart) 
+                {
+                    return;
+                }
+
+
                 uint8_t byte = msgpu::read_byte();
                 buf.push_back(byte);
                 crc = calculate_crc<uint16_t, ccit_polynomial, 0, false>(std::span<const uint8_t>(&byte, 1), crc);
@@ -97,7 +116,8 @@ void set_usart_handler(const UsartHandler& h)
                 handler();
             }
         }
-    });
+    }));
+    t->detach();
 }
 
 void set_dma_mode(uint32_t mode)
@@ -107,6 +127,12 @@ void set_dma_mode(uint32_t mode)
 uint32_t get_dma_crc()
 {
     return crc;
+}
+
+void close_usart()
+{
+    std::cout << "Close uart" << std::endl;
+    stop_usart = true;
 }
 
 } // namespace hal
