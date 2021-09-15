@@ -127,20 +127,20 @@ public:
 
     void render() override
     {
-        auto start = std::chrono::high_resolution_clock::now();
+        //auto start = std::chrono::high_resolution_clock::now();
         this->framebuffer_.block();
-        auto elapsed = std::chrono::high_resolution_clock::now() - start;
-        std::cout << "Block took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
+        //auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        //std::cout << "Block took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
 
         transform_mesh();
-        elapsed = std::chrono::high_resolution_clock::now() - start;
-        std::cout << "transform mesh took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
+        //elapsed = std::chrono::high_resolution_clock::now() - start;
+        //std::cout << "transform mesh took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
 
 
         GraphicMode2D<Configuration>::render();
-        elapsed = std::chrono::high_resolution_clock::now() - start;
+        //elapsed = std::chrono::high_resolution_clock::now() - start;
         this->framebuffer_.unblock();
-        std::cout << "Render took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
+        //std::cout << "Render took: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << std::endl;
     }
 
 protected:
@@ -148,7 +148,7 @@ protected:
     {
 
         static float theta = 0.0f;
-        theta += 0.1f;
+        theta += 0.01f;
         if (theta > 6.23)
         {
             theta = 0;

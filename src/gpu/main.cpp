@@ -195,14 +195,19 @@ int main()
                 });
             }
             control.trigger = false;
+            
             usart_io.process_event(msgpu::io::dma_finished{});
         } 
         auto message = usart_io_data.pop();
         if (message)
         {
+            auto s = std::chrono::high_resolution_clock::now();
             proc.process_message(*message);
+            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - s);
+            
+            if (elapsed.count() > 1000)
+            std::cout << "Message took: " << elapsed.count() << std::endl;
         }
-
     }
 } 
 

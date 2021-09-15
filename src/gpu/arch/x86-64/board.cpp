@@ -18,6 +18,9 @@
 
 #include <memory>
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -32,6 +35,7 @@ namespace
 {
 
 static int serial_port_id;
+static int serial_write_port;
 
 } // namespace 
 
@@ -51,8 +55,11 @@ namespace msgpu
 void initialize_application_specific()
 {
     printf("Opening serial port: /tmp/msgpu_virtual_serial_0\n");
-    serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
-    // tcflush(serial_port_id, TCIOFLUSH);
+    mkfifo("/tmp/gpu_com", 0666);
+    mkfifo("/tmp/gpu_com_2", 0666);
+
+    serial_port_id = open("/tmp/gpu_com", O_RDONLY);
+    serial_write_port = open("/tmp/gpu_com_2", O_WRONLY);
     signal(SIGINT, exit_handler);
 }
 
@@ -65,12 +72,12 @@ uint8_t read_byte()
 
 void write_bytes(std::span<const uint8_t> data)
 {
-    write(serial_port_id, data.data(), data.size());
+    write(serial_write_port, data.data(), data.size());
 }
 
 void write_bytes(const void* data, std::size_t size)
 {
-    write(serial_port_id, data, size);
+    write(serial_write_port, data, size);
 }
 
 } // namespace msgpu

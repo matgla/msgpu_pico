@@ -20,6 +20,7 @@
 
 #include <cstring>
 
+#include "messages/ack.hpp"
 #include "messages/clear_screen.hpp"
 #include "messages/swap_buffer.hpp"
 
@@ -58,19 +59,34 @@ public:
 
     void process(const SwapBuffer&)
     {
+        auto start = std::chrono::high_resolution_clock::now();
+
+       // if (time < 16000 || time > 18000)
+      //  printf("Between swap: %ld\n", time);
+
         uint8_t read_buf_id = buffer_id_;
         buffer_id_ = buffer_id_ ? 0 : 1;
         render();
-        printf("Switch buffer to: %d %d\n", buffer_id_, read_buf_id);
-        framebuffer_.block(); 
+       
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
+        printf("Render took: %ld\n", elapsed.count());
+        
+        //printf("Switch buffer to: %d %d\n", buffer_id_, read_buf_id);
         const uint8_t cmd[] = {0x03, read_buf_id};
         this->i2c_.write(0x2e, cmd);
-        uint8_t ack[2];
-        this->i2c_.read(ack); 
-        printf("ACK: %x%x\n", ack[0], ack[1]);
-        framebuffer_.select_buffer(buffer_id_, read_buf_id);
-        framebuffer_.unblock();
+        elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
+        printf("Write took: %ld\n", elapsed.count());
         
+
+        uint8_t ack[2] = {};
+        this->i2c_.read(ack); 
+
+        this->point_.write(Ack{});
+        elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
+        printf("ACK: %x%x, waited: %ld\n", ack[0], ack[1], std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
+       
+
+        framebuffer_.select_buffer(buffer_id_, read_buf_id);
     }
 
     virtual void render() = 0;

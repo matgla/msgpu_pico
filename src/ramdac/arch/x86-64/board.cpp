@@ -90,7 +90,6 @@ void render_loop()
         }
 
         msgpu::generator::get_vga().block();
-        window.clear();
 
         sf::Image screen;
         sf::Texture screen_texture;
@@ -124,7 +123,9 @@ void render_loop()
         } 
         screen_texture.loadFromImage(screen);
         screen_sprite.setTexture(screen_texture);
+        window.clear();
         window.draw(screen_sprite);
+        static std::chrono::time_point<std::chrono::high_resolution_clock> prev; 
         window.display();
         msgpu::generator::get_vga().unblock();
     }

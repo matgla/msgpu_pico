@@ -76,14 +76,14 @@ void UsartPoint::store_message()
 {
     current_message_->received = true;
     // printf("Acking %d\n", current_message_->payload.at(0));    
-    write(Ack{});
+    // write(Ack{});
 }
 
 void UsartPoint::drop_message()
 {
     messages_.pop_back();
     // printf("Drop -> ACK\n"); 
-    write(Ack{});
+    //write(Ack{});
 }
 
 // GUARDS 

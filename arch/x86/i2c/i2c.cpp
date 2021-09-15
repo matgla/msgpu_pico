@@ -44,7 +44,11 @@ MemInfo master_fd;
 
 MemInfo *my_fd;
 
-constexpr const char* fifo_name = "i2c_bus";
+static int r_fd;
+static int w_fd;
+
+constexpr const char* read_fifo_name = "i2c_bus_r";
+constexpr const char* write_fifo_name = "i2c_bus_w";
 }
 
 I2C::I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda)
@@ -59,12 +63,17 @@ I2C::I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda)
 //    };
 
 //    my_fd = &slave_fd_map[slave_address];
+//
 
+
+    r_fd = open(write_fifo_name, O_RDONLY);
+    w_fd = open(read_fifo_name, O_WRONLY);
 }
 
 I2C::I2C(uint32_t pin_scl, uint32_t pin_sda)
 {
-    mkfifo(fifo_name, 0666);
+    mkfifo(read_fifo_name, 0666);
+    mkfifo(write_fifo_name, 0666);
 //    std::string master_name = "i2c_master";
 
 //    master_fd = {
@@ -73,11 +82,14 @@ I2C::I2C(uint32_t pin_scl, uint32_t pin_sda)
 //    };
 
 //    my_fd = &master_fd;
+    w_fd = open(write_fifo_name, O_WRONLY);
+    r_fd = open(read_fifo_name, O_RDONLY);
 }
 
 I2C::~I2C()
 {
-    
+    close(w_fd); 
+    close(r_fd);
 }
 
 void I2C::read(DataType data)
@@ -85,9 +97,7 @@ void I2C::read(DataType data)
 //    if (!sem_wait(my_fd->sem))
 //    {
     // printf("I2C read\n");
-    int fd = open(fifo_name, O_RDONLY);
-    ::read(fd, data.data(), data.size());
-    close(fd);
+    ::read(r_fd, data.data(), data.size());
 //        sem_post(my_fd->sem);
 //    }
 }
@@ -97,9 +107,7 @@ void I2C::write(ConstDataType data)
     // printf("I2C write\n");
 //    if (!sem_wait(my_fd->sem))
 //    {
-    int fd = open(fifo_name, O_WRONLY);
-    ::write(fd, data.data(), data.size());
-    close(fd);
+    ::write(w_fd, data.data(), data.size());
 //        sem_post(my_fd->sem);
 //    }
 
@@ -108,17 +116,13 @@ void I2C::write(ConstDataType data)
 void I2C::read(uint8_t address, DataType data)
 {
     // printf("I2C read from slave: 0x%x\n", address);
-    int fd = open(fifo_name, O_RDONLY);
-    ::read(fd, data.data(), data.size());
-    close(fd);
+    ::read(r_fd, data.data(), data.size());
 }
 
 void I2C::write(uint8_t address, ConstDataType data)
 {
     // printf("I2C write to slave: 0x%x\n", address);
-    int fd = open(fifo_name, O_WRONLY);
-    ::write(fd, data.data(), data.size());
-    close(fd);
+    ::write(w_fd, data.data(), data.size());
         //sem_post(my_fd->sem);
     //}
    

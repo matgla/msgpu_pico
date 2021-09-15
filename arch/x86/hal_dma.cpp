@@ -56,7 +56,7 @@ void reset_dma_crc()
 void set_usart_dma_buffer(void* buffer, bool trigger)
 {
     {
-    std::unique_lock l(mutex_);
+    //std::unique_lock l(mutex_);
     buffer_ptr = buffer;
     trigger_ = trigger;
     } 
@@ -80,14 +80,22 @@ void set_usart_handler(const UsartHandler& h)
     t.reset(new std::thread([]{
         while (true)
         {
+            //if (!trigger_)
+            //{
+            //    //std::this_thread::sleep_for(std::chrono::microseconds(100));
+            //    continue;
+            //}
             if (stop_usart) 
             {
                 return;
             }
             std::unique_lock lk(mutex_);
-            if(!cv.wait_for(lk, std::chrono::milliseconds(100), [] { return trigger_; }))
+            if (!trigger_)
             {
-                continue;
+                if(!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_; }))
+                {
+                    continue;
+                }
             }
             trigger_ = false;
             std::vector<uint8_t> buf; 
@@ -109,7 +117,7 @@ void set_usart_handler(const UsartHandler& h)
             if (handler) 
             {
                 crc = calculate_crc16(buf);
-                lk.unlock(); 
+                //lk.unlock(); 
                 handler();
             }
         }

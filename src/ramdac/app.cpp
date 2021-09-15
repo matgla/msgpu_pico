@@ -95,11 +95,12 @@ void App::run()
             {
                 // printf ("Switch buffer to %d\n", rx_buf[1]);
                 // msgpu::enable_dump();
-                framebuffer_.block();
                 framebuffer_.select_buffer(rx_buf[1], rx_buf[1]);
+
                 uint8_t ack[2] = {0xac, 0x88};
                 i2c_.write(ack);
-                framebuffer_.unblock();
+                printf("Ack written\n");
+ 
             }
         }
         // printf("\n");
