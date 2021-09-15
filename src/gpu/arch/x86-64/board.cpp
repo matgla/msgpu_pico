@@ -22,12 +22,12 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include <termios.h>
 #include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
 
 #include "hal_dma.hpp"
 
-#include <gperftools/profiler.h>
 namespace 
 {
 
@@ -42,7 +42,6 @@ void exit_handler(int sig)
      
     hal::close_usart();
     close(serial_port_id);
-    ProfilerStop();
     exit(0);
 }
 
@@ -53,6 +52,7 @@ void initialize_application_specific()
 {
     printf("Opening serial port: /tmp/msgpu_virtual_serial_0\n");
     serial_port_id = open("/tmp/msgpu_virtual_serial_0", O_RDWR);
+    // tcflush(serial_port_id, TCIOFLUSH);
     signal(SIGINT, exit_handler);
 }
 

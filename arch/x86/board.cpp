@@ -19,6 +19,7 @@
 #include <thread>
 #include <memory>
 
+
 #include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
 

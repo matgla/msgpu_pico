@@ -66,7 +66,7 @@ void set_usart_dma_buffer(void* buffer, bool trigger)
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
     {
-    std::unique_lock l(mutex_);
+    // std::unique_lock l(mutex_);
     size_to_receive = size; 
     trigger_ = trigger;
     } 
@@ -89,7 +89,6 @@ void set_usart_handler(const UsartHandler& h)
             {
                 continue;
             }
-            
             trigger_ = false;
             std::vector<uint8_t> buf; 
             std::size_t i = 0;
@@ -99,8 +98,6 @@ void set_usart_handler(const UsartHandler& h)
                 {
                     return;
                 }
-
-
                 uint8_t byte = msgpu::read_byte();
                 buf.push_back(byte);
                 crc = calculate_crc<uint16_t, ccit_polynomial, 0, false>(std::span<const uint8_t>(&byte, 1), crc);

@@ -71,13 +71,6 @@ target_compile_options(common_flags
     $<$<CONFIG:RELEASE>:-Os>
 )
 
-if (ENABLE_PROFILER)
-    message(STATUS "Profiler enabled")
-    add_definitions(-DWITHGPERFTOOLS)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lprofiler")
-endif()
-#set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/scripts/message_generator.py)
-
 add_definitions(-DPICO_SCANVIDEO_COLOR_PIN_COUNT=8
     -DPICO_SCANVIDEO_DPI_PIXEL_GSHIFT=3
     -DPICO_SCANVIDEO_DPI_PIXEL_BSHIFT=6

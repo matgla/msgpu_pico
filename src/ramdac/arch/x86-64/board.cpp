@@ -143,7 +143,9 @@ void set_resolution(uint16_t width, uint16_t height)
 
 void deinitialize_signal_generator()
 {
+    std::cout << "Joining rendering thread" << std::endl;
     rendering_thread->join();
+    std::cout << "Joined" << std::endl;
 }
 
 void initialize_application_specific()

@@ -17,6 +17,7 @@
 #include "qspi.hpp"
 
 #include <vector>
+#include <cstring>
 
 #include "qspi_bus.hpp"
 
@@ -77,8 +78,9 @@ bool Qspi::qspi_command_read(DataType command, DataType data)
 bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data)
 {
     std::vector<uint8_t> buffer; 
-    std::copy(command.begin(), command.end(), std::back_inserter(buffer));
-    std::copy(data.begin(), data.end(), std::back_inserter(buffer));
+    buffer.resize(command.size() + data.size());
+    std::memcpy(buffer.data(), command.data(), command.size());
+    std::memcpy(buffer.data() + command.size(), data.data(), data.size());
     QspiBus::get().get_device(config_.io_base)->write(buffer, buffer.size());
     return true;
 }

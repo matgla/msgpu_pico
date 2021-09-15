@@ -47,7 +47,6 @@ target_link_libraries(msgpu
         msgpu_mode
         msgpu_generator
         msgpu_processor
-        profiler
 )
 add_dependencies(msgpu api_generator)
 

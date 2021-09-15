@@ -37,7 +37,6 @@
 #include "messages/swap_buffer.hpp"
 #include "messages/draw_triangle.hpp"
 
-#include <gperftools/profiler.h>
 //#include "messages/begin_primitives.hpp"
 //#include "messages/header.hpp"
 //#include "messages/end_primitives.hpp"
@@ -68,6 +67,8 @@
 #include "arch/i2c.hpp"
 #include "arch/pins_config.hpp"
 #include "arch/qspi_config.hpp"
+
+#include <condition_variable>
 
 using DualBuffered3DGraphic_320x240_256 = msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256>;
 
@@ -141,10 +142,15 @@ void register_messages(auto& proc)
     register_handler<DrawTriangle>(proc);
 }; 
 
+struct ControlUsart
+{
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool trigger;
+};
 
 int main() 
 {
-    ProfilerStart("gpu_profile.log");
     msgpu::initialize_board();
 
     printf("==========================\n");
@@ -160,12 +166,18 @@ int main()
     msgpu::io::UsartPoint usart_io_data; 
     
     boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
-    bool dma_finished = false;
-    hal::set_usart_handler([&dma_finished](){
-        dma_finished = true;
+
+    ControlUsart control;
+    control.trigger = false;
+
+    hal::set_usart_handler([&control](){
+        {
+            std::unique_lock lk(control.mutex);
+            control.trigger = true;
+        }
+        control.cv.notify_all();
     });
 
-   
     modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, i2c, usart_io_data);
     msgpu::processor::MessageProcessor proc;
     register_messages(proc); 
@@ -174,18 +186,23 @@ int main()
     
     while (true)
     {
-        if (dma_finished)
-        {
-            dma_finished = false;
+        std::unique_lock lk(control.mutex);
+        { 
+            if (!control.trigger)
+            {
+                control.cv.wait(lk, [&control]{
+                    return control.trigger; 
+                });
+            }
+            control.trigger = false;
             usart_io.process_event(msgpu::io::dma_finished{});
-        }
+        } 
         auto message = usart_io_data.pop();
         if (message)
         {
-            //printf("Got message\n");
             proc.process_message(*message);
         }
- 
+
     }
 } 
 
