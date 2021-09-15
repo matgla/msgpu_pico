@@ -164,6 +164,60 @@ protected:
                 v.z += 3.0f;
             }
 
+            FloatVertex normal, line1, line2;
+            line1.x = t.vertex[1].x - t.vertex[0].x;
+            line1.y = t.vertex[1].y - t.vertex[0].y;
+            line1.z = t.vertex[1].z - t.vertex[0].z;
+
+            line2.x = t.vertex[2].x - t.vertex[1].x;
+            line2.y = t.vertex[2].y - t.vertex[1].y;
+            line2.z = t.vertex[2].z - t.vertex[1].z;
+
+            normal.x = line1.y * line2.z - line1.z * line2.y;
+            normal.y = line1.z * line2.x - line1.x * line2.z;
+            normal.z = line1.x * line2.y - line1.y * line2.x;
+
+            float l = sqrtf(normal.x*normal.x + normal.y*normal.y + normal.z * normal.z);
+            normal.x /= l;
+            normal.y /= l;
+            normal.z /= l;
+
+            if (normal.x * (t.vertex[0].x - camera_.x)
+                + normal.y * (t.vertex[0].y - camera_.y)
+                + normal.z * (t.vertex[0].z - camera_.z) >= 0.0)
+            {
+                continue; 
+            }
+
+            FloatVertex light {.x = 0, .y = 0, .z = -1};
+            l = sqrtf(light.x * light.x + light.y * light.y + light.z * light.z);
+            light.x /= l;
+            light.y /= l;
+            light.z /= l;
+
+            
+            float dp = normal.x * light.x + normal.y * light.y + normal.z * light.z;
+
+            uint16_t color = 0;
+            int c = static_cast<int>(dp * 13.0f);
+            switch (c)
+            {
+                case 13: color = 0xfff; break;
+                case 12: color = 0xeee; break;
+                case 11: color = 0xddd; break;
+                case 10: color = 0xccc; break;
+                case 9: color = 0xbbb; break;
+                case 8: color = 0xaaa; break;
+                case 7: color = 0x999; break;
+                case 6: color = 0x888; break;
+                case 5: color = 0x777; break;
+                case 4: color = 0x666; break;
+                case 3: color = 0x555; break;
+                case 2: color = 0x444; break;
+                case 1: color = 0x333; break;
+                case 0: color = 0x222; break;
+                default: color = 0x000;
+            }
             calculate_projection(t);
             scale(t);
 
@@ -183,7 +237,7 @@ protected:
                 } 
             };
  
-            GraphicMode2D<Configuration>::add_triangle(tr, 0xfff);
+            GraphicMode2D<Configuration>::add_triangle(tr, color);
         }
     }
 
@@ -276,6 +330,7 @@ protected:
 
     using Matrix_4x4 = eul::math::matrix<float, 4, 4>;
 
+    FloatVertex camera_ {.x = 0, .y = 0, .z = 0};
     Matrix_4x4 projection_;
     Mesh mesh_;
 };

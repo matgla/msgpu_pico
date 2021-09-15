@@ -105,7 +105,7 @@ public:
 
             for (auto& triangle : triangles_)
             {
-                draw_triangle_lines(line, triangle);
+                draw_triangle_line(line, triangle);
             }
             Base::framebuffer_.write_line(line, Base::line_buffer_.u16);
          
