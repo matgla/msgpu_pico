@@ -62,6 +62,8 @@ void App::boot()
 
     printf("Initialize VGA generator\n");
     vga_.setup(&framebuffer_);
+
+    enable_display();
 }
 
 void App::run()
@@ -99,8 +101,6 @@ void App::run()
 
                 uint8_t ack[2] = {0xac, 0x88};
                 i2c_.write(ack);
-                printf("Ack written\n");
- 
             }
         }
         // printf("\n");

@@ -15,6 +15,7 @@
 #include <cstring> 
 
 #include <unistd.h>
+#include <thread>
 
 #include <boost/sml.hpp>
 
@@ -167,15 +168,14 @@ int main()
     
     boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
 
-    ControlUsart control;
-    control.trigger = false;
+    std::atomic<bool> trigger;
+    trigger = false;
 
-    hal::set_usart_handler([&control](){
+    hal::set_usart_handler([&trigger](){
         {
-            std::unique_lock lk(control.mutex);
-            control.trigger = true;
+            trigger = true;
         }
-        control.cv.notify_all();
+        // control.cv.notify_all();
     });
 
     modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, i2c, usart_io_data);
@@ -186,27 +186,24 @@ int main()
     
     while (true)
     {
-        std::unique_lock lk(control.mutex);
-        { 
-            if (!control.trigger)
+        {
+            //std::unique_lock lk(control.mutex);
+            if (!trigger)
             {
-                control.cv.wait(lk, [&control]{
-                    return control.trigger; 
-                });
+                // std::this_thread::sleep_for(std::chrono::microseconds(10));
+                continue;
+                // control.cv.wait(lk, [&control]{
+                    // return control.trigger; 
+                // });
             }
-            control.trigger = false;
-            
+            trigger = false;
+
             usart_io.process_event(msgpu::io::dma_finished{});
         } 
         auto message = usart_io_data.pop();
         if (message)
         {
-            auto s = std::chrono::high_resolution_clock::now();
             proc.process_message(*message);
-            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - s);
-            
-            if (elapsed.count() > 1000)
-            std::cout << "Message took: " << elapsed.count() << std::endl;
         }
     }
 } 

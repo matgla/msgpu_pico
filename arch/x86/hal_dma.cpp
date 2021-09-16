@@ -17,6 +17,7 @@
 
 #include "hal_dma.hpp"
 
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -38,10 +39,10 @@ namespace hal
 namespace 
 {
 static UsartHandler handler; 
-static std::size_t size_to_receive;
-static void* buffer_ptr;
+static std::atomic<std::size_t> size_to_receive;
+static std::atomic<void*> buffer_ptr;
 static uint32_t crc;
-static bool trigger_;
+static std::atomic<bool> trigger_;
 static std::mutex mutex_;
 static std::condition_variable cv;
 static std::unique_ptr<std::thread> t;
@@ -56,7 +57,7 @@ void reset_dma_crc()
 void set_usart_dma_buffer(void* buffer, bool trigger)
 {
     {
-    //std::unique_lock l(mutex_);
+    // std::unique_lock l(mutex_);
     buffer_ptr = buffer;
     trigger_ = trigger;
     } 
@@ -87,15 +88,17 @@ void set_usart_handler(const UsartHandler& h)
             //}
             if (stop_usart) 
             {
+                printf("Exit\n");
                 return;
             }
-            std::unique_lock lk(mutex_);
+            // std::unique_lock lk(mutex_);
             if (!trigger_)
             {
-                if(!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_; }))
-                {
-                    continue;
-                }
+                continue;
+                // if(!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_; }))
+                // {
+                    // continue;
+                // }
             }
             trigger_ = false;
             std::vector<uint8_t> buf; 
@@ -104,6 +107,7 @@ void set_usart_handler(const UsartHandler& h)
             {
                 if (stop_usart) 
                 {
+                    printf("Exit 2\n");
                     return;
                 }
                 uint8_t byte = msgpu::read_byte();
@@ -117,12 +121,12 @@ void set_usart_handler(const UsartHandler& h)
             if (handler) 
             {
                 crc = calculate_crc16(buf);
-                //lk.unlock(); 
+                // lk.unlock(); 
                 handler();
             }
         }
     }));
-    t->detach();
+    // t->detach();
 }
 
 void set_dma_mode(uint32_t mode)

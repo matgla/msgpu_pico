@@ -58,7 +58,9 @@ void initialize_application_specific()
     mkfifo("/tmp/gpu_com", 0666);
     mkfifo("/tmp/gpu_com_2", 0666);
 
+    printf("Opening input: /tmp/gpu_com\n");
     serial_port_id = open("/tmp/gpu_com", O_RDONLY);
+    printf("Opening output: /tmp/gpu_com_2\n");
     serial_write_port = open("/tmp/gpu_com_2", O_WRONLY);
     signal(SIGINT, exit_handler);
 }

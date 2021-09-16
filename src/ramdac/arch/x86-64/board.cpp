@@ -152,6 +152,11 @@ void deinitialize_signal_generator()
 void initialize_application_specific()
 {
     signal(SIGINT, exit_handler);
+}
+
+
+void enable_display()
+{
     rendering_thread.reset(new std::thread(&render_loop));
 }
 

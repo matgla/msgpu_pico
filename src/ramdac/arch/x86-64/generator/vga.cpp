@@ -61,13 +61,11 @@ std::size_t Vga::display_line(std::size_t line, std::span<uint32_t> to_display)
 
 void Vga::block()
 {
-    if (vram_)
     vram_->block();
 }
 
 void Vga::unblock()
 {
-    if (vram_)
     vram_->unblock();
 }
 

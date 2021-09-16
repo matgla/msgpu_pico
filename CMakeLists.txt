@@ -36,6 +36,8 @@ include (mspkg)
 
 setup_mspkg(${mspkg_SOURCE_DIR})
 
+find_package(CMakeUtils REQUIRED)
+
 if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     message (STATUS "Searching pico sdk")
     find_package(pico-sdk REQUIRED)

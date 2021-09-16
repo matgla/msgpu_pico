@@ -59,32 +59,17 @@ public:
 
     void process(const SwapBuffer&)
     {
-        auto start = std::chrono::high_resolution_clock::now();
-
-       // if (time < 16000 || time > 18000)
-      //  printf("Between swap: %ld\n", time);
-
         uint8_t read_buf_id = buffer_id_;
         buffer_id_ = buffer_id_ ? 0 : 1;
         render();
        
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
-        printf("Render took: %ld\n", elapsed.count());
-        
-        //printf("Switch buffer to: %d %d\n", buffer_id_, read_buf_id);
         const uint8_t cmd[] = {0x03, read_buf_id};
         this->i2c_.write(0x2e, cmd);
-        elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
-        printf("Write took: %ld\n", elapsed.count());
-        
 
         uint8_t ack[2] = {};
         this->i2c_.read(ack); 
 
         this->point_.write(Ack{});
-        elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
-        printf("ACK: %x%x, waited: %ld\n", ack[0], ack[1], std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
-       
 
         framebuffer_.select_buffer(buffer_id_, read_buf_id);
     }
