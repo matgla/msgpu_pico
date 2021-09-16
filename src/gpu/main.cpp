@@ -147,7 +147,7 @@ struct ControlUsart
 {
     std::mutex mutex;
     std::condition_variable cv;
-    bool trigger;
+    std::atomic<bool> trigger;
 };
 
 int main() 
@@ -168,14 +168,11 @@ int main()
     
     boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
 
-    std::atomic<bool> trigger;
-    trigger = false;
-
-    hal::set_usart_handler([&trigger](){
-        {
-            trigger = true;
-        }
-        // control.cv.notify_all();
+    
+    ControlUsart c;
+    hal::set_usart_handler([&c](){
+        c.trigger = true;
+        c.cv.notify_all();
     });
 
     modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, i2c, usart_io_data);
@@ -187,19 +184,18 @@ int main()
     while (true)
     {
         {
-            //std::unique_lock lk(control.mutex);
-            if (!trigger)
+            std::unique_lock lk(c.mutex);
+            if (!c.trigger)
             {
                 // std::this_thread::sleep_for(std::chrono::microseconds(10));
-                continue;
-                // control.cv.wait(lk, [&control]{
-                    // return control.trigger; 
-                // });
+                if(!c.cv.wait_for(lk, std::chrono::microseconds(100), [&c]{
+                    return c.trigger.load(); 
+                })) continue;
             }
-            trigger = false;
-
-            usart_io.process_event(msgpu::io::dma_finished{});
+            c.trigger = false;
         } 
+
+        usart_io.process_event(msgpu::io::dma_finished{});
         auto message = usart_io_data.pop();
         if (message)
         {
