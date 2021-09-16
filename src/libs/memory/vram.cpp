@@ -103,22 +103,34 @@ void VideoRam::read_line(uint8_t buffer_id, uint16_t line, DataType<uint8_t> dat
 
 void VideoRam::write_line(uint16_t line, const ConstDataType<uint16_t> &data)
 {
-    write_line(write_buffer_id_, line, data);
+    mutex_enter_blocking(&mutex_);
+    const uint8_t id = write_buffer_id_;
+    write_line(id, line, data);
+    mutex_exit(&mutex_);
 }
 
 void VideoRam::write_line(uint16_t line, const ConstDataType<uint8_t> &data)
 {
-    write_line(write_buffer_id_, line, data);
+    mutex_enter_blocking(&mutex_);
+    const uint8_t id = write_buffer_id_;
+    write_line(id, line, data);
+    mutex_exit(&mutex_);
 }
 
 void VideoRam::read_line(uint16_t line, DataType<uint16_t> data)
 {
-    read_line(read_buffer_id_, line, data);
+    mutex_enter_blocking(&mutex_);
+    const uint8_t id = write_buffer_id_;
+    read_line(id, line, data);
+    mutex_exit(&mutex_);
 }
 
 void VideoRam::read_line(uint16_t line, DataType<uint8_t> data)
 {
-    read_line(read_buffer_id_, line, data);
+    mutex_enter_blocking(&mutex_);
+    const uint8_t id = write_buffer_id_;
+    read_line(id, line, data);
+    mutex_exit(&mutex_);
 }
 
 
@@ -131,24 +143,28 @@ void VideoRam::select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id)
     mutex_exit(&mutex_);
 }
 
-uint8_t VideoRam::get_read_buffer_id() const 
+uint8_t VideoRam::get_read_buffer_id() 
 {
-    return read_buffer_id_;
+    mutex_enter_blocking(&mutex_);
+    const uint8_t ret = read_buffer_id_;
+    mutex_exit(&mutex_);
+    return ret;
 }
 
-uint8_t VideoRam::get_write_buffer_id() const 
+uint8_t VideoRam::get_write_buffer_id() 
 {
-    return write_buffer_id_;
+    mutex_enter_blocking(&mutex_);
+    const uint8_t ret = write_buffer_id_;
+    mutex_exit(&mutex_);
+    return ret;
 }
 
 void VideoRam::block()
 {
-    mutex_enter_blocking(&mutex_);
 }
 
 void VideoRam::unblock()
 {
-    mutex_exit(&mutex_);
 }
 
 } // namespace msgpu::memory

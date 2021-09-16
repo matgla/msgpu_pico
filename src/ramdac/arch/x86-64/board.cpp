@@ -89,7 +89,7 @@ void render_loop()
             }
         }
 
-        msgpu::generator::get_vga().block();
+        //msgpu::generator::get_vga().block();
 
         sf::Image screen;
         sf::Texture screen_texture;
@@ -127,7 +127,7 @@ void render_loop()
         window.draw(screen_sprite);
         static std::chrono::time_point<std::chrono::high_resolution_clock> prev; 
         window.display();
-        msgpu::generator::get_vga().unblock();
+        //msgpu::generator::get_vga().unblock();
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
@@ -157,7 +157,7 @@ void initialize_application_specific()
 
 void enable_display()
 {
-    rendering_thread.reset(new std::thread(&render_loop));
+    rendering_thread.reset(new std::thread(render_loop));
 }
 
 } // namespace msgpu

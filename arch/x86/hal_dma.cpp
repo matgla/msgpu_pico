@@ -41,12 +41,12 @@ namespace
 static UsartHandler handler; 
 static std::atomic<std::size_t> size_to_receive;
 static std::atomic<void*> buffer_ptr;
-static uint32_t crc;
+static std::atomic<uint32_t> crc;
 static std::atomic<bool> trigger_;
 static std::mutex mutex_;
 static std::condition_variable cv;
 static std::unique_ptr<std::thread> t;
-static bool stop_usart = false;
+static std::atomic<bool> stop_usart = false;
 } // namespace
 
 void reset_dma_crc()
@@ -56,21 +56,15 @@ void reset_dma_crc()
 
 void set_usart_dma_buffer(void* buffer, bool trigger)
 {
-    {
-    // std::unique_lock l(mutex_);
     buffer_ptr = buffer;
     trigger_ = trigger;
-    } 
     cv.notify_one();
 }
 
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
-    {
-    // std::unique_lock l(mutex_);
     size_to_receive = size; 
     trigger_ = trigger;
-    } 
     cv.notify_one();
 }
 
@@ -81,24 +75,17 @@ void set_usart_handler(const UsartHandler& h)
     t.reset(new std::thread([]{
         while (true)
         {
-            //if (!trigger_)
-            //{
-            //    //std::this_thread::sleep_for(std::chrono::microseconds(100));
-            //    continue;
-            //}
             if (stop_usart) 
             {
-                printf("Exit\n");
                 return;
             }
-            // std::unique_lock lk(mutex_);
+            std::unique_lock lk(mutex_);
             if (!trigger_)
             {
-                continue;
-                // if(!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_; }))
-                // {
-                    // continue;
-                // }
+                 if(!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_.load(); }))
+                 {
+                     continue;
+                 }
             }
             trigger_ = false;
             std::vector<uint8_t> buf; 
@@ -107,7 +94,6 @@ void set_usart_handler(const UsartHandler& h)
             {
                 if (stop_usart) 
                 {
-                    printf("Exit 2\n");
                     return;
                 }
                 uint8_t byte = msgpu::read_byte();

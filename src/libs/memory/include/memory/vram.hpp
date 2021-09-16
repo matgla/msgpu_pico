@@ -54,8 +54,8 @@ public:
 
 
     void select_buffer(uint8_t read_buffer_id, uint8_t write_buffer_id);
-    uint8_t get_read_buffer_id() const;
-    uint8_t get_write_buffer_id() const;
+    uint8_t get_read_buffer_id();
+    uint8_t get_write_buffer_id();
 
     void block();
     void unblock();
