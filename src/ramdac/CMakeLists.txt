@@ -38,7 +38,7 @@ target_link_libraries(msgpu_ramdac
         common_flags
 )
 
-if (NOT USE_SIMULATION)
+if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     pico_enable_stdio_usb(msgpu_ramdac 0)
     pico_enable_stdio_uart(msgpu_ramdac 1)
 

@@ -159,10 +159,15 @@ int main()
     printf("==========================\n");
 
     msgpu::Qspi qspi(msgpu::framebuffer_config, 3.0f);
+    msgpu::Qspi qspi_ram(msgpu::gpuram_config, 3.0f);
+
     qspi.init();
+    qspi_ram.init();
+
     msgpu::memory::QspiPSRAM qspi_memory(qspi, true);
     msgpu::memory::VideoRam framebuffer(qspi_memory);
 
+    msgpu::memory::QspiPSRAM gpuram(qspi_ram, true);
     msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
     msgpu::io::UsartPoint usart_io_data; 
     

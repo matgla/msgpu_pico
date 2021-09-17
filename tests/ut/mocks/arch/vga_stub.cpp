@@ -14,32 +14,53 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#include "generator/vga.hpp"
 
-#include "qspi.hpp"
+#include "board.hpp"
 
-namespace msgpu 
+#include <algorithm>
+#include <cstring>
+
+#include <eul/utils/unused.hpp>
+
+namespace msgpu::generator
 {
 
-constexpr QspiConfig framebuffer_config {
-    .sck = 0,
-    .io_base = 0,
-    .cs = 0, 
-    .sm = 0,
-    .pio = 0,
-    .sync_in = 0,
-    .sync_out = 0
-};
+Vga::Vga(modes::Modes mode)
+    : vram_(nullptr)
+{
+    UNUSED1(mode);
+}
 
-constexpr QspiConfig gpuram_config {
-    .sck = 0,
-    .io_base = 1,
-    .cs = 0, 
-    .sm = 0,
-    .pio = 0,
-    .sync_in = 0,
-    .sync_out = 0
-};
+void Vga::change_mode(modes::Modes mode)
+{
+    UNUSED1(mode);
+}
 
-} // namespace msgpu
+void Vga::setup(memory::VideoRam *vram)
+{
+    vram_ = vram;
+}
 
+std::size_t Vga::display_line(std::size_t line, std::span<uint32_t> to_display)
+
+{
+    UNUSED2(line, to_display);
+    return 0;
+}
+
+void Vga::block()
+{
+}
+
+void Vga::unblock()
+{
+}
+
+Vga &get_vga()
+{
+    static Vga vga(modes::Modes::Graphic_320x240_12bit);
+    return vga;
+}
+
+} // namespace msgpu::generator

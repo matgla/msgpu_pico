@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#pragma once
 
 #include <cstdint>
-#include <span> 
+#include <span>
 
-namespace msgpu 
+namespace msgpu
 {
 
 class I2C
 {
-public:
-    using DataType = std::span<uint8_t>;
+  public:
+    using DataType      = std::span<uint8_t>;
     using ConstDataType = std::span<const uint8_t>;
     I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda);
     I2C(uint32_t pin_scl, uint32_t pin_sda);

@@ -14,32 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#pragma once
 
-#include "qspi.hpp"
+#include <cstdint>
 
-namespace msgpu 
+namespace msgpu
 {
 
-constexpr QspiConfig framebuffer_config {
-    .sck = 0,
-    .io_base = 0,
-    .cs = 0, 
-    .sm = 0,
-    .pio = 0,
-    .sync_in = 0,
-    .sync_out = 0
-};
-
-constexpr QspiConfig gpuram_config {
-    .sck = 0,
-    .io_base = 1,
-    .cs = 0, 
-    .sm = 0,
-    .pio = 0,
-    .sync_in = 0,
-    .sync_out = 0
-};
+constexpr uint32_t i2c_scl = 0;
+constexpr uint32_t i2c_sda = 1;
 
 } // namespace msgpu
-

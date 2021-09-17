@@ -32,6 +32,9 @@ void initialize_board()
     msgpu::QspiBus::get().register_device(0, 
         std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer_out"));
 
+    msgpu::QspiBus::get().register_device(1,
+        std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_gpuram")); 
+    
     initialize_application_specific();
 }
 

@@ -1,5 +1,5 @@
-// This file is part of MS GPU project.
-// Copyright (C) 2020 Mateusz Stadnik
+// This file is part of msgpu project.
+// Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,15 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "memory/video_ram.hpp"
+#pragma once
 
-#include <cstdio>
+#include "qspi.hpp"
 
-namespace vga
+namespace msgpu
 {
 
-//static uint32_t video_memory[video_ram_size / sizeof(uint32_t)];
+constexpr QspiConfig framebuffer_config{
+    .sck = 0, .io_base = 0, .cs = 0, .sm = 0, .pio = 0, .sync_in = 0, .sync_out = 0};
 
-//std::span<uint32_t> video_memory{video_memory};
+constexpr QspiConfig gpuram_config{
+    .sck = 0, .io_base = 1, .cs = 0, .sm = 0, .pio = 0, .sync_in = 0, .sync_out = 0};
 
-}
+} // namespace msgpu
+

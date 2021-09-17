@@ -1,5 +1,5 @@
-// This file is part of MS GPU project.
-// Copyright (C) 2020 Mateusz Stadnik
+// This file is part of msgpu project.
+// Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,14 +17,10 @@
 #pragma once
 
 #include <cstdint>
-#include <span>
 
-namespace vga
+namespace msgpu
 {
 
+constexpr uint8_t i2c_slave_address = 0x2e;
 
-//constexpr std::size_t video_ram_size = 640 * 480 / 2;
-//extern std::span<uint32_t> video_ram;
-
-
-} // namespace vga
+}

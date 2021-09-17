@@ -19,7 +19,7 @@
 #include <cstring>
 #include <vector>
 
-#include "qspi_bus.hpp"
+#include <eul/utils/unused.hpp>
 
 namespace msgpu
 {
@@ -40,49 +40,43 @@ void Qspi::init_pins()
 
 bool Qspi::spi_transmit(ConstDataType src, DataType dest)
 {
-    QspiBus::get().get_device(config_.io_base)->transmit(src, dest, src.size(), dest.size());
+    UNUSED2(src, dest);
     return true;
 }
 
 bool Qspi::spi_read(DataType dest)
 {
-    QspiBus::get().get_device(config_.io_base)->read(dest, dest.size());
+    UNUSED1(dest);
     return true;
 }
 
 bool Qspi::spi_write(ConstDataType src)
 {
-    QspiBus::get().get_device(config_.io_base)->write(src, src.size());
+    UNUSED1(src);
     return true;
 }
 
 bool Qspi::qspi_read(DataType dest)
 {
-    QspiBus::get().get_device(config_.io_base)->read(dest, dest.size());
+    UNUSED1(dest);
     return true;
 }
 
 bool Qspi::qspi_write(ConstDataType src)
 {
-    QspiBus::get().get_device(config_.io_base)->write(src, src.size());
+    UNUSED1(src);
     return true;
 }
 
 bool Qspi::qspi_command_read(DataType command, DataType data)
 {
-    QspiBus::get()
-        .get_device(config_.io_base)
-        ->transmit(command, data, command.size(), data.size());
+    UNUSED2(command, data);
     return true;
 }
 
 bool Qspi::qspi_command_write(ConstDataType command, ConstDataType data)
 {
-    std::vector<uint8_t> buffer;
-    buffer.resize(command.size() + data.size());
-    std::memcpy(buffer.data(), command.data(), command.size());
-    std::memcpy(buffer.data() + command.size(), data.data(), data.size());
-    QspiBus::get().get_device(config_.io_base)->write(buffer, buffer.size());
+    UNUSED2(command, data);
     return true;
 }
 

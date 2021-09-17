@@ -16,13 +16,17 @@
 
 add_library(msgpu_memory)
 
+add_library(msgpu::memory ALIAS msgpu_memory)
+
 target_sources(msgpu_memory
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/memory/gpuram.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/memory/psram.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/memory/vram.hpp
 
 
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/gpuram.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/psram.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/vram.cpp
 )
@@ -30,8 +34,9 @@ target_sources(msgpu_memory
 target_include_directories(msgpu_memory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(msgpu_memory
-    PRIVATE 
+    PUBLIC 
         msgpu_arch
+    PRIVATE
         common_flags
 )
 

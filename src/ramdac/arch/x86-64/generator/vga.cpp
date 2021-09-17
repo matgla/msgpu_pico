@@ -38,23 +38,24 @@ void Vga::change_mode(modes::Modes mode)
 {
 }
 
-void Vga::setup(memory::VideoRam* vram)
+void Vga::setup(memory::VideoRam *vram)
 {
     vram_ = vram;
 }
 
 std::size_t Vga::display_line(std::size_t line, std::span<uint32_t> to_display)
-    
+
 {
     static uint16_t buffer[320] = {};
     if (vram_)
     {
-        vram_->read_line(line, buffer); 
+        vram_->read_line(line, buffer);
     }
     std::span<uint16_t> scanline_buffer(buffer);
-    std::transform(scanline_buffer.begin(), scanline_buffer.end(), to_display.begin(), [](uint16_t color) {
-        return color; // TODO: transform?
-    });
+    std::transform(scanline_buffer.begin(), scanline_buffer.end(), to_display.begin(),
+                   [](uint16_t color) {
+                       return color; // TODO: transform?
+                   });
 
     return 0;
 }
@@ -69,10 +70,10 @@ void Vga::unblock()
     vram_->unblock();
 }
 
-Vga& get_vga()
+Vga &get_vga()
 {
     static Vga vga(modes::Modes::Graphic_320x240_12bit);
     return vga;
 }
 
-} // namespace msgpu::generator 
+} // namespace msgpu::generator

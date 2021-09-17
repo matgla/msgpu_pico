@@ -16,6 +16,6 @@
 
 if (USE_SIMULATION)
     add_subdirectory(x86-64)
-else ()
+elseif (NOT ENABLE_TESTS)
     add_subdirectory(pico)
 endif ()

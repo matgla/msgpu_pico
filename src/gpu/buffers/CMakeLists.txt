@@ -1,4 +1,4 @@
-# This file is part of MSGPU project. 
+# This file is part of msgpu project.
 # Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,14 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(mocks)
+add_library(msgpu_gpu_buffers)
 
-find_package(gtest REQUIRED)
+add_library(msgpu::gpu::buffers ALIAS msgpu_gpu_buffers)
 
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V)
+target_sources(msgpu_gpu_buffers
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/buffers/gpu_buffers.hpp
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/gpu_buffers.cpp
+)
 
-add_subdirectory(buffers)
-add_subdirectory(io)
-add_subdirectory(mode)
-add_subdirectory(processor)
+target_include_directories(msgpu_gpu_buffers
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(msgpu_gpu_buffers
+    PUBLIC 
+        msgpu::memory
+    PRIVATE 
+        common_flags
+)
 

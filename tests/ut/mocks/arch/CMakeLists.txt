@@ -23,9 +23,15 @@ target_sources(msgpu_arch
         ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma_mocks.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/memory_mock.hpp
     PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/board_stubs.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma_mocks.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/i2c_stub.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/qspi_stub.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vga_stub.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sync.cpp
 )
 
 target_include_directories(msgpu_arch
@@ -37,5 +43,23 @@ target_include_directories(msgpu_arch
 target_link_libraries(msgpu_arch 
     PUBLIC 
         msgpu_arch_interface
+        msgpu_generator_interface
         gmock
 )
+
+add_library(msgpu_generator INTERFACE)
+target_link_libraries(msgpu_generator INTERFACE msgpu_generator_interface msgpu_arch_interface)
+add_library(msgpu_arch_i2c INTERFACE)
+add_library(msgpu_lib INTERFACE)
+add_library(msgpu_config INTERFACE)
+target_include_directories(msgpu_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_library(msgpu_arch_config_ramdac INTERFACE) 
+
+target_link_libraries(msgpu_arch_config_ramdac 
+    INTERFACE 
+        msgpu_arch 
+        msgpu_arch_interface
+        msgpu_generator
+)
+

@@ -1,0 +1,11 @@
+--- 
+BasedOnStyle: Microsoft 
+
+ColumnLimit: '100'
+AlignConsecutiveAssignments: true
+AlignConsecutiveBitFields: true
+# AlignArrayOfStructures: Right
+BreakConstructorInitializers: BeforeComma
+AlwaysBreakTemplateDeclarations: Yes
+...
+

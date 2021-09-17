@@ -17,26 +17,25 @@
 #include "arch/i2c.hpp"
 
 #include <map>
-#include <string> 
+#include <string>
 
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <semaphore.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
-
-namespace msgpu 
+namespace msgpu
 {
 
-namespace 
+namespace
 {
 
-struct MemInfo 
+struct MemInfo
 {
-    int fd; 
+    int fd;
     std::string name;
-    sem_t* sem;
+    sem_t *sem;
 };
 
 std::map<uint8_t, MemInfo> slave_fd_map;
@@ -47,24 +46,24 @@ MemInfo *my_fd;
 static int r_fd;
 static int w_fd;
 
-constexpr const char* read_fifo_name = "i2c_bus_r";
-constexpr const char* write_fifo_name = "i2c_bus_w";
-}
+constexpr const char *read_fifo_name  = "i2c_bus_r";
+constexpr const char *write_fifo_name = "i2c_bus_w";
+} // namespace
 
 I2C::I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda)
 {
-    //std::string name = std::string("i2c_") + std::to_string(slave_address) + std::string("_slave");
+    // std::string name = std::string("i2c_") + std::to_string(slave_address) +
+    // std::string("_slave");
 
-    //mkfifo(fifo_name, 0666);
+    // mkfifo(fifo_name, 0666);
 
-//    slave_fd_map[slave_address] = MemInfo {
-//        .fd = fd,
-//        .name = name
-//    };
+    //    slave_fd_map[slave_address] = MemInfo {
+    //        .fd = fd,
+    //        .name = name
+    //    };
 
-//    my_fd = &slave_fd_map[slave_address];
-//
-
+    //    my_fd = &slave_fd_map[slave_address];
+    //
 
     r_fd = open(write_fifo_name, O_RDONLY);
     w_fd = open(read_fifo_name, O_WRONLY);
@@ -74,43 +73,42 @@ I2C::I2C(uint32_t pin_scl, uint32_t pin_sda)
 {
     mkfifo(read_fifo_name, 0666);
     mkfifo(write_fifo_name, 0666);
-//    std::string master_name = "i2c_master";
+    //    std::string master_name = "i2c_master";
 
-//    master_fd = {
-//        .fd = m_fd, 
-//        .name = master_name,
-//    };
+    //    master_fd = {
+    //        .fd = m_fd,
+    //        .name = master_name,
+    //    };
 
-//    my_fd = &master_fd;
+    //    my_fd = &master_fd;
     w_fd = open(write_fifo_name, O_WRONLY);
     r_fd = open(read_fifo_name, O_RDONLY);
 }
 
 I2C::~I2C()
 {
-    close(w_fd); 
+    close(w_fd);
     close(r_fd);
 }
 
 void I2C::read(DataType data)
 {
-//    if (!sem_wait(my_fd->sem))
-//    {
+    //    if (!sem_wait(my_fd->sem))
+    //    {
     // printf("I2C read\n");
     ::read(r_fd, data.data(), data.size());
-//        sem_post(my_fd->sem);
-//    }
+    //        sem_post(my_fd->sem);
+    //    }
 }
 
 void I2C::write(ConstDataType data)
 {
     // printf("I2C write\n");
-//    if (!sem_wait(my_fd->sem))
-//    {
+    //    if (!sem_wait(my_fd->sem))
+    //    {
     ::write(w_fd, data.data(), data.size());
-//        sem_post(my_fd->sem);
-//    }
-
+    //        sem_post(my_fd->sem);
+    //    }
 }
 
 void I2C::read(uint8_t address, DataType data)
@@ -123,9 +121,8 @@ void I2C::write(uint8_t address, ConstDataType data)
 {
     // printf("I2C write to slave: 0x%x\n", address);
     ::write(w_fd, data.data(), data.size());
-        //sem_post(my_fd->sem);
+    // sem_post(my_fd->sem);
     //}
-   
 }
 
 } // namespace msgpu

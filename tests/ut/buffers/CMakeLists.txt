@@ -14,14 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(mocks)
+add_executable(msgpu_ut_buffers)
 
-find_package(gtest REQUIRED)
+target_sources(msgpu_ut_buffers
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/gpu_buffers_tests.cpp
+)
 
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V)
+target_link_libraries(msgpu_ut_buffers
+    PRIVATE 
+        gtest 
+        gmock 
+        gtest_main 
 
-add_subdirectory(buffers)
-add_subdirectory(io)
-add_subdirectory(mode)
-add_subdirectory(processor)
+        msgpu::gpu::buffers 
+
+        common_flags
+)
+
+add_test (buffers msgpu_ut_buffers)
+add_dependencies (check msgpu_ut_buffers)
 

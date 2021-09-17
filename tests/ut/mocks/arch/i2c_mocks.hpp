@@ -2,7 +2,7 @@
 // Copyright (C) 2021 Mateusz Stadnik
 //
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it is under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
@@ -14,32 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#pragma once
 
-#include "qspi.hpp"
+#include <cstdint>
 
-namespace msgpu 
+#include <gmock/gmock.h>
+
+#include <arch/i2c.i2c.hpp>
+
+namespace msgpu::mocks
 {
 
-constexpr QspiConfig framebuffer_config {
-    .sck = 0,
-    .io_base = 0,
-    .cs = 0, 
-    .sm = 0,
-    .pio = 0,
-    .sync_in = 0,
-    .sync_out = 0
+class I2CInterface
+{
 };
 
-constexpr QspiConfig gpuram_config {
-    .sck = 0,
-    .io_base = 1,
-    .cs = 0, 
-    .sm = 0,
-    .pio = 0,
-    .sync_in = 0,
-    .sync_out = 0
-};
-
-} // namespace msgpu
-
+} // namespace msgpu::mocks

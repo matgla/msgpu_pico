@@ -16,6 +16,7 @@
 find_package(msgui REQUIRED)
 
 add_subdirectory(arch)
+add_subdirectory(buffers)
 add_subdirectory(io)
 add_subdirectory(mode)
 add_subdirectory(processor)
@@ -48,9 +49,10 @@ target_link_libraries(msgpu
         msgpu_generator
         msgpu_processor
 )
+
 add_dependencies(msgpu api_generator)
 
-if (NOT USE_SIMULATION)
+if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     pico_enable_stdio_usb(msgpu 0)
     pico_enable_stdio_uart(msgpu 1)
 
