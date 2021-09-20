@@ -31,24 +31,14 @@ struct BufferEntry
     uint16_t blocks;
 };
 
-template <typename MemoryType>
-class GpuBuffers
+class GpuBuffersBase
 {
   private:
     constexpr static std::size_t block_size  = 1024;
     constexpr static std::size_t buffer_size = 2048;
 
   public:
-    GpuBuffers(MemoryType &memory);
-
     void allocate_names(uint32_t amount, uint32_t *ids);
-
-    void write(uint32_t id, const void *data, std::size_t size)
-    {
-        static_cast<void>(id);
-        static_cast<void>(data);
-        static_cast<void>(size);
-    }
 
     void release_names(uint32_t amount, uint32_t *ids);
 
@@ -60,11 +50,30 @@ class GpuBuffers
 
     uint32_t find_empty_slot();
 
-    MemoryType memory_;
     std::bitset<buffer_size> allocation_map_;
     std::bitset<buffer_size> entries_map_;
     std::array<BufferEntry, buffer_size> entries_;
 };
 
-} // namespace msgpu::buffers
+template <typename MemoryType>
+class GpuBuffers : public GpuBuffersBase
+{
+  private:
+    constexpr static std::size_t block_size  = 1024;
+    constexpr static std::size_t buffer_size = 2048;
 
+  public:
+    GpuBuffers(MemoryType &memory)
+        : memory_(memory)
+    {
+    }
+
+    void write(uint32_t id, const void *data, std::size_t size)
+    {
+    }
+
+  private:
+    MemoryType &memory_;
+};
+
+} // namespace msgpu::buffers

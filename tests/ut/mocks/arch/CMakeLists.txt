@@ -23,7 +23,6 @@ target_sources(msgpu_arch
         ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma_mocks.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/memory_mock.hpp
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/board_stubs.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/hal_dma.cpp

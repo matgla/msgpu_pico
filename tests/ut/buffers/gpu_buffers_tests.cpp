@@ -21,12 +21,8 @@
 
 #include "memory_mock.hpp"
 
-#include "buffers/gpu_buffers.cpp"
-
 namespace msgpu::buffers
 {
-
-template void GpuBuffers<mocks::MemoryMock>::allocate_names(uint32_t amount, uint32_t *ids);
 
 class GpuBuffersShould : public ::testing::Test
 {
@@ -64,6 +60,17 @@ TEST_F(GpuBuffersShould, ReleaseNames)
 
     sut_.allocate_names(4, ids);
     EXPECT_THAT(ids, ::testing::ElementsAreArray({0, 2, 4, 5}));
+}
+
+TEST_F(GpuBuffersShould, AllocateMemoryWithCorrectSlots)
+{
+    uint32_t id;
+    sut_.allocate_names(1, &id);
+    constexpr std::size_t block_size = 1024;
+    uint8_t data[block_size * 2 + 1] = {1, 2, 3};
+
+    EXPECT_CALL(memory_.write(0x0, data, sizeof(block_size)));
+    sut_.write(id, data, sizeof(data));
 }
 
 } // namespace msgpu::buffers

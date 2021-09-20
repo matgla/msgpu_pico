@@ -19,14 +19,7 @@
 namespace msgpu::buffers
 {
 
-template <typename MemoryType>
-GpuBuffers<MemoryType>::GpuBuffers(MemoryType &memory)
-    : memory_(memory)
-{
-}
-
-template <typename MemoryType>
-void GpuBuffers<MemoryType>::allocate_names(uint32_t amount, uint32_t *ids)
+void GpuBuffersBase::allocate_names(uint32_t amount, uint32_t *ids)
 {
     for (std::size_t i = 0; i < amount; ++i)
     {
@@ -34,8 +27,7 @@ void GpuBuffers<MemoryType>::allocate_names(uint32_t amount, uint32_t *ids)
     }
 }
 
-template <typename MemoryType>
-void GpuBuffers<MemoryType>::release_names(uint32_t amount, uint32_t *ids)
+void GpuBuffersBase::release_names(uint32_t amount, uint32_t *ids)
 {
     for (uint32_t i = 0; i < amount; ++i)
     {
@@ -43,8 +35,7 @@ void GpuBuffers<MemoryType>::release_names(uint32_t amount, uint32_t *ids)
     }
 }
 
-template <typename MemoryType>
-uint32_t GpuBuffers<MemoryType>::find_empty_slot()
+uint32_t GpuBuffersBase::find_empty_slot()
 {
     for (uint32_t i = 0; i < buffer_size; ++i)
     {
@@ -57,8 +48,7 @@ uint32_t GpuBuffers<MemoryType>::find_empty_slot()
     return 0xffffffff;
 }
 
-template <typename MemoryType>
-uint32_t GpuBuffers<MemoryType>::find_empty_block(uint32_t size)
+uint32_t GpuBuffersBase::find_empty_block(uint32_t size)
 {
     uint32_t current_size = 0;
     uint32_t block_begin  = 0;
@@ -82,8 +72,7 @@ uint32_t GpuBuffers<MemoryType>::find_empty_block(uint32_t size)
     return 0xffffffff;
 }
 
-template <typename MemoryType>
-void GpuBuffers<MemoryType>::alloc(BufferEntry &entry, std::size_t size)
+void GpuBuffersBase::alloc(BufferEntry &entry, std::size_t size)
 {
     if (size == 0)
     {
