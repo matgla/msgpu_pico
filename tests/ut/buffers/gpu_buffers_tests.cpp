@@ -64,12 +64,54 @@ TEST_F(GpuBuffersShould, ReleaseNames)
 
 TEST_F(GpuBuffersShould, AllocateMemoryWithCorrectSlots)
 {
-    uint32_t id;
-    sut_.allocate_names(1, &id);
     constexpr std::size_t block_size = 1024;
-    uint8_t data[block_size * 2 + 1] = {1, 2, 3};
 
-    EXPECT_CALL(memory_.write(0x0, data, sizeof(block_size)));
+    uint32_t id;
+    uint32_t id2;
+    uint32_t id3;
+
+    uint8_t data[block_size * 2 + 1] = {};
+    uint8_t data2[block_size * 2];
+    uint8_t data3[block_size];
+    {
+        sut_.allocate_names(1, &id);
+        // This allocs segments 0, 1, 2
+        EXPECT_CALL(memory_, write(0x0, data, sizeof(data)));
+        sut_.write(id, data, sizeof(data));
+
+        sut_.allocate_names(1, &id2);
+        // This will alloc segments 3, 4
+        EXPECT_CALL(memory_, write(block_size * 3, data2, sizeof(data2)));
+        sut_.write(id2, data2, sizeof(data2));
+
+        // Release 0, 1, 2
+        sut_.release_names(1, &id);
+        sut_.allocate_names(1, &id);
+        sut_.allocate_names(1, &id3);
+
+        // Alloc 0
+        EXPECT_CALL(memory_, write(0x0, data3, sizeof(data3)));
+        sut_.write(id3, data3, sizeof(data3));
+    }
+    {
+        // Alloc 1, 2
+        EXPECT_CALL(memory_, write(block_size, data2, sizeof(data2)));
+        sut_.write(id, data2, sizeof(data2));
+
+        // Dealloc 1
+        sut_.release_names(1, &id3);
+
+        // Reuse 3, 4
+        EXPECT_CALL(memory_, write(block_size * 3, data2, sizeof(data2)));
+        sut_.write(id2, data2, sizeof(data2));
+
+        // Alloc 0
+        sut_.allocate_names(1, &id3);
+        EXPECT_CALL(memory_, write(0x0, data3, sizeof(data3)));
+        sut_.write(id3, data3, sizeof(data3));
+    }
+    // Reloc 1, 2 to 5, 6
+    EXPECT_CALL(memory_, write(block_size * 5, data, sizeof(data)));
     sut_.write(id, data, sizeof(data));
 }
 

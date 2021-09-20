@@ -23,7 +23,10 @@ void GpuBuffersBase::allocate_names(uint32_t amount, uint32_t *ids)
 {
     for (std::size_t i = 0; i < amount; ++i)
     {
-        ids[i] = find_empty_slot();
+        const uint32_t slot = find_empty_slot();
+        ids[i]              = static_cast<uint16_t>(slot);
+        entries_map_[slot]  = 1;
+        entries_[slot]      = BufferEntry{};
     }
 }
 
@@ -32,6 +35,7 @@ void GpuBuffersBase::release_names(uint32_t amount, uint32_t *ids)
     for (uint32_t i = 0; i < amount; ++i)
     {
         entries_map_[ids[i]] = 0;
+        dealloc(entries_[ids[i]]);
     }
 }
 
@@ -41,7 +45,6 @@ uint32_t GpuBuffersBase::find_empty_slot()
     {
         if (entries_map_[i] == 0)
         {
-            entries_map_[i] = 1;
             return i;
         }
     }
@@ -78,8 +81,9 @@ void GpuBuffersBase::alloc(BufferEntry &entry, std::size_t size)
     {
         return;
     }
-    const uint32_t size_in_blocks = static_cast<uint32_t>(size / block_size + 1);
-    const uint32_t start_block    = find_empty_block(size_in_blocks);
+    const uint32_t size_in_blocks =
+        static_cast<uint32_t>(size / block_size) + (size % block_size != 0);
+    const uint32_t start_block = find_empty_block(size_in_blocks);
 
     for (uint32_t i = start_block; i < start_block + size_in_blocks; ++i)
     {
@@ -88,6 +92,18 @@ void GpuBuffersBase::alloc(BufferEntry &entry, std::size_t size)
 
     entry.blocks  = static_cast<uint16_t>(size_in_blocks);
     entry.address = static_cast<uint16_t>(start_block * block_size);
+}
+
+void GpuBuffersBase::dealloc(BufferEntry &entry)
+{
+    const uint32_t start_block = entry.address / block_size;
+    for (uint32_t i = start_block; i < start_block + entry.blocks; ++i)
+    {
+        allocation_map_[i] = 0;
+    }
+
+    entry.address = 0;
+    entry.blocks  = 0;
 }
 
 } // namespace msgpu::buffers

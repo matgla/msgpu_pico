@@ -33,7 +33,7 @@ struct BufferEntry
 
 class GpuBuffersBase
 {
-  private:
+  protected:
     constexpr static std::size_t block_size  = 1024;
     constexpr static std::size_t buffer_size = 2048;
 
@@ -42,11 +42,11 @@ class GpuBuffersBase
 
     void release_names(uint32_t amount, uint32_t *ids);
 
-  private:
+  protected:
     uint32_t find_empty_block(uint32_t size);
 
     void alloc(BufferEntry &entry, std::size_t size);
-    void dealloc(BufferEntry &entry, uint32_t block);
+    void dealloc(BufferEntry &entry);
 
     uint32_t find_empty_slot();
 
@@ -70,6 +70,18 @@ class GpuBuffers : public GpuBuffersBase
 
     void write(uint32_t id, const void *data, std::size_t size)
     {
+        if (!entries_map_.test(id))
+        {
+            return;
+        }
+
+        auto &entry = entries_[id];
+        if (entry.blocks)
+        {
+            dealloc(entry);
+        }
+        alloc(entry, size);
+        memory_.write(entry.address, data, size);
     }
 
   private:
