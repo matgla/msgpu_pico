@@ -38,6 +38,7 @@ target_compile_options(msgpu
 
 target_link_libraries(msgpu 
     PRIVATE 
+        msgpu::log
         msos_dynamic_linker
         msgpu_arch_interface 
         msgpu_arch_i2c

@@ -1,5 +1,5 @@
-# This file is part of MS GPU project.
-# Copyright (C) 2020 Mateusz Stadnik
+# This file is part of msgpu project.
+# Copyright (C) 2021 Mateusz Stadnik
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,33 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_mode INTERFACE)
+add_library(msgpu_log INTERFACE)
+add_library(msgpu::log ALIAS msgpu_log)
 
-set (include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/mode)
-target_sources(msgpu_mode
+target_sources(msgpu_log 
     INTERFACE 
-        ${include_dir}/2d_graphic_mode.hpp
-        ${include_dir}/3d_graphic_mode.hpp
-        ${include_dir}/buffer.hpp
-        ${include_dir}/buffer_generator.hpp
-        ${include_dir}/framebuffer.hpp
-        ${include_dir}/mode_base.hpp
-        ${include_dir}/modes.hpp
-        ${include_dir}/text_mode.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/log/log.hpp
 )
 
-
-target_link_libraries(msgpu_mode 
+target_compile_options(msgpu_log 
     INTERFACE 
-        common_flags
-        eul_math
-        eul_container
-        msgpu::gpu::buffers
-        msgpu::memory
-        msgpu::log
+    -DLOG_TRACE=ON 
+    -DLOG_ENABLE_COLORS=ON
 )
 
-target_include_directories(msgpu_mode
+target_include_directories(msgpu_log 
     INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+

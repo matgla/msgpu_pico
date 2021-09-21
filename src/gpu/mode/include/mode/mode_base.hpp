@@ -24,6 +24,7 @@
 #include "messages/clear_screen.hpp"
 #include "messages/swap_buffer.hpp"
 
+#include "memory/gpuram.hpp"
 #include "memory/vram.hpp"
 
 #include "generator/vga.hpp"
@@ -38,9 +39,11 @@ class ModeBase
   public:
     virtual ~ModeBase() = default;
 
-    ModeBase(memory::VideoRam &framebuffer, I2CType &i2c, io::UsartPoint &point)
+    ModeBase(memory::VideoRam &framebuffer, memory::GpuRAM &gpuram, I2CType &i2c,
+             io::UsartPoint &point)
         : buffer_id_(1)
         , framebuffer_(framebuffer)
+        , gpuram_(gpuram)
         , i2c_(i2c)
         , point_(point)
 
@@ -87,6 +90,7 @@ class ModeBase
 
     uint8_t buffer_id_;
     memory::VideoRam &framebuffer_;
+    memory::GpuRAM &gpuram_;
     LineBuffer line_buffer_;
     I2CType &i2c_;
     io::UsartPoint &point_;

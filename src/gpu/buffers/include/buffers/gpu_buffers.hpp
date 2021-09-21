@@ -31,16 +31,50 @@ struct BufferEntry
     uint16_t blocks;
 };
 
-class GpuBuffersBase
+template <std::size_t N>
+class IdGenerator
+{
+  public:
+    uint32_t allocate_name()
+    {
+        for (uint32_t i = 0; i < N; ++i)
+        {
+            if (names_map_[i] == 0)
+            {
+                return i;
+            }
+        }
+        return 0xffffffff;
+    }
+
+    void release_name(uint32_t name)
+    {
+        if (name >= N)
+            return;
+        names_map_[name] = 0;
+    }
+
+    bool test(uint32_t name) const
+    {
+        if (name >= N)
+            return false;
+        return names_map_[name];
+    }
+
+  protected:
+    std::bitset<N> names_map_;
+};
+
+class GpuBuffersBase : public IdGenerator<2048>
 {
   protected:
     constexpr static std::size_t block_size  = 1024;
     constexpr static std::size_t buffer_size = 2048;
 
   public:
-    void allocate_names(uint32_t amount, uint32_t *ids);
+    void allocate_names(uint32_t amount, uint16_t *ids);
 
-    void release_names(uint32_t amount, uint32_t *ids);
+    void release_names(uint32_t amount, uint16_t *ids);
 
   protected:
     uint32_t find_empty_block(uint32_t size);
@@ -48,10 +82,7 @@ class GpuBuffersBase
     void alloc(BufferEntry &entry, std::size_t size);
     void dealloc(BufferEntry &entry);
 
-    uint32_t find_empty_slot();
-
     std::bitset<buffer_size> allocation_map_;
-    std::bitset<buffer_size> entries_map_;
     std::array<BufferEntry, buffer_size> entries_;
 };
 
@@ -70,7 +101,7 @@ class GpuBuffers : public GpuBuffersBase
 
     void write(uint32_t id, const void *data, std::size_t size)
     {
-        if (!entries_map_.test(id))
+        if (!names_map_.test(id))
         {
             return;
         }

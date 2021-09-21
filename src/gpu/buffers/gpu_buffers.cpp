@@ -19,36 +19,23 @@
 namespace msgpu::buffers
 {
 
-void GpuBuffersBase::allocate_names(uint32_t amount, uint32_t *ids)
+void GpuBuffersBase::allocate_names(uint32_t amount, uint16_t *ids)
 {
     for (std::size_t i = 0; i < amount; ++i)
     {
-        const uint32_t slot = find_empty_slot();
+        const uint32_t slot = allocate_name();
         ids[i]              = static_cast<uint16_t>(slot);
-        entries_map_[slot]  = 1;
         entries_[slot]      = BufferEntry{};
     }
 }
 
-void GpuBuffersBase::release_names(uint32_t amount, uint32_t *ids)
+void GpuBuffersBase::release_names(uint32_t amount, uint16_t *ids)
 {
     for (uint32_t i = 0; i < amount; ++i)
     {
-        entries_map_[ids[i]] = 0;
+        release_name(ids[i]);
         dealloc(entries_[ids[i]]);
     }
-}
-
-uint32_t GpuBuffersBase::find_empty_slot()
-{
-    for (uint32_t i = 0; i < buffer_size; ++i)
-    {
-        if (entries_map_[i] == 0)
-        {
-            return i;
-        }
-    }
-    return 0xffffffff;
 }
 
 uint32_t GpuBuffersBase::find_empty_block(uint32_t size)
