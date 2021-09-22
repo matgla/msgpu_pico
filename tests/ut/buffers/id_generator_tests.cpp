@@ -38,27 +38,23 @@ class IdGeneratorShould : public ::testing::Test
 
 TEST_F(IdGeneratorShould, AllocateNames)
 {
-    uint16_t ids[3];
-
-    ids = {
+    uint32_t ids[3] = {
         sut_.allocate_name(),
         sut_.allocate_name(),
         sut_.allocate_name(),
     };
     EXPECT_THAT(ids, ::testing::ElementsAreArray({0, 1, 2}));
 
-    ids = {
+    uint32_t ids2[2] = {
         sut_.allocate_name(),
         sut_.allocate_name(),
     };
-    EXPECT_THAT(ids, ::testing::ElementsAreArray({3, 4, 2}));
+    EXPECT_THAT(ids2, ::testing::ElementsAreArray({3, 4}));
 }
 
-TEST_F(GpuBuffersShould, ReleaseNames)
+TEST_F(IdGeneratorShould, ReleaseNames)
 {
-    uint16_t ids[4];
-
-    ids = {
+    uint32_t ids[4] = {
         sut_.allocate_name(),
         sut_.allocate_name(),
         sut_.allocate_name(),
@@ -68,14 +64,14 @@ TEST_F(GpuBuffersShould, ReleaseNames)
     sut_.release_name(ids[0]);
     sut_.release_name(ids[2]);
 
-    ids = {
+    uint32_t ids2[4] = {
         sut_.allocate_name(),
         sut_.allocate_name(),
         sut_.allocate_name(),
         sut_.allocate_name(),
     };
 
-    EXPECT_THAT(ids, ::testing::ElementsAreArray({0, 2, 4, 5}));
+    EXPECT_THAT(ids2, ::testing::ElementsAreArray({0, 2, 4, 5}));
 }
 
 } // namespace msgpu::buffers

@@ -36,6 +36,7 @@
 #include "messages/write_vertex.hpp"
 
 #include "buffers/gpu_buffers.hpp"
+#include "buffers/vertex_array_buffer.hpp"
 
 #include "log/log.hpp"
 
@@ -78,6 +79,7 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                   io::UsartPoint &point)
         : Base::GraphicMode2D(framebuffer, gpuram, i2c, point)
         , gpu_buffers_(Base::gpuram_)
+        , vertex_array_buffer_(Base::gpuram_)
 
     {
     }
@@ -137,28 +139,27 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     void process(const GenerateNamesRequest &msg)
     {
-        log::Log::trace("Received GenerateNamesRequest for %d elements\n", msg.elements);
+        log::Log::trace("Received GenerateNamesRequest for %d elements. Type %d\n", msg.elements,
+                        msg.type);
         GenerateNamesResponse resp;
         resp.error_code = 0;
+        uint16_t ids[sizeof(resp.data)];
         switch (msg.type)
         {
         case ObjectType::VertexArray: {
-            for (uint32_t i = 0; i < msg.elements; ++i)
-            {
-                resp.data[i] = static_cast<uint16_t>(array_names_.allocate_name());
-            }
+            vertex_array_buffer_.allocate_names(msg.elements, ids);
         }
         break;
         case ObjectType::Buffer: {
-            uint16_t ids[sizeof(resp.data)];
             gpu_buffers_.allocate_names(msg.elements, ids);
-            for (uint32_t i = 0; i < msg.elements; ++i)
-            {
-                resp.data[i] = ids[i];
-            }
         }
         break;
         }
+        for (uint32_t i = 0; i < msg.elements; ++i)
+        {
+            resp.data[i] = ids[i] + 1;
+        }
+
         this->point_.write(resp);
     }
 
@@ -381,11 +382,14 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     using Matrix_4x4 = eul::math::matrix<float, 4, 4>;
 
+    uint16_t current_buffer_;
+    uint16_t current_array_buffer_;
     buffers::IdGenerator<1024> array_names_;
     FloatVertex camera_{.x = 0, .y = 0, .z = 0};
     Matrix_4x4 projection_;
     Mesh mesh_;
     buffers::GpuBuffers<memory::GpuRAM> gpu_buffers_;
+    buffers::VertexArrayBuffer<memory::GpuRAM, 1024> vertex_array_buffer_;
 };
 
 template <typename Configuration, typename I2CType>
