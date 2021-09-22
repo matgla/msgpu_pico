@@ -21,6 +21,8 @@ add_library(msgpu::gpu::buffers ALIAS msgpu_gpu_buffers)
 target_sources(msgpu_gpu_buffers
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/buffers/gpu_buffers.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/buffers/id_generator.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/buffers/vertex_array_buffer.hpp
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/gpu_buffers.cpp
 )

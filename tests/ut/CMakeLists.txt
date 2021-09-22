@@ -19,7 +19,7 @@ add_subdirectory(mocks)
 find_package(gtest REQUIRED)
 
 add_custom_target(check 
-    COMMAND GTEST_COLORS=1 ${CMAKE_CTEST_COMMAND} -V)
+    COMMAND GTEST_COLOR=1 ${CMAKE_CTEST_COMMAND} -V)
 
 add_subdirectory(buffers)
 add_subdirectory(io)

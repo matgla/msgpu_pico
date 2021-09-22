@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include "memory/gpuram.hpp"
+#include "buffers/id_generator.hpp"
 
 namespace msgpu::buffers
 {
@@ -29,40 +30,6 @@ struct BufferEntry
 {
     uint16_t address;
     uint16_t blocks;
-};
-
-template <std::size_t N>
-class IdGenerator
-{
-  public:
-    uint32_t allocate_name()
-    {
-        for (uint32_t i = 0; i < N; ++i)
-        {
-            if (names_map_[i] == 0)
-            {
-                return i;
-            }
-        }
-        return 0xffffffff;
-    }
-
-    void release_name(uint32_t name)
-    {
-        if (name >= N)
-            return;
-        names_map_[name] = 0;
-    }
-
-    bool test(uint32_t name) const
-    {
-        if (name >= N)
-            return false;
-        return names_map_[name];
-    }
-
-  protected:
-    std::bitset<N> names_map_;
 };
 
 class GpuBuffersBase : public IdGenerator<2048>

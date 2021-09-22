@@ -40,7 +40,7 @@ class GpuBuffersShould : public ::testing::Test
 
 TEST_F(GpuBuffersShould, AllocateNames)
 {
-    uint32_t ids[3];
+    uint16_t ids[3];
 
     sut_.allocate_names(3, ids);
     EXPECT_THAT(ids, ::testing::ElementsAreArray({0, 1, 2}));
@@ -51,11 +51,11 @@ TEST_F(GpuBuffersShould, AllocateNames)
 
 TEST_F(GpuBuffersShould, ReleaseNames)
 {
-    uint32_t ids[4];
+    uint16_t ids[4];
 
     sut_.allocate_names(4, ids);
 
-    uint32_t to_release[2] = {ids[0], ids[2]};
+    uint16_t to_release[2] = {ids[0], ids[2]};
     sut_.release_names(2, to_release);
 
     sut_.allocate_names(4, ids);
@@ -66,9 +66,9 @@ TEST_F(GpuBuffersShould, AllocateMemoryWithCorrectSlots)
 {
     constexpr std::size_t block_size = 1024;
 
-    uint32_t id;
-    uint32_t id2;
-    uint32_t id3;
+    uint16_t id;
+    uint16_t id2;
+    uint16_t id3;
 
     uint8_t data[block_size * 2 + 1] = {};
     uint8_t data2[block_size * 2];

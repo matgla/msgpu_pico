@@ -18,7 +18,10 @@ add_executable(msgpu_ut_buffers)
 
 target_sources(msgpu_ut_buffers
     PRIVATE 
+
         ${CMAKE_CURRENT_SOURCE_DIR}/gpu_buffers_tests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/id_generator_tests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vertex_array_buffer_tests.cpp
 )
 
 target_link_libraries(msgpu_ut_buffers
