@@ -24,7 +24,7 @@
 
 #include <fcntl.h>
 #include <signal.h>
-#include <termios.h> 
+#include <termios.h>
 #include <unistd.h>
 
 #include <SFML/Graphics.hpp>
@@ -39,17 +39,18 @@ void exit_handler(int sig)
     static_cast<void>(sig);
     printf("Received signal\n");
     close_loop = true;
-    if (rendering_thread) rendering_thread->join();
+    if (rendering_thread)
+        rendering_thread->join();
     exit(0);
 }
 
-namespace msgpu 
+namespace msgpu
 {
 
-static uint16_t resolution_width = 320;
+static uint16_t resolution_width  = 320;
 static uint16_t resolution_height = 240;
 
-static termios old_tio; 
+static termios old_tio;
 
 void initialize_signal_generator()
 {
@@ -80,7 +81,7 @@ void render_loop()
         {
             return;
         }
-        sf::Event ev; 
+        sf::Event ev;
         while (window.pollEvent(ev))
         {
             if (ev.type == sf::Event::Closed)
@@ -89,27 +90,29 @@ void render_loop()
             }
         }
 
-        //msgpu::generator::get_vga().block();
+        // msgpu::generator::get_vga().block();
 
         sf::Image screen;
         sf::Texture screen_texture;
         sf::Sprite screen_sprite;
         screen.create(320, 240, sf::Color::Black);
- 
+
         for (std::size_t line = 0; line < resolution_height; ++line)
         {
-            uint32_t line_buffer_[640]; 
+            uint32_t line_buffer_[640];
             msgpu::generator::get_vga().display_line(line, line_buffer_);
             for (int pixel = 0; pixel < resolution_width; ++pixel)
             {
-                uint8_t r = (line_buffer_[pixel] >> 8) & 0xf;
-                uint8_t g = (line_buffer_[pixel] >> 4) & 0xf;
-                uint8_t b = (line_buffer_[pixel] & 0xf);
-                
-                r = r * (256/16 + 1);
-                g = g * (256/16 + 1);
-                b = b * (256/16 + 1);
+                uint8_t r = (line_buffer_[pixel] >> 5) & 0x07;
+                uint8_t g = (line_buffer_[pixel] >> 2) & 0x07;
+                uint8_t b = (line_buffer_[pixel] & 0x03);
 
+                r = r * (256 / 8);
+                g = g * (256 / 8);
+                b = b * (256 / 4);
+
+                // std::cout << "Set color: " << (int)r << ", " << (int)g << ", " << (int)b
+                //<< std::endl;
                 sf::Color color(r, g, b);
                 screen.setPixel(pixel, line, color);
             }
@@ -120,14 +123,14 @@ void render_loop()
             printf("Screenshot: %d.png\n", i);
             std::string filename = std::to_string(i++) + std::string(".png");
             screen.saveToFile(filename);
-        } 
+        }
         screen_texture.loadFromImage(screen);
         screen_sprite.setTexture(screen_texture);
         window.clear();
         window.draw(screen_sprite);
-        static std::chrono::time_point<std::chrono::high_resolution_clock> prev; 
+        static std::chrono::time_point<std::chrono::high_resolution_clock> prev;
         window.display();
-        //msgpu::generator::get_vga().unblock();
+        // msgpu::generator::get_vga().unblock();
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
@@ -137,10 +140,9 @@ void render_loop()
 void set_resolution(uint16_t width, uint16_t height)
 {
     printf("Setting resolution to: %d %d\n", width, height);
-    resolution_width = width;
+    resolution_width  = width;
     resolution_height = height;
 }
-
 
 void deinitialize_signal_generator()
 {
@@ -153,7 +155,6 @@ void initialize_application_specific()
 {
     signal(SIGINT, exit_handler);
 }
-
 
 void enable_display()
 {

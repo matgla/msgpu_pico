@@ -31,8 +31,11 @@
 
 #include "messages/ack.hpp"
 #include "messages/begin_primitives.hpp"
+#include "messages/bind.hpp"
+#include "messages/draw_arrays.hpp"
 #include "messages/end_primitives.hpp"
 #include "messages/generate_names.hpp"
+#include "messages/write_buffer_data.hpp"
 #include "messages/write_vertex.hpp"
 
 #include "buffers/gpu_buffers.hpp"
@@ -80,8 +83,8 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         : Base::GraphicMode2D(framebuffer, gpuram, i2c, point)
         , gpu_buffers_(Base::gpuram_)
         , vertex_array_buffer_(Base::gpuram_)
-
     {
+        set_projection_matrix(90.0f, 1.0f, 1000.0f, 1.0f);
     }
 
     void clear() override
@@ -104,6 +107,21 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         mesh_.push_back({});
     }
 
+    void process(const BindObject &req)
+    {
+        log::Log::trace("Received binding { type: %d, target: %d, object_id: %d}", req.type,
+                        req.target, req.object_id);
+
+        if (req.type == BindObjectType::BindVertexArray)
+        {
+            current_buffer_ = req.object_id - 1;
+        }
+        if (req.type == BindObjectType::BindBuffer)
+        {
+            current_array_buffer_ = req.object_id - 1;
+        }
+    }
+
     void process(const EndPrimitives &)
     {
         // printf("End primitives\n");
@@ -124,22 +142,62 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         mesh_.back().push_back({v.x, v.y, v.z});
     }
 
-    void process(const SetPerspective &msg)
+    void process(const PrepareForData &req)
     {
-        const float theta = msg.view_angle * 0.5f;
-        const float F     = 1.0f / (tanf(theta / 180.0f * 3.14f));
-        const float a     = -1.0f * msg.aspect;
-        const float q     = msg.z_far / (msg.z_far - msg.z_near);
+        write_buffer_ = req.named ? req.object_id - 1 : current_buffer_;
+        log::Log::trace("Received write buffer preparation for: %d, size: %d", write_buffer_,
+                        req.size);
 
-        // printf ("Calculated projection: %f %f %f %f\n", a*F, F, q, -1 * msg.z_near * q);
+        gpu_buffers_.allocate_memory(write_buffer_, req.size);
+        write_offset_ = 0;
+    }
+
+    void process(const WriteBufferData &msg)
+    {
+        log::Log::trace("Received data part %d with size %d\n", msg.part, msg.size);
+
+        for (uint8_t byte : msg.data)
+        {
+            printf("0x%x, ", byte);
+        }
+        printf("\n");
+        gpu_buffers_.write(write_buffer_, msg.data, msg.size, write_offset_);
+
+        float v[9];
+        gpu_buffers_.read(0, v, sizeof(v));
+        printf("Readed: ");
+        for (auto f : v)
+        {
+            printf("%f, ", f);
+        }
+        printf("\n");
+
+        write_offset_ += msg.size;
+    }
+
+    void set_projection_matrix(float view_angle, float aspect, float z_far, float z_near)
+    {
+        const float theta = view_angle * 0.5f;
+        const float F     = 1.0f / (tanf(theta / 180.0f * 3.14f));
+        const float a     = -1.0f * aspect;
+        const float q     = z_far / (z_far - z_near);
 
         projection_ = {
-            {a * F, 0, 0, 0}, {0, F, 0, 0}, {0, 0, q, 1}, {0, 0, -1 * msg.z_near * q, 0}};
+            {a * F, 0, 0, 0},
+            {0, -F, 0, 0},
+            {0, 0, q, 1},
+            {0, 0, -1 * z_near * q, 0},
+        };
+    }
+
+    void process(const SetPerspective &msg)
+    {
+        set_projection_matrix(msg.view_angle, msg.aspect, msg.z_far, msg.z_near);
     }
 
     void process(const GenerateNamesRequest &msg)
     {
-        log::Log::trace("Received GenerateNamesRequest for %d elements. Type %d\n", msg.elements,
+        log::Log::trace("Received GenerateNamesRequest for %d elements. Type %d", msg.elements,
                         msg.type);
         GenerateNamesResponse resp;
         resp.error_code = 0;
@@ -161,6 +219,24 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         }
 
         this->point_.write(resp);
+    }
+
+    void process(const DrawArrays &msg)
+    {
+        // log::Log::trace("Received draw arrays for id: %d, count: %d", msg.first, msg.count);
+
+        static_cast<void>(msg);
+        for (uint16_t id = 0; id < 1; ++id) // msg.first + msg.count - 1; ++id)
+        {
+            float v[9] = {};
+            gpu_buffers_.read(id, &v, sizeof(v));
+
+            mesh_.push_back({
+                Vertex{.x = v[0], .y = v[1], .z = v[2]},
+                Vertex{.x = v[3], .y = v[4], .z = v[5]},
+                Vertex{.x = v[6], .y = v[7], .z = v[8]},
+            });
+        }
     }
 
     void render() override
@@ -186,22 +262,10 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
   protected:
     void transform_mesh()
     {
-        static float theta = 0.0f;
-        theta += 0.01f;
-        if (theta > 6.23)
-        {
-            theta = 0;
-        }
+        printf("Transform mesh size: %ld\n", mesh_.size());
         for (const auto &triangle : mesh_)
         {
             FloatTriangle t = convert(triangle);
-            rotate_x(t, theta);
-            rotate_z(t, theta);
-
-            for (auto &v : t.vertex)
-            {
-                v.z += 3.0f;
-            }
 
             FloatVertex normal, line1, line2;
             line1.x = t.vertex[1].x - t.vertex[0].x;
@@ -225,7 +289,8 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                     normal.z * (t.vertex[0].z - camera_.z) >=
                 0.0)
             {
-                continue;
+                printf("Continue\n");
+                // continue;
             }
 
             FloatVertex light{.x = 0, .y = 0, .z = -1};
@@ -241,52 +306,74 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
             switch (c)
             {
             case 13:
-                color = 0xfff;
+                color = 0xff;
                 break;
             case 12:
-                color = 0xeee;
+                color = 0xee;
                 break;
             case 11:
-                color = 0xddd;
+                color = 0xdd;
                 break;
             case 10:
-                color = 0xccc;
+                color = 0xcc;
                 break;
             case 9:
-                color = 0xbbb;
+                color = 0xbb;
                 break;
             case 8:
-                color = 0xaaa;
+                color = 0xaa;
                 break;
             case 7:
-                color = 0x999;
+                color = 0x99;
                 break;
             case 6:
-                color = 0x888;
+                color = 0x88;
                 break;
             case 5:
-                color = 0x777;
+                color = 0x77;
                 break;
             case 4:
-                color = 0x666;
+                color = 0x66;
                 break;
             case 3:
-                color = 0x555;
+                color = 0x55;
                 break;
             case 2:
-                color = 0x444;
+                color = 0x44;
                 break;
             case 1:
-                color = 0x333;
+                color = 0x33;
                 break;
             case 0:
-                color = 0x222;
+                color = 0x22;
                 break;
             default:
-                color = 0x000;
+                color = 0x00;
             }
+            printf("Triangle a:");
+            for (auto &v : t.vertex)
+            {
+                printf("{%f %f %f},", v.x, v.y, v.z);
+            }
+            printf("\n");
+
             calculate_projection(t);
+
+            printf("Triangle p:");
+            for (auto &v : t.vertex)
+            {
+                printf("{%f %f %f},", v.x, v.y, v.z);
+            }
+            printf("\n");
+
             scale(t);
+
+            printf("Triangle s:");
+            for (auto &v : t.vertex)
+            {
+                printf("{%f %f %f},", v.x, v.y, v.z);
+            }
+            printf("\n");
 
             Triangle tr{.v = {vertex_2d{.x = static_cast<uint16_t>(t.vertex[0].x),
                                         .y = static_cast<uint16_t>(t.vertex[0].y)},
@@ -295,6 +382,7 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                               vertex_2d{.x = static_cast<uint16_t>(t.vertex[2].x),
                                         .y = static_cast<uint16_t>(t.vertex[2].y)}}};
 
+            printf("Add triangle\n");
             Base::add_triangle(tr, color);
         }
     }
@@ -384,6 +472,8 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     uint16_t current_buffer_;
     uint16_t current_array_buffer_;
+    uint16_t write_buffer_;
+    std::size_t write_offset_;
     buffers::IdGenerator<1024> array_names_;
     FloatVertex camera_{.x = 0, .y = 0, .z = 0};
     Matrix_4x4 projection_;

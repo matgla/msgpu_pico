@@ -104,7 +104,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
         //  printf("Render frame: %d\n", i++); printf("2D render: %ld\n", triangles_.size());
         for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
         {
-            std::memset(Base::line_buffer_.u8, 0, sizeof(Base::line_buffer_));
+            std::memset(Base::line_buffer_.u8, this->clear_color_, sizeof(Base::line_buffer_));
 
             for (auto &triangle : triangles_)
             {

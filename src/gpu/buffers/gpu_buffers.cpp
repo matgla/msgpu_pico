@@ -38,6 +38,22 @@ void GpuBuffersBase::release_names(uint32_t amount, uint16_t *ids)
     }
 }
 
+void GpuBuffersBase::allocate_memory(uint32_t id, std::size_t size)
+{
+    if (!names_map_.test(id))
+    {
+        return;
+    }
+
+    auto &entry = entries_[id];
+    if (entry.blocks)
+    {
+        dealloc(entry);
+    }
+
+    alloc(entry, size);
+}
+
 uint32_t GpuBuffersBase::find_empty_block(uint32_t size)
 {
     uint32_t current_size = 0;
@@ -79,6 +95,9 @@ void GpuBuffersBase::alloc(BufferEntry &entry, std::size_t size)
 
     entry.blocks  = static_cast<uint16_t>(size_in_blocks);
     entry.address = static_cast<uint16_t>(start_block * block_size);
+
+    log::Log::trace("Allocated memory: { address: 0x%x, blocks: %d, size: %d}", entry.address,
+                    entry.blocks, entry.blocks * block_size);
 }
 
 void GpuBuffersBase::dealloc(BufferEntry &entry)

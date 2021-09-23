@@ -20,8 +20,10 @@
 #include <bitset>
 #include <cstdint>
 
-#include "memory/gpuram.hpp"
 #include "buffers/id_generator.hpp"
+#include "memory/gpuram.hpp"
+
+#include "log/log.hpp"
 
 namespace msgpu::buffers
 {
@@ -42,6 +44,9 @@ class GpuBuffersBase : public IdGenerator<2048>
     void allocate_names(uint32_t amount, uint16_t *ids);
 
     void release_names(uint32_t amount, uint16_t *ids);
+
+    void allocate_memory(uint32_t id, std::size_t size);
+    void deallocate_memory(uint32_t id);
 
   protected:
     uint32_t find_empty_block(uint32_t size);
@@ -66,7 +71,7 @@ class GpuBuffers : public GpuBuffersBase
     {
     }
 
-    void write(uint32_t id, const void *data, std::size_t size)
+    void write(uint32_t id, const void *data, std::size_t size, std::size_t offset = 0)
     {
         if (!names_map_.test(id))
         {
@@ -74,12 +79,21 @@ class GpuBuffers : public GpuBuffersBase
         }
 
         auto &entry = entries_[id];
-        if (entry.blocks)
+        printf("write: 0x%lx\n", entry.address + offset);
+
+        memory_.write(entry.address + offset, data, size);
+    }
+
+    void read(uint32_t id, void *data, std::size_t size, std::size_t offset = 0)
+    {
+        if (!names_map_.test(id))
         {
-            dealloc(entry);
+            return;
         }
-        alloc(entry, size);
-        memory_.write(entry.address, data, size);
+
+        auto &entry = entries_[id];
+
+        memory_.read(entry.address + offset, data, size);
     }
 
   private:

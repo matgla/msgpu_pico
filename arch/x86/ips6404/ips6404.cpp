@@ -16,29 +16,28 @@
 
 #include "ips6404/ips6404.hpp"
 
-#include <cstring> 
+#include <cstring>
 
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 #include "panic.hpp"
 
-namespace msgpu 
+namespace msgpu
 {
-namespace stubs 
+namespace stubs
 {
 
-namespace 
+namespace
 {
 constexpr int address_offset = 3;
 constexpr int command_offset = 1;
 
+} // namespace
 
-} // namespace 
-
-IPS6404StubSm::IPS6404StubSm(SharedMemory& memory)
+IPS6404StubSm::IPS6404StubSm(SharedMemory &memory)
     : memory_(memory)
 {
 }
@@ -49,40 +48,40 @@ void IPS6404StubSm::init()
     sem_post(memory_.sem);
 }
 
-void IPS6404StubSm::read_base(const evTransmit& ev, int wait_cycles)
+void IPS6404StubSm::read_base(const evTransmit &ev, int wait_cycles)
 {
     const std::size_t address = ev.src[1] << 16 | ev.src[2] << 8 | ev.src[3];
-    const std::size_t offset = command_offset + address_offset + wait_cycles;
+    const std::size_t offset  = command_offset + address_offset + wait_cycles;
     sem_wait(memory_.sem);
 
-    std::memcpy(ev.dest.data(), &memory_.memory[address], ev.dest.size()); 
- 
+    std::memcpy(ev.dest.data(), &memory_.memory[address], ev.dest.size());
+
     sem_post(memory_.sem);
 }
 
-void IPS6404StubSm::read(const evTransmit& ev)
+void IPS6404StubSm::read(const evTransmit &ev)
 {
     read_base(ev, 0);
 }
 
-void IPS6404StubSm::spi_fast_read(const evTransmit& ev)
+void IPS6404StubSm::spi_fast_read(const evTransmit &ev)
 {
     read_base(ev, 1);
 }
 
-void IPS6404StubSm::qpi_fast_read(const evTransmit& ev)
+void IPS6404StubSm::qpi_fast_read(const evTransmit &ev)
 {
     read_base(ev, 3);
 }
 
-void IPS6404StubSm::write(const evTransmit& ev)
+void IPS6404StubSm::write(const evTransmit &ev)
 {
     const std::size_t address = ev.src[1] << 16 | ev.src[2] << 8 | ev.src[3];
-    const std::size_t offset = command_offset + address_offset;
-    
+    const std::size_t offset  = command_offset + address_offset;
+
     sem_wait(memory_.sem);
 
-    std::memcpy(&memory_.memory[address], &ev.src[offset], ev.src.size() - offset); 
+    std::memcpy(&memory_.memory[address], &ev.src[offset], ev.src.size() - offset);
     sem_post(memory_.sem);
 }
 
@@ -109,17 +108,17 @@ void IPS6404StubSm::reset()
     reset_enabled_ = false;
 }
 
-void IPS6404StubSm::burst_mode_toggle(const evTransmit& ev)
+void IPS6404StubSm::burst_mode_toggle(const evTransmit &ev)
 {
     printf("TODO: Implement burst mode toggle\n");
 }
 
-void IPS6404StubSm::read_eid(const evTransmit& ev)
+void IPS6404StubSm::read_eid(const evTransmit &ev)
 {
     printf("Reading EID\n");
-    
+
     std::size_t i = command_offset + address_offset;
-    if (ev.dest.size() < i + 2) 
+    if (ev.dest.size() < i + 2)
     {
         std::abort();
     }
@@ -127,16 +126,15 @@ void IPS6404StubSm::read_eid(const evTransmit& ev)
     ev.dest[i++] = 0x5d;
 }
 
-bool IPS6404StubSm::is_quad_mode() const 
+bool IPS6404StubSm::is_quad_mode() const
 {
     return quad_mode_;
 }
 
-bool IPS6404StubSm::is_reset_enabled() const 
+bool IPS6404StubSm::is_reset_enabled() const
 {
     return reset_enabled_;
 }
-
 
 IPS6404Stub::IPS6404Stub(std::string_view name)
     : memory_{}
@@ -150,10 +148,10 @@ IPS6404Stub::IPS6404Stub(std::string_view name)
     {
         panic("Can't open shared memory object: %s\n", strerror(errno));
     }
-    memory_.name = name;
+    memory_.name               = name;
     std::string semaphore_name = "/";
     semaphore_name += name;
-    memory_.sem = sem_open(semaphore_name.c_str(), O_CREAT, 0644, 0); 
+    memory_.sem = sem_open(semaphore_name.c_str(), O_CREAT, 0644, 0);
     if (memory_.sem == nullptr)
     {
         panic("Semaphore aquisition failed: %s\n", strerror(errno));
@@ -167,7 +165,7 @@ IPS6404Stub::IPS6404Stub(std::string_view name)
         panic("Memory mapping failed: %s\n", strerror(errno));
     }
 
-    memory_.memory = std::span<uint8_t>(static_cast<uint8_t*>(mem), memory_size);
+    memory_.memory = std::span<uint8_t>(static_cast<uint8_t *>(mem), memory_size);
 
     sm_.process_event(IPS6404StubSm::evInit{});
 }
@@ -179,41 +177,29 @@ IPS6404Stub::~IPS6404Stub()
     shm_unlink(memory_.name.data());
 }
 
-void IPS6404Stub::init() 
+void IPS6404Stub::init()
 {
 }
 
 void IPS6404Stub::read(const DataType &buf, std::size_t len)
 {
     sm_.process_event(IPS6404StubSm::evTransmit{
-        .src = ConstDataType{},
-        .dest = buf,
-        .src_len = 0,
-        .dest_len = len 
-    }); 
+        .src = ConstDataType{}, .dest = buf, .src_len = 0, .dest_len = len});
 }
 
 void IPS6404Stub::write(const ConstDataType &buf, std::size_t len)
 {
-    sm_.process_event(IPS6404StubSm::evTransmit{
-        .src = buf, 
-        .dest = DataType{},
-        .src_len = len,
-        .dest_len = 0 
-    }); 
+    sm_.process_event(
+        IPS6404StubSm::evTransmit{.src = buf, .dest = DataType{}, .src_len = len, .dest_len = 0});
 }
 
-void IPS6404Stub::transmit(const ConstDataType &src, const DataType &dest, std::size_t write_len, std::size_t read_len)
+void IPS6404Stub::transmit(const ConstDataType &src, const DataType &dest, std::size_t write_len,
+                           std::size_t read_len)
 {
     sm_.process_event(IPS6404StubSm::evTransmit{
-        .src = src,
-        .dest = dest,
-        .src_len = write_len,
-        .dest_len = read_len
-    });
-   // ::write(out_memory_fd_, src.data(), write_len);
-   // ::read(in_memory_fd_, dest.data(), read_len);
-    
+        .src = src, .dest = dest, .src_len = write_len, .dest_len = read_len});
+    // ::write(out_memory_fd_, src.data(), write_len);
+    // ::read(in_memory_fd_, dest.data(), read_len);
 }
 
 } // namespace stubs

@@ -27,8 +27,10 @@
 #include "hal_dma.hpp"
 
 #include "messages/begin_primitives.hpp"
+#include "messages/bind.hpp"
 #include "messages/change_mode.hpp"
 #include "messages/clear_screen.hpp"
+#include "messages/draw_arrays.hpp"
 #include "messages/draw_line.hpp"
 #include "messages/draw_triangle.hpp"
 #include "messages/end_primitives.hpp"
@@ -37,9 +39,9 @@
 #include "messages/set_perspective.hpp"
 #include "messages/set_pixel.hpp"
 #include "messages/swap_buffer.hpp"
+#include "messages/write_buffer_data.hpp"
 #include "messages/write_text.hpp"
 #include "messages/write_vertex.hpp"
-
 //#include "messages/begin_primitives.hpp"
 //#include "messages/header.hpp"
 //#include "messages/end_primitives.hpp"
@@ -142,6 +144,10 @@ void register_messages(auto &proc)
     register_handler<SwapBuffer>(proc);
     register_handler<DrawTriangle>(proc);
     register_handler<GenerateNamesRequest>(proc);
+    register_handler<WriteBufferData>(proc);
+    register_handler<BindObject>(proc);
+    register_handler<PrepareForData>(proc);
+    register_handler<DrawArrays>(proc);
 };
 
 struct ControlUsart

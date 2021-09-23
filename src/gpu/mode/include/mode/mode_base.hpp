@@ -30,6 +30,8 @@
 #include "generator/vga.hpp"
 #include "io/usart_point.hpp"
 
+#include "log/log.hpp"
+
 namespace msgpu::mode
 {
 
@@ -42,6 +44,7 @@ class ModeBase
     ModeBase(memory::VideoRam &framebuffer, memory::GpuRAM &gpuram, I2CType &i2c,
              io::UsartPoint &point)
         : buffer_id_(1)
+        , clear_color_(0)
         , framebuffer_(framebuffer)
         , gpuram_(gpuram)
         , i2c_(i2c)
@@ -52,15 +55,17 @@ class ModeBase
     }
 
     virtual void clear() = 0;
-    void process(const ClearScreen &)
+    void process(const ClearScreen &msg)
     {
         // printf("ClearScreen\n");
+        clear_color_ = msg.color;
         clear_screen();
         clear();
     }
 
     void process(const SwapBuffer &)
     {
+        // log::Log::trace("Swap buffer");
         uint8_t read_buf_id = buffer_id_;
         buffer_id_          = buffer_id_ ? 0 : 1;
         render();
@@ -89,6 +94,7 @@ class ModeBase
     };
 
     uint8_t buffer_id_;
+    uint8_t clear_color_;
     memory::VideoRam &framebuffer_;
     memory::GpuRAM &gpuram_;
     LineBuffer line_buffer_;

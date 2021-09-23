@@ -16,25 +16,31 @@
 
 #include "memory/gpuram.hpp"
 
+#include <cstdio>
+
 namespace msgpu::memory
 {
 namespace
 {
 constexpr uint16_t page_size = 1024;
 } // namespace
-GpuRAM::GpuRAM(QspiPSRAM &memory) : memory_(memory)
+GpuRAM::GpuRAM(QspiPSRAM &memory)
+    : memory_(memory)
 {
 }
 
 std::size_t GpuRAM::write(std::size_t address, const void *data, std::size_t nbyte)
 {
-    AddressInfo a = get_address_information(address, nbyte);
+    printf("Write 0x%lx,size: %ld\n", address, nbyte);
+    AddressInfo a                    = get_address_information(address, nbyte);
     const std::size_t last_page_size = nbyte - a.bytes_to_align - a.pages * page_size;
-    std::size_t bytes_written = 0;
+    std::size_t bytes_written        = 0;
     memory_.write(address + bytes_written,
                   QspiPSRAM::ConstDataBuffer(static_cast<const uint8_t *>(data), a.bytes_to_align));
     memory_.wait_for_finish();
     bytes_written += a.bytes_to_align;
+    printf("Pages: %d, align: %d, last: %ld\n", a.pages, a.bytes_to_align, last_page_size);
+
     for (uint16_t i = 0; i < a.pages; ++i)
     {
         memory_.write(address + bytes_written,
@@ -53,35 +59,37 @@ std::size_t GpuRAM::write(std::size_t address, const void *data, std::size_t nby
 
 std::size_t GpuRAM::read(std::size_t address, void *data, std::size_t nbyte)
 {
-    AddressInfo a = get_address_information(address, nbyte);
+    AddressInfo a                    = get_address_information(address, nbyte);
     const std::size_t last_page_size = nbyte - a.bytes_to_align - a.pages * page_size;
-    std::size_t bytes_written = 0;
+    std::size_t bytes_written        = 0;
     memory_.read(address + bytes_written,
                  QspiPSRAM::DataBuffer(static_cast<uint8_t *>(data), a.bytes_to_align));
     memory_.wait_for_finish();
     bytes_written += a.bytes_to_align;
     for (uint16_t i = 0; i < a.pages; ++i)
     {
-        memory_.write(address + bytes_written,
-                      QspiPSRAM::ConstDataBuffer(static_cast<const uint8_t *>(data) + bytes_written,
-                                                 page_size));
+        memory_.read(
+            address + bytes_written,
+            QspiPSRAM::DataBuffer(static_cast<uint8_t *>(data) + bytes_written, page_size));
         bytes_written += page_size;
         memory_.wait_for_finish();
     }
 
-    memory_.write(address + bytes_written,
-                  QspiPSRAM::ConstDataBuffer(static_cast<const uint8_t *>(data) + bytes_written,
-                                             last_page_size));
+    memory_.read(
+        address + bytes_written,
+        QspiPSRAM::DataBuffer(static_cast<uint8_t *>(data) + bytes_written, last_page_size));
     memory_.wait_for_finish();
     return nbyte;
 }
 
 GpuRAM::AddressInfo GpuRAM::get_address_information(std::size_t address, std::size_t size)
 {
-    const uint16_t bytes_to_align = page_size - address % page_size;
+    const uint16_t address_mod_page = address % page_size;
+    const uint16_t bytes_to_pageend = address_mod_page == 0 ? 0 : page_size - address % page_size;
+    const uint16_t bytes_to_align   = std::min(static_cast<uint16_t>(size), bytes_to_pageend);
     return AddressInfo{
         .bytes_to_align = bytes_to_align,
-        .pages = static_cast<uint16_t>((size - bytes_to_align) / page_size),
+        .pages          = static_cast<uint16_t>((size - bytes_to_align) / page_size),
     };
 }
 

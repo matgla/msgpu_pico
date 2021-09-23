@@ -35,6 +35,7 @@ target_include_directories(msgpu_gpu_buffers
 target_link_libraries(msgpu_gpu_buffers
     PUBLIC 
         msgpu::memory
+        msgpu::log
     PRIVATE 
         common_flags
 )
