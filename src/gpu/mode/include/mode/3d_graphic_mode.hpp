@@ -25,16 +25,24 @@
 #include <eul/container/static_vector.hpp>
 #include <eul/math/vector.hpp>
 
+#include <msos/dynamic_linker/dynamic_linker.hpp>
+#include <msos/dynamic_linker/environment.hpp>
+
 #include "mode/2d_graphic_mode.hpp"
 #include "mode/mode_base.hpp"
 #include "mode/types.hpp"
 
 #include "messages/ack.hpp"
+#include "messages/allocate_program.hpp"
+#include "messages/attach_shader.hpp"
 #include "messages/begin_primitives.hpp"
+#include "messages/begin_program_write.hpp"
 #include "messages/bind.hpp"
 #include "messages/draw_arrays.hpp"
 #include "messages/end_primitives.hpp"
 #include "messages/generate_names.hpp"
+#include "messages/program_write.hpp"
+#include "messages/use_program.hpp"
 #include "messages/write_buffer_data.hpp"
 #include "messages/write_vertex.hpp"
 
@@ -42,6 +50,43 @@
 #include "buffers/vertex_array_buffer.hpp"
 
 #include "log/log.hpp"
+
+#include "symbol_codes.h"
+
+extern "C"
+{
+    struct vec3
+    {
+        float x;
+        float y;
+        float z;
+    };
+
+    struct vec4
+    {
+        vec4() = default;
+        vec4(const vec3 &v, float w_)
+            : x(v.x)
+            , y(v.y)
+            , z(v.z)
+            , w(w_)
+        {
+        }
+
+        float x;
+        float y;
+        float z;
+        float w;
+    };
+
+    vec4 gl_Position;
+    void *argument_0;
+    void *argument_1;
+    void *argument_2;
+    void *argument_3;
+    void *out_argument_0;
+    vec4 gl_Color;
+}
 
 namespace msgpu::mode
 {
@@ -175,6 +220,33 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         write_offset_ += msg.size;
     }
 
+    void process(const AllocateProgramRequest &req)
+    {
+        log::Log::trace("Received program allocation: %d\n", req.program_type);
+
+        uint8_t program_id = 0;
+
+        if (req.program_type == AllocateProgramType::AllocateProgram)
+        {
+            log::Log::trace("Assign program");
+            programs_assignments_.emplace_back();
+            program_id = static_cast<uint8_t>(programs_assignments_.size() - 1);
+        }
+        else
+        {
+            log::Log::trace("Assign shader");
+            programs_.emplace_back();
+            program_id = static_cast<uint8_t>(programs_.size() - 1);
+        }
+
+        log::Log::trace("Allocated pid: %d", program_id);
+        AllocateProgramResponse resp{
+            .program_id = program_id,
+        };
+
+        this->point_.write(resp);
+    }
+
     void set_projection_matrix(float view_angle, float aspect, float z_far, float z_near)
     {
         const float theta = view_angle * 0.5f;
@@ -239,6 +311,58 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         }
     }
 
+    void process(const BeginProgramWrite &msg)
+    {
+        log::Log::trace("Received program transmission start, size: %d, pid: %d", msg.size,
+                        msg.program_id);
+        program_position_ = msg.program_id;
+        programs_[program_position_].data.resize(msg.size);
+        program_write_index_ = 0;
+    }
+
+    void process(const ProgramWrite &msg)
+    {
+        // log::Log::trace("Received program part: %d, current size: %d", msg.part,
+        // program_write_index_);
+        auto &program = programs_[program_position_];
+        std::copy(std::begin(msg.data), std::begin(msg.data) + msg.size,
+                  program.data.begin() + program_write_index_);
+        program_write_index_ += msg.size;
+        if (program.data.size() == program_write_index_)
+        {
+            printf("Got whole program\n");
+        }
+    }
+
+    void process(const UseProgram &req)
+    {
+        static msos::dl::Environment env{
+            msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf},
+        };
+
+        static msos::dl::DynamicLinker linker;
+        eul::error::error_code ec;
+        auto &assignments = programs_assignments_[req.program_id];
+        for (int program_id : assignments.shaders)
+        {
+            printf("Module: %d\n", program_id);
+            auto &program = programs_[program_id].data;
+            vec3 arg;
+            argument_0     = &arg;
+            out_argument_0 = &gl_Color;
+            const auto *module =
+                linker.load_module(std::span<const uint8_t>(program.data(), program.size()),
+                                   msos::dl::LoadingModeCopyText, env, ec);
+            module->execute();
+        }
+    }
+
+    void process(const AttachShader &req)
+    {
+        auto &assignments = programs_assignments_[req.program_id];
+        assignments.shaders.push_back(req.shader_id);
+    }
+
     void render() override
     {
         // auto start = std::chrono::high_resolution_clock::now();
@@ -260,6 +384,13 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     }
 
   protected:
+    constexpr uint8_t to_rgb332(float r, float g, float b)
+    {
+        return static_cast<uint8_t>(static_cast<uint8_t>(roundf(r * 7)) << 5 |
+                                    static_cast<uint8_t>(roundf(g * 7)) << 2 |
+                                    static_cast<uint8_t>(roundf(b * 3)));
+    }
+
     void transform_mesh()
     {
         printf("Transform mesh size: %ld\n", mesh_.size());
@@ -299,57 +430,9 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
             light.y /= l;
             light.z /= l;
 
-            float dp = normal.x * light.x + normal.y * light.y + normal.z * light.z;
+            uint8_t color = to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
 
-            uint16_t color = 0;
-            int c          = static_cast<int>(dp * 13.0f);
-            switch (c)
-            {
-            case 13:
-                color = 0xff;
-                break;
-            case 12:
-                color = 0xee;
-                break;
-            case 11:
-                color = 0xdd;
-                break;
-            case 10:
-                color = 0xcc;
-                break;
-            case 9:
-                color = 0xbb;
-                break;
-            case 8:
-                color = 0xaa;
-                break;
-            case 7:
-                color = 0x99;
-                break;
-            case 6:
-                color = 0x88;
-                break;
-            case 5:
-                color = 0x77;
-                break;
-            case 4:
-                color = 0x66;
-                break;
-            case 3:
-                color = 0x55;
-                break;
-            case 2:
-                color = 0x44;
-                break;
-            case 1:
-                color = 0x33;
-                break;
-            case 0:
-                color = 0x22;
-                break;
-            default:
-                color = 0x00;
-            }
+            printf("Color {%f %f %f, %x}\n", gl_Color.x, gl_Color.y, gl_Color.z, color);
             printf("Triangle a:");
             for (auto &v : t.vertex)
             {
@@ -480,6 +563,20 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     Mesh mesh_;
     buffers::GpuBuffers<memory::GpuRAM> gpu_buffers_;
     buffers::VertexArrayBuffer<memory::GpuRAM, 1024> vertex_array_buffer_;
+    struct ProgramHandle
+    {
+        std::vector<uint8_t> data; // for now, later this can be written to static buffer
+    };
+    std::vector<ProgramHandle> programs_;
+    std::size_t program_position_;
+    std::size_t program_write_index_;
+
+    struct ProgramAssignment
+    {
+        std::vector<uint8_t> shaders;
+    };
+
+    std::vector<ProgramAssignment> programs_assignments_;
 };
 
 template <typename Configuration, typename I2CType>

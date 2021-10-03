@@ -32,9 +32,12 @@ target_sources(msgpu
 
 target_compile_options(msgpu
     PRIVATE 
+        -rdynamic
         $<$<CONFIG:DEBUG>:-Og -g>
         $<$<CONFIG:RELEASE>:-Os>
 )
+
+target_link_libraries(msgpu PUBLIC -rdynamic)
 
 target_link_libraries(msgpu 
     PRIVATE 

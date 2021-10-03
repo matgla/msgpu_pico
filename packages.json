@@ -1,4 +1,3 @@
-
 {
     "dependencies": [
         {
@@ -12,7 +11,7 @@
                 "is_cmake_library": true
             }
         },
-        { 
+        {
             "link": "https://github.com/matgla/pico-extras.git",
             "type": "git",
             "version": "master",
@@ -22,7 +21,6 @@
                 "update_submodules": true,
                 "is_cmake_library": true
             }
-
         },
         {
             "link": "https://github.com/matgla/msgpu_interface.git",
@@ -86,9 +84,14 @@
             "options": {
                 "create_library": {
                     "type": "STATIC",
-                    "sources_filter": [ "*.c", "*.h"],
+                    "sources_filter": [
+                        "*.c",
+                        "*.h"
+                    ],
                     "sources_directory": "",
-                    "include_directories": [""]
+                    "include_directories": [
+                        ""
+                    ]
                 }
             }
         },
@@ -96,7 +99,7 @@
             "target": "gtest",
             "version": "master",
             "directory": "gtest",
-            "options": { },
+            "options": {},
             "type": "git",
             "link": "https://github.com/google/googletest.git"
         },
@@ -105,26 +108,28 @@
             "version": "v1.1.4",
             "link": "https://github.com/boost-ext/sml.git",
             "type": "git",
-            "directory": "sml", 
+            "directory": "sml",
             "options": {
                 "create_library": {
                     "type": "INTERFACE",
-                    "sources_filter": ["*.hpp"],
-                    "include_directories": ["include"],
+                    "sources_filter": [
+                        "*.hpp"
+                    ],
+                    "include_directories": [
+                        "include"
+                    ],
                     "sources_directory": "include"
                 }
             }
         },
         {
-            "target": "cmake_utils",
+            "target": "cmakeutils",
             "version": "master",
             "link": "https://github.com/matgla/CMakeUtils.git",
-            "type": "git", 
-            "directory": "cmake_utils",
+            "type": "git",
             "options": {
                 "is_cmake_library": true
             }
         }
     ]
 }
-

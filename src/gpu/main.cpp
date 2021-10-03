@@ -26,7 +26,10 @@
 #include "board.hpp"
 #include "hal_dma.hpp"
 
+#include "messages/allocate_program.hpp"
+#include "messages/attach_shader.hpp"
 #include "messages/begin_primitives.hpp"
+#include "messages/begin_program_write.hpp"
 #include "messages/bind.hpp"
 #include "messages/change_mode.hpp"
 #include "messages/clear_screen.hpp"
@@ -36,9 +39,11 @@
 #include "messages/end_primitives.hpp"
 #include "messages/generate_names.hpp"
 #include "messages/info_req.hpp"
+#include "messages/program_write.hpp"
 #include "messages/set_perspective.hpp"
 #include "messages/set_pixel.hpp"
 #include "messages/swap_buffer.hpp"
+#include "messages/use_program.hpp"
 #include "messages/write_buffer_data.hpp"
 #include "messages/write_text.hpp"
 #include "messages/write_vertex.hpp"
@@ -110,18 +115,20 @@ static msos::dl::Environment env{msos::dl::SymbolAddress{SymbolCode::libc_printf
                                  msos::dl::SymbolAddress{SymbolCode::libc_puts, &puts}};
 int exec(const std::size_t *module_address)
 {
-    eul::error::error_code ec;
-
-    const auto *module =
-        msgpu::dynamic_linker.load_module(module_address, msos::dl::LoadingModeCopyText, env, ec);
-
-    if (ec)
-    {
-        printf("Error during exec: %s\n", ec.message().data());
-        return -1;
-    }
-
-    return module->execute();
+    static_cast<void>(module_address);
+    // eul::error::error_code ec;
+    //
+    // const auto *module =
+    // msgpu::dynamic_linker.load_module(module_address, msos::dl::LoadingModeCopyText, env, ec);
+    //
+    // if (ec)
+    // {
+    // printf("Error during exec: %s\n", ec.message().data());
+    // return -1;
+    // }
+    //
+    // return module->execute();
+    return 0;
 }
 //    static_cast<void>(module_address);
 //    return 0;
@@ -148,6 +155,11 @@ void register_messages(auto &proc)
     register_handler<BindObject>(proc);
     register_handler<PrepareForData>(proc);
     register_handler<DrawArrays>(proc);
+    register_handler<ProgramWrite>(proc);
+    register_handler<BeginProgramWrite>(proc);
+    register_handler<AllocateProgramRequest>(proc);
+    register_handler<AttachShader>(proc);
+    register_handler<UseProgram>(proc);
 };
 
 struct ControlUsart
@@ -215,4 +227,3 @@ int main()
         }
     }
 }
-
