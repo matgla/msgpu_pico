@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_library(msgpu_mode INTERFACE)
+add_library(msgpu_mode STATIC)
 
 set (include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/mode)
 target_sources(msgpu_mode
-    INTERFACE 
+    PUBLIC  
         ${include_dir}/2d_graphic_mode.hpp
         ${include_dir}/3d_graphic_mode.hpp
         ${include_dir}/buffer.hpp
@@ -27,20 +27,26 @@ target_sources(msgpu_mode
         ${include_dir}/mode_base.hpp
         ${include_dir}/modes.hpp
         ${include_dir}/text_mode.hpp
+        ${include_dir}/program.hpp
+        ${include_dir}/programs.hpp 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/programs.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/program.cpp
 )
 
 
 target_link_libraries(msgpu_mode 
-    INTERFACE 
+    PUBLIC  
         common_flags
         eul_math
         eul_container
         msgpu::gpu::buffers
         msgpu::memory
         msgpu::log
+        msos_dynamic_linker
 )
 
 target_include_directories(msgpu_mode
-    INTERFACE 
+    PUBLIC  
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
