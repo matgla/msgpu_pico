@@ -20,8 +20,50 @@
 
 #include <eul/container/static_deque.hpp>
 
+#include <msos/dynamic_linker/dynamic_linker.hpp>
+#include <msos/dynamic_linker/environment.hpp>
+
 #include "mode/mode_base.hpp"
+#include "mode/programs.hpp"
 #include "mode/vertex.hpp"
+
+#include "symbol_codes.h"
+extern "C"
+{
+    struct vec3
+    {
+        float x;
+        float y;
+        float z;
+    };
+
+    struct vec4
+    {
+        vec4() = default;
+        vec4(const vec3 &v, float w_)
+            : x(v.x)
+            , y(v.y)
+            , z(v.z)
+            , w(w_)
+        {
+        }
+
+        float x;
+        float y;
+        float z;
+        float w;
+    };
+
+    vec4 gl_Position;
+    void **argument_0;
+    void *argument_0_p;
+    void *argument_1;
+    void *argument_2;
+    void *argument_3;
+    void *out_argument_0;
+    vec4 gl_Color;
+    vec3 arg;
+}
 
 namespace msgpu::mode
 {
@@ -136,19 +178,121 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
     {
         triangles_.clear();
     }
+    void process(const BeginProgramWrite &msg)
+    {
+        log::Log::trace("Received program transmission start, size: %d, pid: %d", msg.size,
+                        msg.program_id);
+        program_position_ = msg.program_id;
+        program_data_.resize(msg.size);
+        program_write_index_ = 0;
+    }
+
+    void process(const ProgramWrite &msg)
+    {
+        // log::Log::trace("Received program part: %d, current size: %d", msg.part,
+        // program_write_index_);
+        std::copy(std::begin(msg.data), std::begin(msg.data) + msg.size,
+                  program_data_.begin() + program_write_index_);
+        program_write_index_ += msg.size;
+
+        if (program_write_index_ == program_data_.size())
+        {
+            static msos::dl::Environment env{
+                msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf},
+            };
+
+            static msos::dl::DynamicLinker linker;
+            eul::error::error_code ec;
+
+            argument_0     = &argument_0_p;
+            argument_0_p   = &arg;
+            out_argument_0 = &gl_Color;
+
+            const auto *module = linker.load_module(
+                std::span<const uint8_t>(program_data_.data(), program_data_.size()),
+                msos::dl::LoadingModeCopyText, env, ec);
+
+            if (program_type_ == ProgramType::VertexShader)
+            {
+                programs_.add_vertex_shader(program_position_, module);
+            }
+            else if (program_type_ == ProgramType::FragmentShader)
+            {
+                programs_.add_fragment_shader(program_position_, module);
+            }
+        }
+    }
+
+    void process(const AllocateProgramRequest &req)
+    {
+        log::Log::trace("Received program allocation: %d\n", req.program_type);
+
+        uint8_t program_id = 0;
+
+        if (req.program_type == AllocateProgramType::AllocateProgram)
+        {
+            log::Log::trace("%s", "Allocate program");
+            std::size_t pid = programs_.allocate_program();
+            program_id      = static_cast<uint8_t>(pid);
+        }
+        else if (req.program_type == AllocateProgramType::AllocateFragmentShader)
+        {
+            log::Log::trace("%s", "Allocate fragment shader");
+            std::size_t shader_id = programs_.allocate_module();
+            program_id            = static_cast<uint8_t>(shader_id);
+            program_type_         = ProgramType::FragmentShader;
+        }
+        else if (req.program_type == AllocateProgramType::AllocateVertexShader)
+        {
+            log::Log::trace("%s", "Allocate vertex shader");
+            std::size_t shader_id = programs_.allocate_module();
+            program_id            = static_cast<uint8_t>(shader_id);
+            program_type_         = ProgramType::VertexShader;
+        }
+
+        log::Log::trace("Allocated pid: %d", program_id);
+        AllocateProgramResponse resp{
+            .program_id = program_id,
+        };
+
+        this->point_.write(resp);
+    }
+
+    void process(const UseProgram &req)
+    {
+        used_program_ = programs_.get(req.program_id);
+    }
+
+    void process(const AttachShader &req)
+    {
+        programs_.assign_module(req.program_id, req.shader_id);
+    }
 
   protected:
+    constexpr uint8_t to_rgb332(float r, float g, float b)
+    {
+        return static_cast<uint8_t>(static_cast<uint8_t>(roundf(r * 7)) << 5 |
+                                    static_cast<uint8_t>(roundf(g * 7)) << 2 |
+                                    static_cast<uint8_t>(roundf(b * 3)));
+    }
+
     void draw_horizontal_line(uint16_t x0, uint16_t x1, uint16_t color)
     {
+        static_cast<void>(color);
         if (x0 > x1)
             std::swap(x0, x1);
         if (x0 >= Configuration::resolution_width || x1 >= Configuration::resolution_width)
         {
             return;
         }
+
         for (std::size_t i = x0; i <= x1; ++i)
         {
-            Base::line_buffer_.u16[i] = color;
+            if (used_program_ && used_program_->pixel_shader_)
+            {
+                used_program_->pixel_shader_->execute();
+            }
+            Base::line_buffer_.u16[i] = to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
         }
     }
 
@@ -224,7 +368,18 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
     }
 
     eul::container::static_deque<prepared_triangle, 4096> triangles_;
+
+    Programs programs_;
+    std::vector<uint8_t> program_data_; // for now, later this can be written to static buffer
+    std::size_t program_position_;
+    std::size_t program_write_index_;
+    enum class ProgramType
+    {
+        VertexShader,
+        FragmentShader,
+    };
+    ProgramType program_type_;
+    const Program *used_program_;
 };
 
 } // namespace msgpu::mode
-

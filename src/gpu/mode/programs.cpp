@@ -20,6 +20,11 @@
 namespace msgpu::mode
 {
 
+Programs::Programs()
+    : used_program_(MAX_PROGRAM_LIST_SIZE)
+{
+}
+
 std::size_t Programs::allocate_program()
 {
     for (std::size_t i = 0; i < programs_map_.size(); ++i)
@@ -27,6 +32,7 @@ std::size_t Programs::allocate_program()
         if (programs_map_.test(i) == 0)
         {
             programs_map_[i] = 1;
+            programs_[i]     = Program();
             return i;
         }
     }
@@ -76,29 +82,22 @@ bool Programs::add_fragment_shader(std::size_t module_id, const msos::dl::Loaded
 
 bool Programs::assign_module(std::size_t program_id, std::size_t module_id)
 {
-    if (!programs_map_.test(program_id))
+    if (!programs_map_.test(program_id) || !modules_map_.test(module_id))
     {
         return false;
     }
 
-    programs_[program_id].assign_module(module_id);
+    programs_[program_id].assign_module(modules_[module_id]);
     return true;
 }
 
-bool Programs::use_program(uint8_t program_id)
+const Program *Programs::get(uint8_t program_id) const
 {
     if (!programs_map_.test(program_id))
     {
-        return false;
+        return nullptr;
     }
-
-    used_program_ = program_id;
-    return true;
-}
-
-const Program &Programs::get() const
-{
-    return programs_[used_program_];
+    return &programs_[program_id];
 }
 
 } // namespace msgpu::mode

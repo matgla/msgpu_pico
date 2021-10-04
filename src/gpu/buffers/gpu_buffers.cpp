@@ -82,12 +82,14 @@ void GpuBuffersBase::alloc(BufferEntry &entry, std::size_t size)
 {
     if (size == 0)
     {
+        printf("Size is 0\n");
         return;
     }
     const uint32_t size_in_blocks =
         static_cast<uint32_t>(size / block_size) + (size % block_size != 0);
     const uint32_t start_block = find_empty_block(size_in_blocks);
 
+    printf("Start block: %d\n", start_block);
     for (uint32_t i = start_block; i < start_block + size_in_blocks; ++i)
     {
         allocation_map_[i] = 1;
@@ -113,4 +115,3 @@ void GpuBuffersBase::dealloc(BufferEntry &entry)
 }
 
 } // namespace msgpu::buffers
-

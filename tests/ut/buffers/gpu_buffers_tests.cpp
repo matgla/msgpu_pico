@@ -77,11 +77,13 @@ TEST_F(GpuBuffersShould, AllocateMemoryWithCorrectSlots)
         sut_.allocate_names(1, &id);
         // This allocs segments 0, 1, 2
         EXPECT_CALL(memory_, write(0x0, data, sizeof(data)));
+        sut_.allocate_memory(id, sizeof(data));
         sut_.write(id, data, sizeof(data));
 
         sut_.allocate_names(1, &id2);
         // This will alloc segments 3, 4
         EXPECT_CALL(memory_, write(block_size * 3, data2, sizeof(data2)));
+        sut_.allocate_memory(id2, sizeof(data2));
         sut_.write(id2, data2, sizeof(data2));
 
         // Release 0, 1, 2
@@ -91,11 +93,13 @@ TEST_F(GpuBuffersShould, AllocateMemoryWithCorrectSlots)
 
         // Alloc 0
         EXPECT_CALL(memory_, write(0x0, data3, sizeof(data3)));
+        sut_.allocate_memory(id3, sizeof(data3));
         sut_.write(id3, data3, sizeof(data3));
     }
     {
         // Alloc 1, 2
         EXPECT_CALL(memory_, write(block_size, data2, sizeof(data2)));
+        sut_.allocate_memory(id, sizeof(data2));
         sut_.write(id, data2, sizeof(data2));
 
         // Dealloc 1
@@ -103,15 +107,18 @@ TEST_F(GpuBuffersShould, AllocateMemoryWithCorrectSlots)
 
         // Reuse 3, 4
         EXPECT_CALL(memory_, write(block_size * 3, data2, sizeof(data2)));
+        sut_.allocate_memory(id2, sizeof(data2));
         sut_.write(id2, data2, sizeof(data2));
 
         // Alloc 0
-        sut_.allocate_names(1, &id3);
         EXPECT_CALL(memory_, write(0x0, data3, sizeof(data3)));
+        sut_.allocate_names(1, &id3);
+        sut_.allocate_memory(id3, sizeof(data3));
         sut_.write(id3, data3, sizeof(data3));
     }
     // Reloc 1, 2 to 5, 6
     EXPECT_CALL(memory_, write(block_size * 5, data, sizeof(data)));
+    sut_.allocate_memory(id, sizeof(data));
     sut_.write(id, data, sizeof(data));
 }
 

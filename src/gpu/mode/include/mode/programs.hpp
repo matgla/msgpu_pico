@@ -38,15 +38,15 @@ constexpr std::size_t MAX_PROGRAM_LIST_SIZE = 10;
 class Programs
 {
   public:
+    Programs();
     std::size_t allocate_program();
     std::size_t allocate_module();
 
     bool add_fragment_shader(std::size_t module_id, const msos::dl::LoadedModule *module);
     bool add_vertex_shader(std::size_t module_id, const msos::dl::LoadedModule *module);
     bool assign_module(std::size_t program_id, std::size_t module_id);
-    bool use_program(uint8_t program_id);
 
-    const Program &get() const;
+    const Program *get(uint8_t program_id) const;
 
   private:
     std::array<Module, MAX_MODULES_LIST_SIZE> modules_;

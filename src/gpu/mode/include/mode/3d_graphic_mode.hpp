@@ -25,9 +25,6 @@
 #include <eul/container/static_vector.hpp>
 #include <eul/math/vector.hpp>
 
-#include <msos/dynamic_linker/dynamic_linker.hpp>
-#include <msos/dynamic_linker/environment.hpp>
-
 #include "mode/2d_graphic_mode.hpp"
 #include "mode/mode_base.hpp"
 #include "mode/programs.hpp"
@@ -51,44 +48,6 @@
 #include "buffers/vertex_array_buffer.hpp"
 
 #include "log/log.hpp"
-
-#include "symbol_codes.h"
-
-extern "C"
-{
-    struct vec3
-    {
-        float x;
-        float y;
-        float z;
-    };
-
-    struct vec4
-    {
-        vec4() = default;
-        vec4(const vec3 &v, float w_)
-            : x(v.x)
-            , y(v.y)
-            , z(v.z)
-            , w(w_)
-        {
-        }
-
-        float x;
-        float y;
-        float z;
-        float w;
-    };
-
-    vec4 gl_Position;
-    void **argument_0;
-    void *argument_1;
-    void *argument_2;
-    void *argument_3;
-    void *out_argument_0;
-    vec4 gl_Color;
-    vec3 arg;
-}
 
 namespace msgpu::mode
 {
@@ -145,7 +104,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     void process(const BeginPrimitives &msg)
     {
         static_cast<void>(msg);
-        // printf("Begin primitives: %d\n", msg.type);
         if (mesh_.size() == mesh_.max_size())
         {
             log::Log::error("%s", "Mesh buffer is full, dropping primitive");
@@ -171,7 +129,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     void process(const EndPrimitives &)
     {
-        // printf("End primitives\n");
     }
 
     void process(const WriteVertex &v)
@@ -185,7 +142,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
             mesh_.push_back({});
         }
 
-        // printf("Got vertex: {x: %f, y: %f, z: %f\n", v.x, v.y, v.z);
         mesh_.back().push_back({v.x, v.y, v.z});
     }
 
@@ -209,41 +165,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         gpu_buffers_.read(0, v, sizeof(v));
 
         write_offset_ += msg.size;
-    }
-
-    void process(const AllocateProgramRequest &req)
-    {
-        log::Log::trace("Received program allocation: %d\n", req.program_type);
-
-        uint8_t program_id = 0;
-
-        if (req.program_type == AllocateProgramType::AllocateProgram)
-        {
-            log::Log::trace("%s", "Allocate program");
-            std::size_t pid = programs_.allocate_program();
-            program_id      = static_cast<uint8_t>(pid);
-        }
-        else if (req.program_type == AllocateProgramType::AllocateFragmentShader)
-        {
-            log::Log::trace("%s", "Allocate fragment shader");
-            std::size_t shader_id = programs_.allocate_module();
-            program_id            = static_cast<uint8_t>(shader_id);
-            program_type_         = ProgramType::FragmentShader;
-        }
-        else if (req.program_type == AllocateProgramType::AllocateVertexShader)
-        {
-            log::Log::trace("%s", "Allocate vertex shader");
-            std::size_t shader_id = programs_.allocate_module();
-            program_id            = static_cast<uint8_t>(shader_id);
-            program_type_         = ProgramType::VertexShader;
-        }
-
-        log::Log::trace("Allocated pid: %d", program_id);
-        AllocateProgramResponse resp{
-            .program_id = program_id,
-        };
-
-        this->point_.write(resp);
     }
 
     void set_projection_matrix(float view_angle, float aspect, float z_far, float z_near)
@@ -310,60 +231,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         }
     }
 
-    void process(const BeginProgramWrite &msg)
-    {
-        log::Log::trace("Received program transmission start, size: %d, pid: %d", msg.size,
-                        msg.program_id);
-        program_position_ = msg.program_id;
-        program_data_.resize(msg.size);
-        program_write_index_ = 0;
-    }
-
-    void process(const ProgramWrite &msg)
-    {
-        // log::Log::trace("Received program part: %d, current size: %d", msg.part,
-        // program_write_index_);
-        std::copy(std::begin(msg.data), std::begin(msg.data) + msg.size,
-                  program_data_.begin() + program_write_index_);
-        program_write_index_ += msg.size;
-
-        if (program_write_index_ == program_data_.size())
-        {
-            static msos::dl::Environment env{
-                msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf},
-            };
-
-            static msos::dl::DynamicLinker linker;
-            eul::error::error_code ec;
-
-            *argument_0    = &arg;
-            out_argument_0 = &gl_Color;
-
-            const auto *module = linker.load_module(
-                std::span<const uint8_t>(program_data_.data(), program_data_.size()),
-                msos::dl::LoadingModeCopyText, env, ec);
-
-            if (program_type_ == ProgramType::VertexShader)
-            {
-                programs_.add_vertex_shader(program_position_, module);
-            }
-            else if (program_type_ == ProgramType::FragmentShader)
-            {
-                programs_.add_fragment_shader(program_position_, module);
-            }
-        }
-    }
-
-    void process(const UseProgram &req)
-    {
-        programs_.use_program(req.program_id);
-    }
-
-    void process(const AttachShader &req)
-    {
-        programs_.assign_module(req.program_id, req.shader_id);
-    }
-
     void render() override
     {
         this->framebuffer_.block();
@@ -373,13 +240,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     }
 
   protected:
-    constexpr uint8_t to_rgb332(float r, float g, float b)
-    {
-        return static_cast<uint8_t>(static_cast<uint8_t>(roundf(r * 7)) << 5 |
-                                    static_cast<uint8_t>(roundf(g * 7)) << 2 |
-                                    static_cast<uint8_t>(roundf(b * 3)));
-    }
-
     void transform_mesh()
     {
         for (const auto &triangle : mesh_)
@@ -417,8 +277,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
             light.y /= l;
             light.z /= l;
 
-            uint8_t color = to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
-
             calculate_projection(t);
 
             scale(t);
@@ -432,17 +290,13 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
             for (auto &v : t.vertex)
             {
-                const auto &program = programs_.get();
-                for (const auto &module : program)
+                argument_0_p = &v;
+                if (this->used_program_ && this->used_program_->vertex_shader_)
                 {
-                    if (module.type == ModuleType::VertexShader)
-                    {
-                        *argument_0 = &v;
-                        module.module->execute();
-                    }
+                    this->used_program_->vertex_shader_->execute();
                 }
             }
-            Base::add_triangle(tr, color);
+            Base::add_triangle(tr, 0);
         }
     }
 
@@ -539,18 +393,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     Mesh mesh_;
     buffers::GpuBuffers<memory::GpuRAM> gpu_buffers_;
     buffers::VertexArrayBuffer<memory::GpuRAM, 1024> vertex_array_buffer_;
-
-    std::vector<uint8_t> program_data_; // for now, later this can be written to static buffer
-    std::size_t program_position_;
-    std::size_t program_write_index_;
-    enum class ProgramType
-    {
-        VertexShader,
-        FragmentShader,
-    };
-    ProgramType program_type_;
-
-    Programs programs_;
 };
 
 template <typename Configuration, typename I2CType>
