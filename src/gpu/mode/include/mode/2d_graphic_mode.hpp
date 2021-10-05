@@ -23,44 +23,23 @@
 #include <msos/dynamic_linker/dynamic_linker.hpp>
 #include <msos/dynamic_linker/environment.hpp>
 
+#include <shader/globals.hpp>
+#include <shader/vec3.hpp>
+#include <shader/vec4.hpp>
+
 #include "mode/mode_base.hpp"
 #include "mode/programs.hpp"
 #include "mode/vertex.hpp"
 
 #include "symbol_codes.h"
+
 extern "C"
 {
-    struct vec3
-    {
-        float x;
-        float y;
-        float z;
-    };
-
-    struct vec4
-    {
-        vec4() = default;
-        vec4(const vec3 &v, float w_)
-            : x(v.x)
-            , y(v.y)
-            , z(v.z)
-            , w(w_)
-        {
-        }
-
-        float x;
-        float y;
-        float z;
-        float w;
-    };
-
+    void **in_argument[shader_in_arguments_size];
+    void **out_argument[shader_out_arguments_size];
+    void *in_argument_pointer[shader_in_arguments_size];
+    void *out_argument_pointer[shader_out_arguments_size];
     vec4 gl_Position;
-    void **argument_0;
-    void *argument_0_p;
-    void *argument_1;
-    void *argument_2;
-    void *argument_3;
-    void *out_argument_0;
     vec4 gl_Color;
     vec3 arg;
 }
@@ -90,6 +69,21 @@ template <typename Configuration, typename I2CType>
 class GraphicMode2D : public ModeBase<Configuration, I2CType>
 {
   public:
+    GraphicMode2D(memory::VideoRam &framebuffer, memory::GpuRAM &gpuram, I2CType &i2c,
+                  io::UsartPoint &point)
+        : ModeBase<Configuration, I2CType>(framebuffer, gpuram, i2c, point)
+    {
+        for (int i = 0; i < shader_in_arguments_size; ++i)
+        {
+            in_argument[i] = &in_argument_pointer[i];
+        }
+
+        for (int i = 0; i < shader_out_arguments_size; ++i)
+        {
+            out_argument[i] = &out_argument_pointer[i];
+        }
+    }
+
     using Base = ModeBase<Configuration, I2CType>;
     using Base::ModeBase;
     using Base::process;
@@ -204,9 +198,8 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
             static msos::dl::DynamicLinker linker;
             eul::error::error_code ec;
 
-            argument_0     = &argument_0_p;
-            argument_0_p   = &arg;
-            out_argument_0 = &gl_Color;
+            in_argument_pointer[0]  = &arg;
+            out_argument_pointer[0] = &gl_Color;
 
             const auto *module = linker.load_module(
                 std::span<const uint8_t>(program_data_.data(), program_data_.size()),
@@ -371,7 +364,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
     Programs programs_;
     std::vector<uint8_t> program_data_; // for now, later this can be written to static buffer
-    std::size_t program_position_;
+    uint8_t program_position_;
     std::size_t program_write_index_;
     enum class ProgramType
     {

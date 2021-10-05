@@ -29,6 +29,7 @@ target_sources(msgpu_mode
         ${include_dir}/text_mode.hpp
         ${include_dir}/program.hpp
         ${include_dir}/programs.hpp 
+        ${include_dir}/vertex_attribute.hpp
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/programs.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/program.cpp
@@ -44,6 +45,7 @@ target_link_libraries(msgpu_mode
         msgpu::memory
         msgpu::log
         msos_dynamic_linker
+        msgpu::interface::shader
 )
 
 target_include_directories(msgpu_mode

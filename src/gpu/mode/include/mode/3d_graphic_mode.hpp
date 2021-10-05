@@ -29,6 +29,7 @@
 #include "mode/mode_base.hpp"
 #include "mode/programs.hpp"
 #include "mode/types.hpp"
+#include "mode/vertex_attribute.hpp"
 
 #include "messages/ack.hpp"
 #include "messages/allocate_program.hpp"
@@ -40,6 +41,7 @@
 #include "messages/end_primitives.hpp"
 #include "messages/generate_names.hpp"
 #include "messages/program_write.hpp"
+#include "messages/set_vertex_attrib.hpp"
 #include "messages/use_program.hpp"
 #include "messages/write_buffer_data.hpp"
 #include "messages/write_vertex.hpp"
@@ -74,6 +76,13 @@ struct FloatTriangle
 using Vec3      = eul::math::vector<float, 3>;
 using BTriangle = eul::container::static_vector<Vertex, 3>;
 using Mesh      = eul::container::static_vector<BTriangle, 2048>;
+
+struct DrawRequest
+{
+    uint16_t id;
+    uint16_t size;
+};
+using DrawRequests = eul::container::static_vector<DrawRequest, 2048>;
 
 template <typename Configuration, typename I2CType>
 class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
@@ -127,6 +136,24 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         }
     }
 
+    void process(const SetVertexAttrib &msg)
+    {
+        log::Log::trace("Received set vertex attribute message");
+
+        if (msg.index >= shader_in_arguments_size)
+        {
+            log::Log::error("Index outside range: %d, max %d", msg.index, shader_in_arguments_size);
+            return;
+        }
+
+        auto &attrib      = vertex_attributes_[msg.index];
+        attrib.normalized = msg.normalized;
+        attrib.offset     = msg.pointer;
+        attrib.size       = msg.size;
+        attrib.stride     = msg.stride;
+        attrib.type       = msg.type;
+    }
+
     void process(const EndPrimitives &)
     {
     }
@@ -160,9 +187,6 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         log::Log::trace("Received data part %d with size %d\n", msg.part, msg.size);
 
         gpu_buffers_.write(write_buffer_, msg.data, msg.size, write_offset_);
-
-        float v[9];
-        gpu_buffers_.read(0, v, sizeof(v));
 
         write_offset_ += msg.size;
     }
@@ -215,20 +239,10 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     void process(const DrawArrays &msg)
     {
-        // log::Log::trace("Received draw arrays for id: %d, count: %d", msg.first, msg.count);
-
-        static_cast<void>(msg);
-        for (uint16_t id = 0; id < 1; ++id) // msg.first + msg.count - 1; ++id)
-        {
-            float v[9] = {};
-            gpu_buffers_.read(id, &v, sizeof(v));
-
-            mesh_.push_back({
-                Vertex{.x = v[0], .y = v[1], .z = v[2]},
-                Vertex{.x = v[3], .y = v[4], .z = v[5]},
-                Vertex{.x = v[6], .y = v[7], .z = v[8]},
-            });
-        }
+        requests_.emplace_back(DrawRequest{
+            .id   = msg.first,
+            .size = msg.count,
+        });
     }
 
     void render() override
@@ -242,8 +256,35 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
   protected:
     void transform_mesh()
     {
-        for (const auto &triangle : mesh_)
+        for (const auto &request : requests_)
         {
+            float v[9] = {};
+            gpu_buffers_.read(request.id, &v, sizeof(v));
+
+            set_arguments(&v[0]);
+            if (this->used_program_ && this->used_program_->vertex_shader_)
+            {
+                this->used_program_->vertex_shader_->execute();
+            }
+
+            set_arguments(&v[3]);
+            if (this->used_program_ && this->used_program_->vertex_shader_)
+            {
+                this->used_program_->vertex_shader_->execute();
+            }
+
+            set_arguments(&v[6]);
+            if (this->used_program_ && this->used_program_->vertex_shader_)
+            {
+                this->used_program_->vertex_shader_->execute();
+            }
+
+            BTriangle triangle{
+                Vertex{.x = v[0], .y = v[1], .z = v[2]},
+                Vertex{.x = v[3], .y = v[4], .z = v[5]},
+                Vertex{.x = v[6], .y = v[7], .z = v[8]},
+            };
+
             FloatTriangle t = convert(triangle);
 
             FloatVertex normal, line1, line2;
@@ -288,15 +329,16 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                               vertex_2d{.x = static_cast<uint16_t>(t.vertex[2].x),
                                         .y = static_cast<uint16_t>(t.vertex[2].y)}}};
 
-            for (auto &v : t.vertex)
-            {
-                argument_0_p = &v;
-                if (this->used_program_ && this->used_program_->vertex_shader_)
-                {
-                    this->used_program_->vertex_shader_->execute();
-                }
-            }
             Base::add_triangle(tr, 0);
+        }
+    }
+
+    void set_arguments(float *data)
+    {
+        for (int i = 0; i < shader_in_arguments_size; ++i)
+        {
+            auto &attribute        = vertex_attributes_[i];
+            in_argument_pointer[i] = &data[attribute.offset];
         }
     }
 
@@ -390,9 +432,12 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     buffers::IdGenerator<1024> array_names_;
     FloatVertex camera_{.x = 0, .y = 0, .z = 0};
     Matrix_4x4 projection_;
+
     Mesh mesh_;
+    DrawRequests requests_;
     buffers::GpuBuffers<memory::GpuRAM> gpu_buffers_;
     buffers::VertexArrayBuffer<memory::GpuRAM, 1024> vertex_array_buffer_;
+    VertexAttribute vertex_attributes_[shader_in_arguments_size];
 };
 
 template <typename Configuration, typename I2CType>
