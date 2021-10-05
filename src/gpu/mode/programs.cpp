@@ -25,9 +25,9 @@ Programs::Programs()
 {
 }
 
-std::size_t Programs::allocate_program()
+uint8_t Programs::allocate_program()
 {
-    for (std::size_t i = 0; i < programs_map_.size(); ++i)
+    for (uint8_t i = 0; i < programs_map_.size(); ++i)
     {
         if (programs_map_.test(i) == 0)
         {
@@ -39,9 +39,9 @@ std::size_t Programs::allocate_program()
     return -1;
 }
 
-std::size_t Programs::allocate_module()
+uint8_t Programs::allocate_module()
 {
-    for (std::size_t i = 0; i < modules_map_.size(); ++i)
+    for (uint8_t i = 0; i < modules_map_.size(); ++i)
     {
         if (modules_map_.test(i) == 0)
         {
@@ -52,7 +52,7 @@ std::size_t Programs::allocate_module()
     return -1;
 }
 
-bool Programs::add_vertex_shader(std::size_t module_id, const msos::dl::LoadedModule *module)
+bool Programs::add_vertex_shader(uint8_t module_id, const msos::dl::LoadedModule *module)
 {
     if (!modules_map_.test(module_id))
     {
@@ -66,7 +66,7 @@ bool Programs::add_vertex_shader(std::size_t module_id, const msos::dl::LoadedMo
     return true;
 }
 
-bool Programs::add_fragment_shader(std::size_t module_id, const msos::dl::LoadedModule *module)
+bool Programs::add_fragment_shader(uint8_t module_id, const msos::dl::LoadedModule *module)
 {
     if (!modules_map_.test(module_id))
     {
@@ -80,7 +80,7 @@ bool Programs::add_fragment_shader(std::size_t module_id, const msos::dl::Loaded
     return true;
 }
 
-bool Programs::assign_module(std::size_t program_id, std::size_t module_id)
+bool Programs::assign_module(uint8_t program_id, uint8_t module_id)
 {
     if (!programs_map_.test(program_id) || !modules_map_.test(module_id))
     {

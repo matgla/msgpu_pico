@@ -19,6 +19,7 @@ add_executable(msgpu_ut_mode)
 target_sources(msgpu_ut_mode
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/modes_tests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/programs_tests.cpp
 )
 
 target_link_libraries(msgpu_ut_mode
@@ -32,6 +33,33 @@ target_link_libraries(msgpu_ut_mode
         common_flags
 )
 
+target_link_options(msgpu_ut_mode 
+    PRIVATE 
+        -rdynamic
+)
+
 add_test(mode msgpu_ut_mode)
 add_dependencies(check msgpu_ut_mode)
 
+add_library(vertex_shader_test SHARED)
+
+target_sources(vertex_shader_test 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/vertex_shader_stub.cpp
+)
+
+add_library(fragment_shader_test SHARED)
+
+target_sources(fragment_shader_test 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/fragment_shader_stub.cpp
+)
+
+target_compile_definitions(msgpu_ut_mode 
+    PRIVATE 
+        -DVERTEX_SHADER_PATH="$<TARGET_FILE:vertex_shader_test>"
+        -DFRAGMENT_SHADER_PATH="$<TARGET_FILE:fragment_shader_test>"
+)
+
+add_dependencies(msgpu_ut_mode fragment_shader_test)
+add_dependencies(msgpu_ut_mode vertex_shader_test)

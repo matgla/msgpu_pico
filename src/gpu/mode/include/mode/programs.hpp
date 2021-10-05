@@ -39,12 +39,12 @@ class Programs
 {
   public:
     Programs();
-    std::size_t allocate_program();
-    std::size_t allocate_module();
+    uint8_t allocate_program();
+    uint8_t allocate_module();
 
-    bool add_fragment_shader(std::size_t module_id, const msos::dl::LoadedModule *module);
-    bool add_vertex_shader(std::size_t module_id, const msos::dl::LoadedModule *module);
-    bool assign_module(std::size_t program_id, std::size_t module_id);
+    bool add_fragment_shader(uint8_t module_id, const msos::dl::LoadedModule *module);
+    bool add_vertex_shader(uint8_t module_id, const msos::dl::LoadedModule *module);
+    bool assign_module(uint8_t program_id, uint8_t module_id);
 
     const Program *get(uint8_t program_id) const;
 
