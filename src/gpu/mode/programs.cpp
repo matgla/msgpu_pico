@@ -39,44 +39,48 @@ uint8_t Programs::allocate_program()
     return -1;
 }
 
-uint8_t Programs::allocate_module()
+uint8_t Programs::allocate_fragment_shader()
 {
     for (uint8_t i = 0; i < modules_map_.size(); ++i)
     {
         if (modules_map_.test(i) == 0)
         {
             modules_map_[i] = 1;
+            modules_[i]     = {
+                .type   = ModuleType::FragmentShader,
+                .module = nullptr,
+            };
             return i;
         }
     }
     return -1;
 }
 
-bool Programs::add_vertex_shader(uint8_t module_id, const msos::dl::LoadedModule *module)
+uint8_t Programs::allocate_vertex_shader()
 {
-    if (!modules_map_.test(module_id))
+    for (uint8_t i = 0; i < modules_map_.size(); ++i)
     {
-        return false;
+        if (modules_map_.test(i) == 0)
+        {
+            modules_map_[i] = 1;
+            modules_[i]     = {
+                .type   = ModuleType::VertexShader,
+                .module = nullptr,
+            };
+            return i;
+        }
     }
-
-    modules_[module_id] = {
-        .type   = ModuleType::VertexShader,
-        .module = module,
-    };
-    return true;
+    return -1;
 }
 
-bool Programs::add_fragment_shader(uint8_t module_id, const msos::dl::LoadedModule *module)
+bool Programs::add_shader(uint8_t module_id, const msos::dl::LoadedModule *module)
 {
     if (!modules_map_.test(module_id))
     {
         return false;
     }
 
-    modules_[module_id] = {
-        .type   = ModuleType::FragmentShader,
-        .module = module,
-    };
+    modules_[module_id].module = module;
     return true;
 }
 
@@ -87,6 +91,7 @@ bool Programs::assign_module(uint8_t program_id, uint8_t module_id)
         return false;
     }
 
+    printf("Assigned %d, to %d\n", module_id, program_id);
     programs_[program_id].assign_module(modules_[module_id]);
     return true;
 }

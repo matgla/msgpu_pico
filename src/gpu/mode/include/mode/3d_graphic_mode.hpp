@@ -49,6 +49,8 @@
 #include "buffers/gpu_buffers.hpp"
 #include "buffers/vertex_array_buffer.hpp"
 
+#include "glm/glm.hpp"
+
 #include "log/log.hpp"
 
 namespace msgpu::mode
@@ -70,6 +72,7 @@ struct FloatVertex
 
 struct FloatTriangle
 {
+    uint16_t color;
     FloatVertex vertex[3];
 };
 
@@ -128,11 +131,11 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
         if (req.type == BindObjectType::BindVertexArray)
         {
-            current_buffer_ = req.object_id - 1;
+            current_array_buffer_ = req.object_id - 1;
         }
         if (req.type == BindObjectType::BindBuffer)
         {
-            current_array_buffer_ = req.object_id - 1;
+            current_buffer_ = req.object_id - 1;
         }
     }
 
@@ -148,10 +151,12 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
         auto &attrib      = vertex_attributes_[msg.index];
         attrib.normalized = msg.normalized;
-        attrib.offset     = msg.pointer;
-        attrib.size       = msg.size;
+        attrib.size       = msg.size & 0x3;
         attrib.stride     = msg.stride;
         attrib.type       = msg.type;
+        attrib.buffer     = current_buffer_;
+        attrib.used       = true;
+        attrib.offset     = msg.pointer;
     }
 
     void process(const EndPrimitives &)
@@ -256,89 +261,157 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
   protected:
     void transform_mesh()
     {
+        FloatVertex v[3];
+
         for (const auto &request : requests_)
         {
-            float v[9] = {};
-            gpu_buffers_.read(request.id, &v, sizeof(v));
-
-            set_arguments(&v[0]);
-            if (this->used_program_ && this->used_program_->vertex_shader_)
+            int vertex_pos = 0;
+            for (int i = 0; i < request.size; ++i)
             {
-                this->used_program_->vertex_shader_->execute();
+                std::size_t buffer[shader_in_arguments_size][4];
+                for (int j = 0; j < shader_in_arguments_size; ++j)
+                {
+                    if (vertex_attributes_[j].used)
+                    {
+                        const std::size_t size = vertex_attributes_[j].size * sizeof(float);
+                        printf("Stride: %d\n", vertex_attributes_[j].stride);
+                        const std::size_t offset_size = vertex_attributes_[j].stride == 0
+                                                            ? vertex_attributes_[j].size
+                                                            : vertex_attributes_[j].stride;
+                        const std::size_t offset = offset_size * i + vertex_attributes_[j].offset;
+                        printf("Read size: %ld, with offset: %ld\n", size, offset);
+                        gpu_buffers_.read(vertex_attributes_[j].buffer, buffer[j], size, offset);
+                        in_argument_pointer[j] = buffer[j];
+                    }
+                }
+
+                vec3 color;
+                out_argument_pointer[0] = &color;
+                if (this->used_program_ && this->used_program_->vertex_shader_)
+                {
+                    this->used_program_->vertex_shader_->execute();
+                }
+
+                printf("Adding vertex: {%f %f %f}\n", gl_Position.x, gl_Position.y, gl_Position.z);
+
+                v[vertex_pos] = FloatVertex{
+                    .x = gl_Position.x,
+                    .y = gl_Position.y,
+                    .z = gl_Position.z,
+                };
+                if (++vertex_pos == 3)
+                {
+                    vertex_pos      = 0;
+                    FloatTriangle t = {
+                        .color = Base::to_rgb332(color.x, color.y, color.z),
+                        .vertex =
+                            {
+                                v[0],
+                                v[1],
+                                v[2],
+                            },
+                    };
+
+                    calculate_projection(t);
+                    scale(t);
+                    Triangle tg = {.color = t.color,
+                                   .v     = {
+                                       vertex_2d{
+                                           .x = static_cast<uint16_t>(t.vertex[0].x),
+                                           .y = static_cast<uint16_t>(t.vertex[0].y),
+                                       },
+                                       vertex_2d{
+                                           .x = static_cast<uint16_t>(t.vertex[1].x),
+                                           .y = static_cast<uint16_t>(t.vertex[1].y),
+                                       },
+                                       vertex_2d{
+                                           .x = static_cast<uint16_t>(t.vertex[2].x),
+                                           .y = static_cast<uint16_t>(t.vertex[2].y),
+                                       },
+                                   }};
+                    Base::add_triangle(tg);
+                }
             }
-
-            set_arguments(&v[3]);
-            if (this->used_program_ && this->used_program_->vertex_shader_)
-            {
-                this->used_program_->vertex_shader_->execute();
-            }
-
-            set_arguments(&v[6]);
-            if (this->used_program_ && this->used_program_->vertex_shader_)
-            {
-                this->used_program_->vertex_shader_->execute();
-            }
-
-            BTriangle triangle{
-                Vertex{.x = v[0], .y = v[1], .z = v[2]},
-                Vertex{.x = v[3], .y = v[4], .z = v[5]},
-                Vertex{.x = v[6], .y = v[7], .z = v[8]},
-            };
-
-            FloatTriangle t = convert(triangle);
-
-            FloatVertex normal, line1, line2;
-            line1.x = t.vertex[1].x - t.vertex[0].x;
-            line1.y = t.vertex[1].y - t.vertex[0].y;
-            line1.z = t.vertex[1].z - t.vertex[0].z;
-
-            line2.x = t.vertex[2].x - t.vertex[1].x;
-            line2.y = t.vertex[2].y - t.vertex[1].y;
-            line2.z = t.vertex[2].z - t.vertex[1].z;
-
-            normal.x = line1.y * line2.z - line1.z * line2.y;
-            normal.y = line1.z * line2.x - line1.x * line2.z;
-            normal.z = line1.x * line2.y - line1.y * line2.x;
-
-            float l = sqrtf(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-            normal.x /= l;
-            normal.y /= l;
-            normal.z /= l;
-
-            if (normal.x * (t.vertex[0].x - camera_.x) + normal.y * (t.vertex[0].y - camera_.y) +
-                    normal.z * (t.vertex[0].z - camera_.z) >=
-                0.0)
-            {
-                // continue;
-            }
-
-            FloatVertex light{.x = 0, .y = 0, .z = -1};
-            l = sqrtf(light.x * light.x + light.y * light.y + light.z * light.z);
-            light.x /= l;
-            light.y /= l;
-            light.z /= l;
-
-            calculate_projection(t);
-
-            scale(t);
-
-            Triangle tr{.v = {vertex_2d{.x = static_cast<uint16_t>(t.vertex[0].x),
-                                        .y = static_cast<uint16_t>(t.vertex[0].y)},
-                              vertex_2d{.x = static_cast<uint16_t>(t.vertex[1].x),
-                                        .y = static_cast<uint16_t>(t.vertex[1].y)},
-                              vertex_2d{.x = static_cast<uint16_t>(t.vertex[2].x),
-                                        .y = static_cast<uint16_t>(t.vertex[2].y)}}};
-
-            Base::add_triangle(tr, 0);
+            //
+            // printf("Send arguments: {%f %f %f}\n", v[0], v[1], v[2]);
+            // uint8_t buffer[4 * sizeof(std::size_t) * shader_in_arguments_size] = {};
+            // set_arguments(buffer);
+            // if (this->used_program_ && this->used_program_->vertex_shader_)
+            // {
+            // this->used_program_->vertex_shader_->execute();
+            // }
+            // printf("Position {%f %f %f}\n", gl_Position.x, gl_Position.y, gl_Position.z);
+            // Vertex v1 = {.x = gl_Position.x, .y = gl_Position.y, .z = gl_Position.z};
+            // set_arguments(buffer);
+            // if (this->used_program_ && this->used_program_->vertex_shader_)
+            // {
+            // this->used_program_->vertex_shader_->execute();
+            // }
+            // Vertex v2 = {.x = gl_Position.x, .y = gl_Position.y, .z = gl_Position.z};
+            //
+            // set_arguments(buffer);
+            // if (this->used_program_ && this->used_program_->vertex_shader_)
+            // {
+            // this->used_program_->vertex_shader_->execute();
+            // }
+            // Vertex v3 = {.x = gl_Position.x, .y = gl_Position.y, .z = gl_Position.z};
+            //
+            // BTriangle triangle{v1, v2, v3};
+            //
+            // FloatTriangle t = convert(triangle);
+            //
+            // FloatVertex normal, line1, line2;
+            // line1.x = t.vertex[1].x - t.vertex[0].x;
+            // line1.y = t.vertex[1].y - t.vertex[0].y;
+            // line1.z = t.vertex[1].z - t.vertex[0].z;
+            //
+            // line2.x = t.vertex[2].x - t.vertex[1].x;
+            // line2.y = t.vertex[2].y - t.vertex[1].y;
+            // line2.z = t.vertex[2].z - t.vertex[1].z;
+            //
+            // normal.x = line1.y * line2.z - line1.z * line2.y;
+            // normal.y = line1.z * line2.x - line1.x * line2.z;
+            // normal.z = line1.x * line2.y - line1.y * line2.x;
+            //
+            // float l = sqrtf(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+            // normal.x /= l;
+            // normal.y /= l;
+            // normal.z /= l;
+            //
+            // if (normal.x * (t.vertex[0].x - camera_.x) + normal.y * (t.vertex[0].y - camera_.y) +
+            // normal.z * (t.vertex[0].z - camera_.z) >=
+            // 0.0)
+            // {
+            // continue;
+            // }
+            //
+            // FloatVertex light{.x = 0, .y = 0, .z = -1};
+            // l = sqrtf(light.x * light.x + light.y * light.y + light.z * light.z);
+            // light.x /= l;
+            // light.y /= l;
+            // light.z /= l;
+            //
+            // calculate_projection(t);
+            //
+            // scale(t);
+            //
+            // Triangle tr{.v = {vertex_2d{.x = static_cast<uint16_t>(t.vertex[0].x),
+            // .y = static_cast<uint16_t>(t.vertex[0].y)},
+            //   vertex_2d{.x = static_cast<uint16_t>(t.vertex[1].x),
+            // .y = static_cast<uint16_t>(t.vertex[1].y)},
+            //   vertex_2d{.x = static_cast<uint16_t>(t.vertex[2].x),
+            // .y = static_cast<uint16_t>(t.vertex[2].y)}}};
+            //
+            // Base::add_triangle(tr, 0);
         }
     }
 
-    void set_arguments(float *data)
+    void set_arguments(uint8_t *buffer)
     {
         for (int i = 0; i < shader_in_arguments_size; ++i)
         {
             auto &attribute        = vertex_attributes_[i];
-            in_argument_pointer[i] = &data[attribute.offset];
+            in_argument_pointer[i] = attribute.buffer;
         }
     }
 
@@ -430,7 +503,7 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     uint16_t write_buffer_;
     std::size_t write_offset_;
     buffers::IdGenerator<1024> array_names_;
-    FloatVertex camera_{.x = 0, .y = 0, .z = 0};
+    // FloatVertex camera_{.color = 0, .x = 0, .y = 0, .z = 0};
     Matrix_4x4 projection_;
 
     Mesh mesh_;

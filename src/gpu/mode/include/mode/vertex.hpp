@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#pragma once
 
 #include <cstdint>
 
 namespace msgpu
 {
-namespace mode  
+namespace mode
 {
 
 struct vertex_2d
@@ -29,6 +29,5 @@ struct vertex_2d
     uint16_t y;
 };
 
-} // namespace mode 
+} // namespace mode
 } // namespace msgpu
-

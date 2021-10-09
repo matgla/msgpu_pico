@@ -160,6 +160,7 @@ void register_messages(auto &proc)
     register_handler<AllocateProgramRequest>(proc);
     register_handler<AttachShader>(proc);
     register_handler<UseProgram>(proc);
+    register_handler<SetVertexAttrib>(proc);
 };
 
 struct ControlUsart

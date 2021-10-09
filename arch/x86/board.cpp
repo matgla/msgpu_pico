@@ -16,28 +16,32 @@
 
 #include "board.hpp"
 
-#include <thread>
 #include <memory>
+#include <sched.h>
+#include <thread>
 
-
-#include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
+#include "qspi_bus.hpp"
 
-
-namespace msgpu 
+namespace msgpu
 {
 void initialize_board()
 {
+    struct sched_param param;
+    int pid_num          = getpid();
+    param.sched_priority = 20;
 
-    msgpu::QspiBus::get().register_device(0, 
-        std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer_out"));
+    printf("Set scheduler\n");
+    sched_setscheduler(pid_num, SCHED_FIFO, &param);
 
-    msgpu::QspiBus::get().register_device(1,
-        std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_gpuram")); 
-    
+    msgpu::QspiBus::get().register_device(
+        0, std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_framebuffer_out"));
+
+    msgpu::QspiBus::get().register_device(
+        1, std::make_unique<msgpu::stubs::IPS6404Stub>("qspi_gpuram"));
+
     initialize_application_specific();
 }
-
 
 void sleep_ms(uint32_t time)
 {
@@ -46,12 +50,16 @@ void sleep_ms(uint32_t time)
 
 uint32_t get_millis()
 {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
 }
 
-uint64_t get_us() 
+uint64_t get_us()
 {
-    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
 }
 
 void sleep_us(uint32_t time)
@@ -59,5 +67,4 @@ void sleep_us(uint32_t time)
     std::this_thread::sleep_for(std::chrono::microseconds(time));
 }
 
-} // namespace msgpu 
-
+} // namespace msgpu

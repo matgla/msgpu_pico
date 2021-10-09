@@ -42,6 +42,7 @@ extern "C"
     vec4 gl_Position;
     vec4 gl_Color;
     vec3 arg;
+    int default_argument = 0;
 }
 
 namespace msgpu::mode
@@ -62,6 +63,7 @@ struct prepared_triangle
 
 struct Triangle
 {
+    uint16_t color;
     vertex_2d v[3];
 };
 
@@ -75,12 +77,14 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
     {
         for (int i = 0; i < shader_in_arguments_size; ++i)
         {
-            in_argument[i] = &in_argument_pointer[i];
+            in_argument[i]         = &in_argument_pointer[i];
+            in_argument_pointer[i] = &default_argument;
         }
 
         for (int i = 0; i < shader_out_arguments_size; ++i)
         {
-            out_argument[i] = &out_argument_pointer[i];
+            out_argument[i]         = &out_argument_pointer[i];
+            out_argument_pointer[i] = &default_argument;
         }
     }
 
@@ -88,7 +92,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
     using Base::ModeBase;
     using Base::process;
 
-    void add_triangle(Triangle t, uint16_t color)
+    void add_triangle(Triangle t)
     {
         sort_triangle(t);
         // printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x,
@@ -128,7 +132,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
         {
             std::swap(p.dx1, p.dx2);
         }
-        p.color = color;
+        p.color = t.color;
         p.min_y = t.v[0].y;
         p.mid_y = std::min(t.v[1].y, t.v[2].y);
         p.max_y = std::max(t.v[1].y, t.v[2].y);
@@ -198,21 +202,11 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
             static msos::dl::DynamicLinker linker;
             eul::error::error_code ec;
 
-            in_argument_pointer[0]  = &arg;
-            out_argument_pointer[0] = &gl_Color;
-
             const auto *module = linker.load_module(
                 std::span<const uint8_t>(program_data_.data(), program_data_.size()),
                 msos::dl::LoadingModeCopyText, env, ec);
 
-            if (program_type_ == ProgramType::VertexShader)
-            {
-                programs_.add_vertex_shader(program_position_, module);
-            }
-            else if (program_type_ == ProgramType::FragmentShader)
-            {
-                programs_.add_fragment_shader(program_position_, module);
-            }
+            programs_.add_shader(program_position_, module);
         }
     }
 
@@ -231,16 +225,14 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
         else if (req.program_type == AllocateProgramType::AllocateFragmentShader)
         {
             log::Log::trace("%s", "Allocate fragment shader");
-            std::size_t shader_id = programs_.allocate_module();
+            std::size_t shader_id = programs_.allocate_fragment_shader();
             program_id            = static_cast<uint8_t>(shader_id);
-            program_type_         = ProgramType::FragmentShader;
         }
         else if (req.program_type == AllocateProgramType::AllocateVertexShader)
         {
             log::Log::trace("%s", "Allocate vertex shader");
-            std::size_t shader_id = programs_.allocate_module();
+            std::size_t shader_id = programs_.allocate_vertex_shader();
             program_id            = static_cast<uint8_t>(shader_id);
-            program_type_         = ProgramType::VertexShader;
         }
 
         log::Log::trace("Allocated pid: %d", program_id);
@@ -285,7 +277,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
             {
                 used_program_->pixel_shader_->execute();
             }
-            Base::line_buffer_.u16[i] = to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
+            Base::line_buffer_.u16[i] = color; // to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
         }
     }
 
@@ -371,7 +363,6 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
         VertexShader,
         FragmentShader,
     };
-    ProgramType program_type_;
     const Program *used_program_;
 };
 

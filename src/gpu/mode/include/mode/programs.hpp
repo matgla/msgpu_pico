@@ -40,10 +40,10 @@ class Programs
   public:
     Programs();
     uint8_t allocate_program();
-    uint8_t allocate_module();
+    uint8_t allocate_vertex_shader();
+    uint8_t allocate_fragment_shader();
 
-    bool add_fragment_shader(uint8_t module_id, const msos::dl::LoadedModule *module);
-    bool add_vertex_shader(uint8_t module_id, const msos::dl::LoadedModule *module);
+    bool add_shader(uint8_t module_id, const msos::dl::LoadedModule *module);
     bool assign_module(uint8_t program_id, uint8_t module_id);
 
     const Program *get(uint8_t program_id) const;

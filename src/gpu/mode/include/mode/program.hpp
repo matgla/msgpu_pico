@@ -36,10 +36,12 @@ class Program
     {
         if (module.type == ModuleType::VertexShader)
         {
+            printf("VERTEX SHADER\n");
             vertex_shader_ = module.module;
         }
         if (module.type == ModuleType::FragmentShader)
         {
+            printf("FRAGMENT SHADER\n");
             pixel_shader_ = module.module;
         }
         return true;

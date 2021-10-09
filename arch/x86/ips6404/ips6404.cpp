@@ -25,6 +25,8 @@
 
 #include "panic.hpp"
 
+#include <thread>
+
 namespace msgpu
 {
 namespace stubs
@@ -55,7 +57,7 @@ void IPS6404StubSm::read_base(const evTransmit &ev, int wait_cycles)
     sem_wait(memory_.sem);
 
     std::memcpy(ev.dest.data(), &memory_.memory[address], ev.dest.size());
-
+    std::this_thread::sleep_for(std::chrono::nanoseconds(20 * ev.dest.size()));
     sem_post(memory_.sem);
 }
 
@@ -80,8 +82,9 @@ void IPS6404StubSm::write(const evTransmit &ev)
     const std::size_t offset  = command_offset + address_offset;
 
     sem_wait(memory_.sem);
-
-    std::memcpy(&memory_.memory[address], &ev.src[offset], ev.src.size() - offset);
+    std::size_t size = ev.src.size() - offset;
+    std::memcpy(&memory_.memory[address], &ev.src[offset], size);
+    std::this_thread::sleep_for(std::chrono::nanoseconds(size * 20));
     sem_post(memory_.sem);
 }
 

@@ -24,11 +24,13 @@ namespace msgpu::mode
 
 struct VertexAttribute
 {
-    uint32_t size       : 2;
-    uint32_t type       : 4;
-    uint32_t normalized : 1;
-    uint32_t stride     : 4;
-    uint32_t offset     : 20;
+    uint16_t size       : 2;
+    uint16_t type       : 4;
+    uint16_t normalized : 1;
+    uint16_t used       : 1;
+    uint16_t buffer;
+    uint32_t stride;
+    uint32_t offset;
 };
 
 } // namespace msgpu::mode
