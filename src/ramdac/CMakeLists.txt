@@ -43,7 +43,14 @@ if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     pico_enable_stdio_uart(msgpu_ramdac 1)
 
     pico_add_extra_outputs(msgpu_ramdac)
-endif()
+else () 
+    add_custom_command(TARGET msgpu_ramdac 
+        POST_BUILD 
+        COMMAND 
+            echo "Enable scheduler options for: $<TARGET_FILE:msgpu_ramdac>"  && 
+            sudo setcap cap_sys_nice=ep $<TARGET_FILE:msgpu_ramdac> 
+    )
+endif ()
 
 
 

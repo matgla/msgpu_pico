@@ -77,10 +77,10 @@ TEST_F(ProgramsShould, AllocateModule)
 {
     for (std::size_t i = 0; i < MAX_MODULES_LIST_SIZE; ++i)
     {
-        EXPECT_EQ(i, sut_.allocate_module());
+        EXPECT_EQ(i, sut_.allocate_fragment_shader());
     }
-    EXPECT_EQ(std::numeric_limits<uint8_t>::max(), sut_.allocate_module());
-    EXPECT_EQ(std::numeric_limits<uint8_t>::max(), sut_.allocate_module());
+    EXPECT_EQ(std::numeric_limits<uint8_t>::max(), sut_.allocate_fragment_shader());
+    EXPECT_EQ(std::numeric_limits<uint8_t>::max(), sut_.allocate_vertex_shader());
 }
 
 TEST_F(ProgramsShould, AllocatePrograms)
@@ -95,9 +95,9 @@ TEST_F(ProgramsShould, AllocatePrograms)
 
 TEST_F(ProgramsShould, AddShaders)
 {
-    uint8_t vertex_shader_id = sut_.allocate_module();
+    uint8_t vertex_shader_id = sut_.allocate_vertex_shader();
     const auto *module       = load_module(VERTEX_SHADER_PATH);
-    sut_.add_vertex_shader(vertex_shader_id, module);
+    sut_.add_shader(vertex_shader_id, module);
 
     uint8_t program_id = sut_.allocate_program();
     EXPECT_EQ(sut_.get(program_id)->vertex_shader_, nullptr);
@@ -112,9 +112,9 @@ TEST_F(ProgramsShould, AddShaders)
     EXPECT_EQ(answer, input_a + input_b);
 
     const auto *fragment             = load_module(FRAGMENT_SHADER_PATH);
-    const uint8_t fragment_shader_id = sut_.allocate_module();
+    const uint8_t fragment_shader_id = sut_.allocate_fragment_shader();
 
-    sut_.add_fragment_shader(fragment_shader_id, fragment);
+    sut_.add_shader(fragment_shader_id, fragment);
     sut_.assign_module(program_id, fragment_shader_id);
 
     input_a = 120;

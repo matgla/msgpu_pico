@@ -250,6 +250,10 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         });
     }
 
+    void process(const GetNamedParameterIdReq &msg)
+    {
+    }
+
     void render() override
     {
         this->framebuffer_.block();
@@ -511,6 +515,10 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     buffers::GpuBuffers<memory::GpuRAM> gpu_buffers_;
     buffers::VertexArrayBuffer<memory::GpuRAM, 1024> vertex_array_buffer_;
     VertexAttribute vertex_attributes_[shader_in_arguments_size];
+    struct NamedParameter
+    {
+        char name[sizeof(GetNamedParameterIdReq::name)];
+    };
 };
 
 template <typename Configuration, typename I2CType>

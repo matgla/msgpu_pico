@@ -61,6 +61,12 @@ if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
     pico_enable_stdio_uart(msgpu 1)
 
     pico_add_extra_outputs(msgpu)
-endif()
-
-endif()
+else ()
+    add_custom_command(TARGET msgpu 
+        POST_BUILD 
+        COMMAND 
+            echo "Enable scheduler options for: $<TARGET_FILE:msgpu>"  && 
+            sudo setcap cap_sys_nice=ep $<TARGET_FILE:msgpu> 
+    )
+endif ()
+endif ()

@@ -38,6 +38,7 @@
 #include "messages/draw_triangle.hpp"
 #include "messages/end_primitives.hpp"
 #include "messages/generate_names.hpp"
+#include "messages/get_named_parameter_id.hpp"
 #include "messages/info_req.hpp"
 #include "messages/program_write.hpp"
 #include "messages/set_perspective.hpp"
@@ -161,6 +162,7 @@ void register_messages(auto &proc)
     register_handler<AttachShader>(proc);
     register_handler<UseProgram>(proc);
     register_handler<SetVertexAttrib>(proc);
+    register_handler<GetNamedParameterIdReq>(proc);
 };
 
 struct ControlUsart

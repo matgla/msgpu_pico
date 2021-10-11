@@ -20,6 +20,7 @@ target_sources(msgpu_ut_mode
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/modes_tests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/programs_tests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/indexed_buffer_tests.cpp
 )
 
 target_link_libraries(msgpu_ut_mode

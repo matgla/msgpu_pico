@@ -16,6 +16,7 @@
 
 #include "ips6404/ips6404.hpp"
 
+#include <chrono>
 #include <cstring>
 
 #include <fcntl.h>
@@ -52,12 +53,22 @@ void IPS6404StubSm::init()
 
 void IPS6404StubSm::read_base(const evTransmit &ev, int wait_cycles)
 {
+    const auto start          = std::chrono::high_resolution_clock::now();
     const std::size_t address = ev.src[1] << 16 | ev.src[2] << 8 | ev.src[3];
-    const std::size_t offset  = command_offset + address_offset + wait_cycles;
     sem_wait(memory_.sem);
 
     std::memcpy(ev.dest.data(), &memory_.memory[address], ev.dest.size());
-    std::this_thread::sleep_for(std::chrono::nanoseconds(20 * ev.dest.size()));
+
+    constexpr std::size_t time_cost_of_byte_write = 19;
+    const auto required_time = std::chrono::nanoseconds(ev.dest.size() * time_cost_of_byte_write);
+    const std::chrono::nanoseconds cost_of_function(2000);
+    const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                             std::chrono::high_resolution_clock::now() - start) +
+                         cost_of_function;
+    if (required_time > elapsed)
+    {
+        std::this_thread::sleep_for(required_time - elapsed);
+    }
     sem_post(memory_.sem);
 }
 
@@ -78,13 +89,24 @@ void IPS6404StubSm::qpi_fast_read(const evTransmit &ev)
 
 void IPS6404StubSm::write(const evTransmit &ev)
 {
+    const auto start          = std::chrono::high_resolution_clock::now();
     const std::size_t address = ev.src[1] << 16 | ev.src[2] << 8 | ev.src[3];
     const std::size_t offset  = command_offset + address_offset;
 
     sem_wait(memory_.sem);
     std::size_t size = ev.src.size() - offset;
     std::memcpy(&memory_.memory[address], &ev.src[offset], size);
-    std::this_thread::sleep_for(std::chrono::nanoseconds(size * 20));
+    constexpr std::size_t time_cost_of_byte = 19;
+    const auto required_time                = std::chrono::nanoseconds(size * time_cost_of_byte);
+
+    const std::chrono::nanoseconds cost_of_function(3000);
+    const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                             std::chrono::high_resolution_clock::now() - start) +
+                         cost_of_function;
+    if (required_time > elapsed)
+    {
+        std::this_thread::sleep_for(required_time - elapsed);
+    }
     sem_post(memory_.sem);
 }
 
