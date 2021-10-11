@@ -27,55 +27,28 @@ Programs::Programs()
 
 uint8_t Programs::allocate_program()
 {
-    for (uint8_t i = 0; i < programs_map_.size(); ++i)
-    {
-        if (programs_map_.test(i) == 0)
-        {
-            programs_map_[i] = 1;
-            programs_[i]     = Program();
-            return i;
-        }
-    }
-    return -1;
+    return programs_.allocate();
 }
 
 uint8_t Programs::allocate_fragment_shader()
 {
-    for (uint8_t i = 0; i < modules_map_.size(); ++i)
-    {
-        if (modules_map_.test(i) == 0)
-        {
-            modules_map_[i] = 1;
-            modules_[i]     = {
-                .type   = ModuleType::FragmentShader,
-                .module = nullptr,
-            };
-            return i;
-        }
-    }
-    return -1;
+    const uint8_t id    = modules_.allocate();
+    modules_[id].module = nullptr;
+    modules_[id].type   = ModuleType::PixelShader;
+    return id;
 }
 
 uint8_t Programs::allocate_vertex_shader()
 {
-    for (uint8_t i = 0; i < modules_map_.size(); ++i)
-    {
-        if (modules_map_.test(i) == 0)
-        {
-            modules_map_[i] = 1;
-            modules_[i]     = {
-                .type   = ModuleType::VertexShader,
-                .module = nullptr,
-            };
-            return i;
-        }
-    }
-    return -1;
+    const uint8_t id    = modules_.allocate();
+    modules_[id].module = nullptr;
+    modules_[id].type   = ModuleType::VertexShader;
+    return id;
 }
 
 bool Programs::add_shader(uint8_t module_id, const msos::dl::LoadedModule *module)
 {
-    if (!modules_map_.test(module_id))
+    if (!modules_.test(module_id))
     {
         return false;
     }
@@ -86,7 +59,7 @@ bool Programs::add_shader(uint8_t module_id, const msos::dl::LoadedModule *modul
 
 bool Programs::assign_module(uint8_t program_id, uint8_t module_id)
 {
-    if (!programs_map_.test(program_id) || !modules_map_.test(module_id))
+    if (!programs_.test(program_id) || !modules_.test(module_id))
     {
         return false;
     }
@@ -98,7 +71,7 @@ bool Programs::assign_module(uint8_t program_id, uint8_t module_id)
 
 const Program *Programs::get(uint8_t program_id) const
 {
-    if (!programs_map_.test(program_id))
+    if (!programs_.test(program_id))
     {
         return nullptr;
     }

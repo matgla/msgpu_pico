@@ -19,6 +19,7 @@ add_executable(msgpu_ut_mode)
 target_sources(msgpu_ut_mode
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/modes_tests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/program_tests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/programs_tests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/indexed_buffer_tests.cpp
 )

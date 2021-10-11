@@ -273,9 +273,9 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
         for (std::size_t i = x0; i <= x1; ++i)
         {
-            if (used_program_ && used_program_->pixel_shader_)
+            if (used_program_ && used_program_->pixel_shader())
             {
-                used_program_->pixel_shader_->execute();
+                used_program_->pixel_shader()->execute();
             }
             Base::line_buffer_.u16[i] = color; // to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
         }

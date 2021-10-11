@@ -24,13 +24,13 @@
 namespace msgpu::mode
 {
 
-template <typename T, std::size_t N>
+template <typename T, std::size_t N, typename IndexType = std::size_t>
 class IndexedBuffer
 {
   public:
-    std::size_t allocate()
+    IndexType allocate()
     {
-        for (std::size_t i = 0; i < N; ++i)
+        for (IndexType i = 0; i < N; ++i)
         {
             if (!map_.test(i))
             {
@@ -38,10 +38,10 @@ class IndexedBuffer
                 return i;
             }
         }
-        return static_cast<std::size_t>(-1);
+        return static_cast<IndexType>(-1);
     }
 
-    void deallocate(std::size_t id)
+    void deallocate(IndexType id)
     {
         if (id >= map_.size())
         {
@@ -53,7 +53,7 @@ class IndexedBuffer
         }
     }
 
-    bool write(std::size_t id, const T &data)
+    bool write(IndexType id, const T &data)
     {
         if (id >= map_.size())
         {
@@ -69,15 +69,28 @@ class IndexedBuffer
         return true;
     }
 
-    const T &operator[](std::size_t id) const
+    const T &operator[](IndexType id) const
     {
         return data_[id];
     }
 
-    T &operator[](std::size_t id)
+    T &operator[](IndexType id)
     {
-
         return data_[id];
+    }
+
+    bool test(IndexType t) const
+    {
+        if (t >= N)
+        {
+            return false;
+        }
+        return map_.test(t);
+    }
+
+    constexpr IndexType size() const
+    {
+        return N;
     }
 
   private:

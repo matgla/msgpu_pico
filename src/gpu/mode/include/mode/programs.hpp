@@ -23,6 +23,7 @@
 
 #include <msos/dynamic_linker/loaded_module.hpp>
 
+#include "mode/indexed_buffer.hpp"
 #include "mode/module.hpp"
 #include "mode/program.hpp"
 
@@ -49,11 +50,8 @@ class Programs
     const Program *get(uint8_t program_id) const;
 
   private:
-    std::array<Module, MAX_MODULES_LIST_SIZE> modules_;
-    std::bitset<MAX_MODULES_LIST_SIZE> modules_map_;
-
-    std::array<Program, MAX_PROGRAM_LIST_SIZE> programs_;
-    std::bitset<MAX_PROGRAM_LIST_SIZE> programs_map_;
+    IndexedBuffer<Module, MAX_MODULES_LIST_SIZE, uint8_t> modules_;
+    IndexedBuffer<Program, MAX_PROGRAM_LIST_SIZE, uint8_t> programs_;
 
     uint8_t used_program_;
 };

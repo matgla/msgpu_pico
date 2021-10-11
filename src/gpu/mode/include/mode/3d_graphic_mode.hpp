@@ -26,6 +26,7 @@
 #include <eul/math/vector.hpp>
 
 #include "mode/2d_graphic_mode.hpp"
+#include "mode/indexed_buffer.hpp"
 #include "mode/mode_base.hpp"
 #include "mode/programs.hpp"
 #include "mode/types.hpp"
@@ -291,9 +292,9 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
                 vec3 color;
                 out_argument_pointer[0] = &color;
-                if (this->used_program_ && this->used_program_->vertex_shader_)
+                if (this->used_program_ && this->used_program_->vertex_shader())
                 {
-                    this->used_program_->vertex_shader_->execute();
+                    this->used_program_->vertex_shader()->execute();
                 }
 
                 printf("Adding vertex: {%f %f %f}\n", gl_Position.x, gl_Position.y, gl_Position.z);
@@ -340,21 +341,21 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
             // printf("Send arguments: {%f %f %f}\n", v[0], v[1], v[2]);
             // uint8_t buffer[4 * sizeof(std::size_t) * shader_in_arguments_size] = {};
             // set_arguments(buffer);
-            // if (this->used_program_ && this->used_program_->vertex_shader_)
+            // if (this->used_program_ && this->used_program_->vertex_shader())
             // {
             // this->used_program_->vertex_shader_->execute();
             // }
             // printf("Position {%f %f %f}\n", gl_Position.x, gl_Position.y, gl_Position.z);
             // Vertex v1 = {.x = gl_Position.x, .y = gl_Position.y, .z = gl_Position.z};
             // set_arguments(buffer);
-            // if (this->used_program_ && this->used_program_->vertex_shader_)
+            // if (this->used_program_ && this->used_program_->vertex_shader())
             // {
             // this->used_program_->vertex_shader_->execute();
             // }
             // Vertex v2 = {.x = gl_Position.x, .y = gl_Position.y, .z = gl_Position.z};
             //
             // set_arguments(buffer);
-            // if (this->used_program_ && this->used_program_->vertex_shader_)
+            // if (this->used_program_ && this->used_program_->vertex_shader())
             // {
             // this->used_program_->vertex_shader_->execute();
             // }
@@ -519,6 +520,7 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     {
         char name[sizeof(GetNamedParameterIdReq::name)];
     };
+    IndexedBuffer<NamedParameter, 5, uint8_t> named_parameters_;
 };
 
 template <typename Configuration, typename I2CType>

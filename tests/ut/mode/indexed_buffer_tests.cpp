@@ -82,4 +82,18 @@ TEST(IndexedBufferShould, WriteData)
     EXPECT_EQ(sut[id_2], 10);
 }
 
+TEST(IndexedBufferShould, TestUsage)
+{
+    constexpr std::size_t size = 2;
+    IndexedBuffer<int, size> sut;
+
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        EXPECT_FALSE(sut.test(i));
+    }
+    sut.allocate();
+    EXPECT_TRUE(sut.test(0));
+    EXPECT_FALSE(sut.test(1));
+}
+
 } // namespace msgpu::mode

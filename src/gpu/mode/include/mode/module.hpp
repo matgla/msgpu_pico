@@ -24,7 +24,7 @@ namespace msgpu::mode
 
 enum class ModuleType : uint8_t
 {
-    FragmentShader,
+    PixelShader,
     VertexShader,
 };
 

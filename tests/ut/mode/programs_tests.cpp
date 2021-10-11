@@ -100,14 +100,14 @@ TEST_F(ProgramsShould, AddShaders)
     sut_.add_shader(vertex_shader_id, module);
 
     uint8_t program_id = sut_.allocate_program();
-    EXPECT_EQ(sut_.get(program_id)->vertex_shader_, nullptr);
-    EXPECT_EQ(sut_.get(program_id)->pixel_shader_, nullptr);
+    EXPECT_EQ(sut_.get(program_id)->vertex_shader(), nullptr);
+    EXPECT_EQ(sut_.get(program_id)->pixel_shader(), nullptr);
     sut_.assign_module(program_id, vertex_shader_id);
     input_a = 10;
     input_b = 25;
     int answer;
     output = &answer;
-    sut_.get(program_id)->vertex_shader_->execute();
+    sut_.get(program_id)->vertex_shader()->execute();
 
     EXPECT_EQ(answer, input_a + input_b);
 
@@ -119,7 +119,7 @@ TEST_F(ProgramsShould, AddShaders)
 
     input_a = 120;
     input_b = 8;
-    sut_.get(program_id)->pixel_shader_->execute();
+    sut_.get(program_id)->pixel_shader()->execute();
     EXPECT_EQ(answer, input_a * input_b);
 }
 
