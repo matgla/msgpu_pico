@@ -64,12 +64,20 @@ bool Programs::assign_module(uint8_t program_id, uint8_t module_id)
         return false;
     }
 
-    printf("Assigned %d, to %d\n", module_id, program_id);
     programs_[program_id].assign_module(modules_[module_id]);
     return true;
 }
 
 const Program *Programs::get(uint8_t program_id) const
+{
+    if (!programs_.test(program_id))
+    {
+        return nullptr;
+    }
+    return &programs_[program_id];
+}
+
+Program *Programs::get(uint8_t program_id)
 {
     if (!programs_.test(program_id))
     {

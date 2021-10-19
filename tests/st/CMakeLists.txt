@@ -14,8 +14,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if (ENABLE_TESTS)
-    add_subdirectory(ut)
-elseif (ENABLE_ST_TESTS)
-    add_subdirectory(st)
-endif ()
+add_subdirectory(framework)
+add_subdirectory(tests)

@@ -38,6 +38,7 @@ target_link_libraries(msgpu_io
     PRIVATE
         common_flags
         msgpu_arch
+        msgpu::log
     PUBLIC
         eul_container
         eul_crc

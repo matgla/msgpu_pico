@@ -38,12 +38,12 @@ target_link_libraries(msgpu_ramdac
         common_flags
 )
 
-if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
+if (${MSGPU_ARCH_VERSION} STREQUAL "pico")
     pico_enable_stdio_usb(msgpu_ramdac 0)
     pico_enable_stdio_uart(msgpu_ramdac 1)
 
     pico_add_extra_outputs(msgpu_ramdac)
-else () 
+elseif (${MSGPU_ARCH_VERSION} STREQUAL "x86_64" AND NOT ENABLE_ST_TESTS)
     add_custom_command(TARGET msgpu_ramdac 
         POST_BUILD 
         COMMAND 

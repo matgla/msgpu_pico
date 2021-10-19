@@ -16,6 +16,7 @@
 
 #include "arch/i2c.hpp"
 
+#include <filesystem>
 #include <map>
 #include <string>
 
@@ -71,6 +72,14 @@ I2C::I2C(uint8_t slave_address, uint32_t pin_scl, uint32_t pin_sda)
 
 I2C::I2C(uint32_t pin_scl, uint32_t pin_sda)
 {
+    if (std::filesystem::exists(read_fifo_name))
+    {
+        std::filesystem::remove(read_fifo_name);
+    }
+    if (std::filesystem::exists(write_fifo_name))
+    {
+        std::filesystem::remove(write_fifo_name);
+    }
     mkfifo(read_fifo_name, 0666);
     mkfifo(write_fifo_name, 0666);
     //    std::string master_name = "i2c_master";
@@ -81,7 +90,9 @@ I2C::I2C(uint32_t pin_scl, uint32_t pin_sda)
     //    };
 
     //    my_fd = &master_fd;
+    printf("I2C STUB, open file: %s\n", write_fifo_name);
     w_fd = open(write_fifo_name, O_WRONLY);
+    printf("I2C STUB, open file: %s\n", read_fifo_name);
     r_fd = open(read_fifo_name, O_RDONLY);
 }
 

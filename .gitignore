@@ -3,3 +3,7 @@ build*/
 __pycache__
 .vs/
 CMakeSettings.json
+tests_config.py
+log.html 
+output.xml 
+report.html

@@ -20,13 +20,14 @@
 
 #include "hal_dma.hpp"
 
+#include "log/log.hpp"
 
-namespace msgpu::io 
+namespace msgpu::io
 {
 
 constexpr uint8_t start_token = 0x7e;
 
-std::optional<Message> UsartPoint::pop() 
+std::optional<Message> UsartPoint::pop()
 {
     if (!messages_.empty())
     {
@@ -40,7 +41,7 @@ std::optional<Message> UsartPoint::pop()
     return {};
 }
 
-// ACTIONS 
+// ACTIONS
 
 void UsartPoint::prepare_for_header()
 {
@@ -62,31 +63,30 @@ void UsartPoint::prepare_for_payload()
     hal::reset_dma_crc();
     hal::set_usart_dma_buffer(current_message_->payload.data(), false);
     hal::set_usart_dma_transfer_count(current_message_->header.size, true);
-
 }
 
 void UsartPoint::prepare_for_crc()
 {
-    got_crc_ = static_cast<uint16_t>(hal::get_dma_crc());
+    expected_crc_ = static_cast<uint16_t>(hal::get_dma_crc());
     hal::set_usart_dma_buffer(&received_crc_, false);
     hal::set_usart_dma_transfer_count(sizeof(received_crc_), true);
 }
 
-void UsartPoint::store_message() 
+void UsartPoint::store_message()
 {
     current_message_->received = true;
-    // printf("Acking %d\n", current_message_->payload.at(0));    
+    // printf("Acking %d\n", current_message_->payload.at(0));
     // write(Ack{});
 }
 
 void UsartPoint::drop_message()
 {
     messages_.pop_back();
-    // printf("Drop -> ACK\n"); 
-    //write(Ack{});
+    // printf("Drop -> ACK\n");
+    // write(Ack{});
 }
 
-// GUARDS 
+// GUARDS
 
 bool UsartPoint::got_start_token()
 {
@@ -95,10 +95,16 @@ bool UsartPoint::got_start_token()
 
 bool UsartPoint::verify_crc()
 {
-    return got_crc_ == received_crc_;
+    if (expected_crc_ != received_crc_)
+    {
+        log::Log::error("CRC verification failed, expected: 0x%x, got: 0x%x", expected_crc_,
+                        received_crc_);
+        return false;
+    }
+    return true;
 }
 
-bool UsartPoint::message_without_size() 
+bool UsartPoint::message_without_size()
 {
     return current_message_->header.size == 0;
 }

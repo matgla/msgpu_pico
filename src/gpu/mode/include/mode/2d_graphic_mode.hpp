@@ -86,6 +86,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
             out_argument[i]         = &out_argument_pointer[i];
             out_argument_pointer[i] = &default_argument;
         }
+        out_argument_pointer[0] = &gl_Color;
     }
 
     using Base = ModeBase<Configuration, I2CType>;
@@ -95,8 +96,8 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
     void add_triangle(Triangle t)
     {
         sort_triangle(t);
-        // printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x,
-        // t.v[0].y, t.v[1].x, t.v[1].y, t.v[2].x, t.v[2].y);
+        printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x,
+               t.v[0].y, t.v[1].x, t.v[1].y, t.v[2].x, t.v[2].y);
 
         if (triangles_.size() == triangles_.max_size())
         {
@@ -195,6 +196,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
         if (program_write_index_ == program_data_.size())
         {
+            log::Log::trace("Received program: %d", program_position_);
             static msos::dl::Environment env{
                 msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf},
             };
@@ -245,11 +247,13 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
     void process(const UseProgram &req)
     {
+        log::Log::trace("Using program: %d", req.program_id);
         used_program_ = programs_.get(req.program_id);
     }
 
     void process(const AttachShader &req)
     {
+        log::Log::trace("Assign shader %d to program %d", req.shader_id, req.program_id);
         programs_.assign_module(req.program_id, req.shader_id);
     }
 
@@ -277,6 +281,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
             {
                 used_program_->pixel_shader()->execute();
             }
+
             Base::line_buffer_.u16[i] = color; // to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
         }
     }
@@ -299,7 +304,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
         const float x0   = std::min(triangle.sx, triangle.ex);
         const float x1   = std::max(triangle.sx, triangle.ex);
         draw_horizontal_line(static_cast<uint16_t>(round(x0)), static_cast<uint16_t>(round(x1)),
-                             triangle.color);
+                             0xfff);
         triangle.sx += triangle.dx2;
         triangle.ex += e_dx;
     }

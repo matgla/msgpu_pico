@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if (USE_SIMULATION)
+if (${MSGPU_ARCH_VERSION} STREQUAL "x86_64")
     add_subdirectory(x86-64)
-elseif (NOT ENABLE_TESTS)
+elseif (${MSGPU_ARCH_VERSION} STREQUAL "pico") 
     add_subdirectory(pico)
 endif ()
+

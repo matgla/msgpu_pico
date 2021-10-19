@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once 
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -30,92 +30,101 @@
 
 #include "io/message.hpp"
 
-namespace msgpu::io 
+namespace msgpu::io
 {
 
-struct init{};
-struct dma_finished{};
+struct init
+{
+};
+struct dma_finished
+{
+};
 
 /// @brief Implements external world interface with standard USART protocol
-/// 
-/// @details 
-///  Simple class to receive messages from external devices via USART protocol. 
+///
+/// @details
+///  Simple class to receive messages from external devices via USART protocol.
 ///  Received data is validated, but retransmission of frames is not supported.
-///  Performance is more desirable than reliability. 
+///  Performance is more desirable than reliability.
 ///  Frames are limited to 32 bytes.
-///  Protocol uses little endian byte order. 
-///  Frames format: 
+///  Protocol uses little endian byte order.
+///  Frames format:
 ///  +--------------+
 ///  |     0x7e     |  1 - byte
 ///  +--------------+
-///  |      id      |  2 - byte 
-///  +--------------+  
-///  |     size     |  3 - byte 
-///  +--------------+ 
-///  |              |  4 - byte  
-///  +  CRC16-CCIT  + 
-///  |              |  5 - byte 
+///  |      id      |  2 - byte
+///  +--------------+
+///  |     size     |  3 - byte
+///  +--------------+
+///  |              |  4 - byte
+///  +  CRC16-CCIT  +
+///  |              |  5 - byte
 ///  +--------------+
 ///  |              |
 ///  .    payload   .  0 - 32 bytes
 ///  |              |
 ///  +--------------+
-///  |              |  
-///  +  CRC16-CCIT  +  0 - 2 bytes  
-///  |              |   
-///  +--------------+ 
+///  |              |
+///  +  CRC16-CCIT  +  0 - 2 bytes
+///  |              |
+///  +--------------+
 ///
 /// @author Mateusz Stadnik
 class UsartPoint
 {
     using Self = UsartPoint;
-public:
-    auto operator()() 
+
+  public:
+    auto operator()()
     {
         using namespace boost::sml;
 
         auto const got_frame_start = wrap(&Self::got_start_token);
-        auto const verify = wrap(&Self::verify_crc);
-        auto const empty_message = wrap(&Self::message_without_size);
-        auto const verify_header = wrap(&Self::check_header);
+        auto const verify          = wrap(&Self::verify_crc);
+        auto const empty_message   = wrap(&Self::message_without_size);
+        auto const verify_header   = wrap(&Self::check_header);
         return make_transition_table(
-           *"init"_s                 + event<init>                                    
-                        / (&Self::prepare_for_token)  = "wait_for_start_token"_s,
-            "wait_for_start_token"_s + event<dma_finished> [ got_frame_start ] 
-                        / (&Self::prepare_for_header) = "wait_for_header"_s, 
-            "wait_for_start_token"_s + event<dma_finished> [ !got_frame_start ] 
-                        / (&Self::prepare_for_token)  = "wait_for_start_token"_s,
-            "wait_for_header"_s + event<dma_finished>
-                        / (&Self::prepare_for_crc)    = "wait_for_header_crc"_s,
-            "wait_for_header_crc"_s + event<dma_finished> [ verify && verify_header && !empty_message ]
-                        / (&Self::prepare_for_payload) = "wait_for_payload"_s,
-            "wait_for_header_crc"_s + event<dma_finished> [ verify && empty_message ] 
-                        / (wrap(&Self::store_message), &Self::prepare_for_token) = "wait_for_start_token"_s,
-            "wait_for_header_crc"_s + event<dma_finished> [ !verify || !verify_header] 
-                        / (wrap(&Self::drop_message), &Self::prepare_for_token)  = "wait_for_start_token"_s, 
-            "wait_for_payload"_s + event<dma_finished> 
-                        / (&Self::prepare_for_crc)   = "wait_for_payload_crc"_s, 
-            "wait_for_payload_crc"_s + event<dma_finished> [ verify ] 
-                        / (wrap(&Self::store_message), &Self::prepare_for_token) = "wait_for_start_token"_s, 
-            "wait_for_payload_crc"_s + event<dma_finished> [ !verify ] 
-                        / (wrap(&Self::drop_message), &Self::prepare_for_token) = "wait_for_start_token"_s
-        );
+            *"init"_s + event<init> / (&Self::prepare_for_token) = "wait_for_start_token"_s,
+            "wait_for_start_token"_s + event<dma_finished>[got_frame_start] /
+                                           (&Self::prepare_for_header) = "wait_for_header"_s,
+            "wait_for_start_token"_s + event<dma_finished>[!got_frame_start] /
+                                           (&Self::prepare_for_token) = "wait_for_start_token"_s,
+            "wait_for_header"_s + event<dma_finished> / (&Self::prepare_for_crc) =
+                "wait_for_header_crc"_s,
+            "wait_for_header_crc"_s +
+                event<dma_finished>[verify && verify_header && !empty_message] /
+                    (&Self::prepare_for_payload) = "wait_for_payload"_s,
+            "wait_for_header_crc"_s + event<dma_finished>[verify && empty_message] /
+                                          (wrap(&Self::store_message), &Self::prepare_for_token) =
+                "wait_for_start_token"_s,
+            "wait_for_header_crc"_s + event<dma_finished>[!verify || !verify_header] /
+                                          (wrap(&Self::drop_message), &Self::prepare_for_token) =
+                "wait_for_start_token"_s,
+            "wait_for_payload"_s + event<dma_finished> / (&Self::prepare_for_crc) =
+                "wait_for_payload_crc"_s,
+            "wait_for_payload_crc"_s + event<dma_finished>[verify] /
+                                           (wrap(&Self::store_message), &Self::prepare_for_token) =
+                "wait_for_start_token"_s,
+            "wait_for_payload_crc"_s + event<dma_finished>[!verify] /
+                                           (wrap(&Self::drop_message), &Self::prepare_for_token) =
+                "wait_for_start_token"_s);
     }
 
-    /// @brief Provide access to ready messages 
-        /// @return Message object if it's ready to process or none if queue is empty
+    /// @brief Provide access to ready messages
+    /// @return Message object if it's ready to process or none if queue is empty
     std::optional<Message> pop();
 
     template <typename T>
-    void write(const T& msg)
+    void write(const T &msg)
     {
         Header header;
-        header.id = T::id;
+        header.id   = T::id;
         header.size = sizeof(T);
 
         std::memcpy(write_buffer_, &header, sizeof(header));
-        uint16_t header_crc = calculate_crc16(std::span<const uint8_t>(write_buffer_, sizeof(Header)));
-        uint8_t* next_pos = write_buffer_ + sizeof(header);
+        uint16_t header_crc =
+            calculate_crc16(std::span<const uint8_t>(write_buffer_, sizeof(Header)));
+        uint8_t *next_pos = write_buffer_ + sizeof(header);
         std::memcpy(write_buffer_ + sizeof(header), &header_crc, sizeof(header_crc));
         next_pos += sizeof(header_crc);
         std::memcpy(next_pos, &msg, sizeof(T));
@@ -123,14 +132,15 @@ public:
         next_pos += sizeof(T);
         std::memcpy(next_pos, &message_crc, sizeof(message_crc));
 
-        std::span<const uint8_t> data(write_buffer_, sizeof(Header) + sizeof(T) + 2 * sizeof(uint16_t));
+        std::span<const uint8_t> data(write_buffer_,
+                                      sizeof(Header) + sizeof(T) + 2 * sizeof(uint16_t));
 
         constexpr uint8_t start_flag = 0x7e;
         write_bytes(&start_flag, sizeof(start_flag));
         write_bytes(data);
     }
 
-private:
+  private:
     // ==================== GUARDS ==================//
     /// @brief Checks if token buffer contains 0x7e, which is symbol for frame start.
     bool got_start_token();
@@ -139,66 +149,66 @@ private:
     /// @brief Checks if message contains only header (id, without any payload).
     bool message_without_size();
 
-    /// @brief Checks if payload size is correct (<=32 bytes) 
+    /// @brief Checks if payload size is correct (<=32 bytes)
     bool check_header();
 
     // =================== ACTIONS ==================//
 
-    /// @brief Setup DMA controller to fetch header from usart. 
-    /// 
-    /// @details 
+    /// @brief Setup DMA controller to fetch header from usart.
+    ///
+    /// @details
     ///  This function also resets DMA CRC block to calculate CRC via hardware.
     ///  Used algorithm is CRC16-CCIT with 0x0000 initial state.
     ///  Header will be stored in \ref UsartPoint::current_message_.header.
     ///
     void prepare_for_header();
 
-    /// @brief Setup DMA controller to fetch single byte. 
-    /// 
-    /// @details 
-    ///  This member functions is used to synchronize frame in case of transmission errors. 
+    /// @brief Setup DMA controller to fetch single byte.
+    ///
+    /// @details
+    ///  This member functions is used to synchronize frame in case of transmission errors.
     ///  Start frame token will be stored in \ref UsartPoint::token_buffer_.
     ///
     void prepare_for_token();
 
-    /// @brief Setup DMA controller to fetch payload. 
-    /// 
-    /// @details 
-    ///  This function resets DMA CRC block to correctly calculate CRC for payload. 
-    ///  Used algorithm is CRC16-CCIT with 0x0000 initial state. 
-    ///  
-    ///  Size of payload is taken from last captured message header \ref UsartPoint::current_message_.header.
-    ///  Payload will be stored in \ref UsartPoint::current_message_.payload
+    /// @brief Setup DMA controller to fetch payload.
+    ///
+    /// @details
+    ///  This function resets DMA CRC block to correctly calculate CRC for payload.
+    ///  Used algorithm is CRC16-CCIT with 0x0000 initial state.
+    ///
+    ///  Size of payload is taken from last captured message header \ref
+    ///  UsartPoint::current_message_.header. Payload will be stored in \ref
+    ///  UsartPoint::current_message_.payload
     ///
     void prepare_for_payload();
 
-    /// @brief Setup DMA controller to fetch 2-byte CRC from peer.  
-    /// 
-    /// @details 
-    ///   Used to capture CRC value calculated by peer for header and payload. 
+    /// @brief Setup DMA controller to fetch 2-byte CRC from peer.
+    ///
+    /// @details
+    ///   Used to capture CRC value calculated by peer for header and payload.
     ///   CRC is stored in \ref UsartPoint::received_crc_.
     ///
     void prepare_for_crc();
 
-    /// @brief Store received message in message queue 
-    /// 
-    /// @details 
-    ///   Used to store message in queue for further processing. 
-    ///   Data in buffer contains header and 32 bytes of raw bytes. 
-    ///   Further processing by be done by other component 
-    /// 
+    /// @brief Store received message in message queue
+    ///
+    /// @details
+    ///   Used to store message in queue for further processing.
+    ///   Data in buffer contains header and 32 bytes of raw bytes.
+    ///   Further processing by be done by other component
+    ///
     void store_message();
 
     /// @brief Drop message from buffer in case of failure.
     void drop_message();
 
     uint8_t token_buffer_;
-    uint16_t got_crc_;
+    uint16_t expected_crc_;
     uint16_t received_crc_;
-    Message* current_message_;
+    Message *current_message_;
     uint8_t write_buffer_[128];
     eul::container::static_deque<Message, 32> messages_;
 };
 
-} // namespace msgpu::io 
-
+} // namespace msgpu::io

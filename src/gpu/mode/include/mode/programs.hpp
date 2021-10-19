@@ -48,6 +48,7 @@ class Programs
     bool assign_module(uint8_t program_id, uint8_t module_id);
 
     const Program *get(uint8_t program_id) const;
+    Program *get(uint8_t program_id);
 
   private:
     IndexedBuffer<Module, MAX_MODULES_LIST_SIZE, uint8_t> modules_;

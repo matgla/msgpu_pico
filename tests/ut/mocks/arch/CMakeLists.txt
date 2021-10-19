@@ -16,9 +16,9 @@
 
 message (STATUS "Configuring arch for UT")
 
-add_library(msgpu_arch STATIC)
+add_library(msgpu_arch_for_ut STATIC)
 
-target_sources(msgpu_arch 
+target_sources(msgpu_arch_for_ut 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.hpp
@@ -33,13 +33,13 @@ target_sources(msgpu_arch
         ${CMAKE_CURRENT_SOURCE_DIR}/sync.cpp
 )
 
-target_include_directories(msgpu_arch
+target_include_directories(msgpu_arch_for_ut
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}
 )
 
-target_link_libraries(msgpu_arch 
+target_link_libraries(msgpu_arch_for_ut
     PUBLIC 
         msgpu_arch_interface
         msgpu_generator_interface

@@ -46,6 +46,7 @@
 #include "messages/swap_buffer.hpp"
 #include "messages/use_program.hpp"
 #include "messages/write_buffer_data.hpp"
+#include "messages/write_parameter.hpp"
 #include "messages/write_text.hpp"
 #include "messages/write_vertex.hpp"
 //#include "messages/begin_primitives.hpp"
@@ -163,6 +164,7 @@ void register_messages(auto &proc)
     register_handler<UseProgram>(proc);
     register_handler<SetVertexAttrib>(proc);
     register_handler<GetNamedParameterIdReq>(proc);
+    register_handler<PrepareForParameterData>(proc);
 };
 
 struct ControlUsart
@@ -180,20 +182,24 @@ int main()
     printf("=        MSGPU           =\n");
     printf("==========================\n");
 
+    printf("* Initialize QSPI\n");
     msgpu::Qspi qspi(msgpu::framebuffer_config, 3.0f);
     msgpu::Qspi qspi_ram(msgpu::gpuram_config, 3.0f);
 
     qspi.init();
     qspi_ram.init();
 
+    printf("** QSPI initialization finished **\n");
     msgpu::memory::QspiPSRAM qspi_memory(qspi, true);
     msgpu::memory::VideoRam framebuffer(qspi_memory);
-
+    printf("** Framebuffer created          **\n");
     msgpu::memory::QspiPSRAM qspi_gpuram(qspi_ram, true);
     msgpu::memory::GpuRAM gpuram(qspi_gpuram);
+    printf("** GPURAM created               ** \n");
     msgpu::I2C i2c(msgpu::i2c_scl, msgpu::i2c_sda);
     msgpu::io::UsartPoint usart_io_data;
 
+    printf("** I2C initialized **\n");
     boost::sml::sm<msgpu::io::UsartPoint> usart_io(usart_io_data);
 
     ControlUsart c;
@@ -202,12 +208,17 @@ int main()
         c.cv.notify_all();
     });
 
+    printf("** GPU/IO initialized\n");
     modes.switch_to<DualBuffered3DGraphic_320x240_256>(framebuffer, gpuram, i2c, usart_io_data);
+
+    printf("** Switched to default mode\n");
+
     msgpu::processor::MessageProcessor proc;
     register_messages(proc);
 
     usart_io.process_event(msgpu::io::init{});
 
+    printf("** Initialization finished **\n");
     while (true)
     {
         {

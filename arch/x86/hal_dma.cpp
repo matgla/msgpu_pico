@@ -18,29 +18,29 @@
 #include "hal_dma.hpp"
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <cstring>
-#include <vector>
-#include <thread>
+#include <future>
+#include <iostream>
 #include <memory>
 #include <mutex>
-#include <future>
 #include <optional>
-#include <condition_variable>
-#include <iostream>
+#include <thread>
+#include <vector>
 
 #include <eul/crc/crc.hpp>
 
-#include "board.hpp" 
+#include "board.hpp"
 
-namespace hal 
+namespace hal
 {
 
-namespace 
+namespace
 {
-static UsartHandler handler; 
+static UsartHandler handler;
 static std::atomic<std::size_t> size_to_receive;
-static std::atomic<void*> buffer_ptr;
+static std::atomic<void *> buffer_ptr;
 static std::atomic<uint32_t> crc;
 static std::atomic<bool> trigger_;
 static std::mutex mutex_;
@@ -54,60 +54,61 @@ void reset_dma_crc()
     crc = 0;
 }
 
-void set_usart_dma_buffer(void* buffer, bool trigger)
+void set_usart_dma_buffer(void *buffer, bool trigger)
 {
     buffer_ptr = buffer;
-    trigger_ = trigger;
+    trigger_   = trigger;
     cv.notify_one();
 }
 
 void set_usart_dma_transfer_count(std::size_t size, bool trigger)
 {
-    size_to_receive = size; 
-    trigger_ = trigger;
+    size_to_receive = size;
+    trigger_        = trigger;
     cv.notify_one();
 }
 
-void set_usart_handler(const UsartHandler& h)
+void set_usart_handler(const UsartHandler &h)
 {
-    handler = h;
+    handler    = h;
     stop_usart = false;
-    t.reset(new std::thread([]{
+    t.reset(new std::thread([] {
         while (true)
         {
-            if (stop_usart) 
+            if (stop_usart)
             {
                 return;
             }
             std::unique_lock lk(mutex_);
             if (!trigger_)
             {
-                 if(!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_.load(); }))
-                 {
-                     continue;
-                 }
+                if (!cv.wait_for(lk, std::chrono::microseconds(10), [] { return trigger_.load(); }))
+                {
+                    continue;
+                }
             }
             trigger_ = false;
-            std::vector<uint8_t> buf; 
+            std::vector<uint8_t> buf;
             std::size_t i = 0;
             while (i < size_to_receive)
             {
-                if (stop_usart) 
+                if (stop_usart)
                 {
                     return;
                 }
                 uint8_t byte = msgpu::read_byte();
                 buf.push_back(byte);
-                crc = calculate_crc<uint16_t, ccit_polynomial, 0, false>(std::span<const uint8_t>(&byte, 1), crc);
+                crc = calculate_crc<uint16_t, ccit_polynomial, 0, false>(
+                    std::span<const uint8_t>(&byte, 1), crc);
                 ++i;
             }
 
             std::memcpy(buffer_ptr, buf.data(), size_to_receive);
 
-            if (handler) 
+            if (handler)
             {
                 crc = calculate_crc16(buf);
-                // lk.unlock(); 
+                // lk.unlock();
                 handler();
             }
         }

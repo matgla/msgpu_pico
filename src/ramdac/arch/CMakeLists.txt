@@ -16,9 +16,8 @@
 
 add_subdirectory (include/generator)
 
-if (USE_SIMULATION)
+if (${MSGPU_ARCH_VERSION} STREQUAL "x86_64")
     add_subdirectory(x86-64)
-elseif (NOT ENABLE_TESTS) 
+elseif (${MSGPU_ARCH_VERSION} STREQUAL "pico") 
     add_subdirectory(pico)
 endif ()
-

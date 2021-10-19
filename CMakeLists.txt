@@ -18,7 +18,6 @@ cmake_minimum_required(VERSION 3.9)
 
 project (msgpu NONE) 
 
-
 find_package (Python3 COMPONENTS Interpreter) 
 
 include(FetchContent)
@@ -36,7 +35,15 @@ include (mspkg)
 
 setup_mspkg(${mspkg_SOURCE_DIR})
 
-if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
+if (USE_SIMULATION OR ENABLE_ST_TESTS)
+    set (MSGPU_ARCH_VERSION "x86_64")
+elseif (ENABLE_TESTS)
+    set (MSGPU_ARCH_VERSION "x86_64_stub")
+else ()
+    set (MSGPU_ARCH_VERSION "pico")
+endif ()
+
+if (${MSGPU_ARCH_VERSION} STREQUAL "pico")
     message (STATUS "Searching pico sdk")
     find_package(pico-sdk REQUIRED)
     include (cmake/preload/toolchains/pico_arm_gcc)
@@ -46,17 +53,14 @@ endif ()
 enable_language(ASM C CXX) 
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
+if (${MSGPU_ARCH_VERSION} STREQUAL "pico")
     find_package(pico-extras REQUIRED)
     include (external/pico_extras_import)
     pico_sdk_init()
-    set (arch "ARM")
     set (MSOS_DL_ARCH "armv-6m")
-else ()
-    set (arch "x86_64")
+elseif (${MSGPU_ARCH_VERSION} STREQUAL "x86_64" OR ${MSGPU_ARCH_VERSION} STREQUAL "x86_64_stub")
     set (MSOS_DL_ARCH "x86_64-linux")
 endif ()
-
 
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 20)
@@ -85,10 +89,6 @@ find_package(msgpu_interface)
 
 set (MSOS_DYNAMIC_LINKER_API_FILE ${PROJECT_SOURCE_DIR}/api/symbol_codes.json)
 
-if (USE_SIMULATION)
-    set (MSOS_DL_ARCH x86_64-linux)
-endif () 
-
 find_package(msos_dl REQUIRED)
 
 add_subdirectory(arch)
@@ -98,7 +98,7 @@ add_subdirectory(src)
 
 add_subdirectory(lib)
 
-if (ENABLE_TESTS)
+if (ENABLE_TESTS OR ENABLE_ST_TESTS)
     include(CTest)
     enable_testing()
     add_subdirectory(tests)

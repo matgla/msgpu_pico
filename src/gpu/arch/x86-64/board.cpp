@@ -16,59 +16,84 @@
 
 #include "board.hpp"
 
+#include <filesystem>
 #include <memory>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <unistd.h>
 
-#include <termios.h>
-#include "qspi_bus.hpp"
 #include "ips6404/ips6404.hpp"
+#include "qspi_bus.hpp"
+#include <termios.h>
 
 #include "hal_dma.hpp"
 
-namespace 
+namespace
 {
 
 static int serial_port_id;
 static int serial_write_port;
 
-} // namespace 
-
+} // namespace
 
 void exit_handler(int sig)
 {
     static_cast<void>(sig);
-     
+
     hal::close_usart();
     close(serial_port_id);
+    close(serial_write_port);
+
+    if (std::filesystem::exists("/tmp/gpu_com"))
+    {
+        std::filesystem::remove("/tmp/gpu_com");
+    }
+    if (std::filesystem::exists("/tmp/gpu_com_2"))
+    {
+        std::filesystem::remove("/tmp/gpu_com_2");
+    }
     exit(0);
 }
 
-namespace msgpu 
+namespace msgpu
 {
 
 void initialize_application_specific()
 {
-    printf("Opening serial port: /tmp/msgpu_virtual_serial_0\n");
-    mkfifo("/tmp/gpu_com", 0666);
-    mkfifo("/tmp/gpu_com_2", 0666);
+    constexpr const char *in_file = "/tmp/gpu_com";
+    if (std::filesystem::exists(in_file))
+    {
+        std::filesystem::remove(in_file);
+    }
+
+    constexpr const char *out_file = "/tmp/gpu_com_2";
+    if (std::filesystem::exists(out_file))
+    {
+        std::filesystem::remove(out_file);
+    }
+
+    mkfifo(in_file, 0666);
+    mkfifo(out_file, 0666);
 
     printf("Opening input: /tmp/gpu_com\n");
-    serial_port_id = open("/tmp/gpu_com", O_RDONLY);
+    serial_port_id = open(in_file, O_RDONLY);
     printf("Opening output: /tmp/gpu_com_2\n");
-    serial_write_port = open("/tmp/gpu_com_2", O_WRONLY);
+    serial_write_port = open(out_file, O_WRONLY);
+
     signal(SIGINT, exit_handler);
 }
 
-uint8_t read_byte() 
+uint8_t read_byte()
 {
-    uint8_t byte; 
-    read(serial_port_id, &byte, sizeof(byte));
+    uint8_t byte;
+    if (read(serial_port_id, &byte, sizeof(byte)) == -1)
+    {
+        printf("Error while reading\n");
+    }
     return byte;
 }
 
@@ -77,11 +102,9 @@ void write_bytes(std::span<const uint8_t> data)
     write(serial_write_port, data.data(), data.size());
 }
 
-void write_bytes(const void* data, std::size_t size)
+void write_bytes(const void *data, std::size_t size)
 {
     write(serial_write_port, data, size);
 }
 
 } // namespace msgpu
-
-

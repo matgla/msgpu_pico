@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-find_package(msgui REQUIRED)
+find_package(msgpu_interface REQUIRED)
 
 add_subdirectory(arch)
 add_subdirectory(buffers)
@@ -21,8 +21,6 @@ add_subdirectory(io)
 add_subdirectory(mode)
 add_subdirectory(processor)
 
-
-if (NOT ENABLE_TESTS)
 add_executable(msgpu) 
 
 target_sources(msgpu 
@@ -52,21 +50,21 @@ target_link_libraries(msgpu
         msgpu_mode
         msgpu_generator
         msgpu_processor
+        msgpu_messages
 )
 
 add_dependencies(msgpu api_generator)
 
-if (NOT USE_SIMULATION AND NOT ENABLE_TESTS)
+if (${MSGPU_ARCH_VERSION} STREQUAL "pico")
     pico_enable_stdio_usb(msgpu 0)
     pico_enable_stdio_uart(msgpu 1)
 
     pico_add_extra_outputs(msgpu)
-else ()
+elseif (${MSGPU_ARCH_VERSION} STREQUAL "x86_64" AND NOT ENABLE_ST_TESTS)
     add_custom_command(TARGET msgpu 
         POST_BUILD 
         COMMAND 
             echo "Enable scheduler options for: $<TARGET_FILE:msgpu>"  && 
             sudo setcap cap_sys_nice=ep $<TARGET_FILE:msgpu> 
     )
-endif ()
 endif ()

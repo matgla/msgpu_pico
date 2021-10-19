@@ -153,7 +153,14 @@ void deinitialize_signal_generator()
 
 void initialize_application_specific()
 {
+    printf("================================\n");
     signal(SIGINT, exit_handler);
+    const std::string_view dump_frames = std::getenv("DUMP_FRAMES");
+    if (dump_frames == "ON" || dump_frames == "1")
+    {
+        printf("[BOARD/SIM] Enable frames dumping\n");
+        enable_dumping = true;
+    }
 }
 
 void enable_display()
@@ -162,4 +169,3 @@ void enable_display()
 }
 
 } // namespace msgpu
-

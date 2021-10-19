@@ -14,8 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if (ENABLE_TESTS)
-    add_subdirectory(ut)
-elseif (ENABLE_ST_TESTS)
-    add_subdirectory(st)
-endif ()
+add_library(shader_stub SHARED)
+
+target_sources(shader_stub 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader_stub.cpp
+)
+
+
+add_library(vertex_shader_stub SHARED)
+
+target_sources(vertex_shader_stub 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/vertex_shader_stub.cpp
+)
+
+add_library(pixel_shader_stub SHARED)
+
+target_sources(pixel_shader_stub 
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/pixel_shader_stub.cpp
+)
+
+target_link_libraries(pixel_shader_stub
+    PRIVATE 
+        msgpu::interface::shader
+)
+
+target_link_libraries(vertex_shader_stub
+    PRIVATE 
+        msgpu::interface::shader
+)

@@ -192,6 +192,12 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     {
         log::Log::trace("Received data part %d with size %d\n", msg.part, msg.size);
 
+        for (int i = 0; i < msg.size; ++i)
+        {
+            printf("%x, ", msg.data[i]);
+        }
+        printf("\n");
+        printf("Write to %d, size %d, offset %ld\n", write_buffer_, msg.size, write_offset_);
         gpu_buffers_.write(write_buffer_, msg.data, msg.size, write_offset_);
 
         write_offset_ += msg.size;
@@ -245,6 +251,7 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     void process(const DrawArrays &msg)
     {
+        log::Log::trace("Draw arrays from %d to %d", msg.first, msg.count);
         requests_.emplace_back(DrawRequest{
             .id   = msg.first,
             .size = msg.count,
@@ -253,6 +260,13 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     void process(const GetNamedParameterIdReq &msg)
     {
+        Program *prog = this->programs_.get(msg.program_id);
+        if (prog)
+        {
+            const uint8_t id = prog->get_named_parameter_id(msg.name);
+            GetNamedParameterIdResp resp{.parameter_id = id};
+            this->point_.write(resp);
+        }
     }
 
     void render() override
@@ -263,17 +277,32 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
         this->framebuffer_.unblock();
     }
 
+    void process(const PrepareForParameterData &msg)
+    {
+        parameter_id_    = msg.parameter_id;
+        parameter_index_ = 0;
+        parameter_size_  = msg.size;
+    }
+
+    void process(const WriteParameterData &req)
+    {
+        std::memcpy(parameter_data_, req.data + parameter_index_, req.size);
+        parameter_index_ += req.size;
+        if (parameter_index_ == parameter_size_)
+        {
+        }
+    }
+
   protected:
     void transform_mesh()
     {
         FloatVertex v[3];
-
         for (const auto &request : requests_)
         {
             int vertex_pos = 0;
             for (int i = 0; i < request.size; ++i)
             {
-                std::size_t buffer[shader_in_arguments_size][4];
+                uint8_t buffer[shader_in_arguments_size][sizeof(std::size_t) * 4];
                 for (int j = 0; j < shader_in_arguments_size; ++j)
                 {
                     if (vertex_attributes_[j].used)
@@ -284,8 +313,14 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                                                             ? vertex_attributes_[j].size
                                                             : vertex_attributes_[j].stride;
                         const std::size_t offset = offset_size * i + vertex_attributes_[j].offset;
-                        printf("Read size: %ld, with offset: %ld\n", size, offset);
+                        printf("Read from %d, size: %ld, with offset: %ld, argument position: %d\n",
+                               vertex_attributes_[j].buffer, size, offset, j);
                         gpu_buffers_.read(vertex_attributes_[j].buffer, buffer[j], size, offset);
+                        for (std::size_t x = 0; x < size; ++x)
+                        {
+                            printf("%x, ", buffer[j][x]);
+                        }
+                        printf("\n");
                         in_argument_pointer[j] = buffer[j];
                     }
                 }
@@ -294,6 +329,7 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                 out_argument_pointer[0] = &color;
                 if (this->used_program_ && this->used_program_->vertex_shader())
                 {
+                    printf("Call vertex shader\n");
                     this->used_program_->vertex_shader()->execute();
                 }
 
@@ -516,11 +552,10 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
     buffers::GpuBuffers<memory::GpuRAM> gpu_buffers_;
     buffers::VertexArrayBuffer<memory::GpuRAM, 1024> vertex_array_buffer_;
     VertexAttribute vertex_attributes_[shader_in_arguments_size];
-    struct NamedParameter
-    {
-        char name[sizeof(GetNamedParameterIdReq::name)];
-    };
-    IndexedBuffer<NamedParameter, 5, uint8_t> named_parameters_;
+    uint8_t parameter_data_[1024];
+    uint16_t parameter_id_;
+    uint16_t parameter_size_;
+    std::size_t parameter_index_;
 };
 
 template <typename Configuration, typename I2CType>

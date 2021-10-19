@@ -16,5 +16,7 @@
 
 add_subdirectory(libs)
 
+find_package (msgui REQUIRED)
+
 add_subdirectory(gpu)
 add_subdirectory(ramdac)
