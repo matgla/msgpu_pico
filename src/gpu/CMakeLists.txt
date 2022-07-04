@@ -51,6 +51,7 @@ target_link_libraries(msgpu
         msgpu_generator
         msgpu_processor
         msgpu_messages
+        msgui
 )
 
 add_dependencies(msgpu api_generator)

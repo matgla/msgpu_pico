@@ -1,0 +1,10 @@
+path_to_msgpu = "@msgpu_path@"
+path_to_binaries = "@path_to_binaries@"
+
+gpu_io_out_path = "/tmp/gpu_com"
+gpu_io_in_path = "/tmp/gpu_com_2"
+
+i2c_w_path = "i2c_bus_r"
+i2c_r_path = "i2c_bus_w"
+
+path_to_messages_interface = "@path_to_messages@"

@@ -1,9 +1,9 @@
 // This file is part of MS GPU project.
 // Copyright (C) 2020 Mateusz Stadnik
 //
-// This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,49 +16,46 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
-#include "modes.hpp"
+#include "generator/modes.hpp"
 
-namespace vga
-{
-namespace modes
-{
-namespace text
+namespace msgpu::modes::text
 {
 
 template <typename Font>
 struct Text_80x30_16color
 {
-    using font = Font;
-    constexpr static std::size_t width = 80;
-    constexpr static std::size_t height = 30;
-    constexpr static std::size_t bits_per_pixel = 4; 
-    using ColorType = uint8_t;
-    constexpr static Modes mode = Modes::Text_80x30_16;
-    constexpr static std::size_t resolution_width = 640;
+    using font                                     = Font;
+    constexpr static std::size_t width             = 80;
+    constexpr static std::size_t height            = 30;
+    constexpr static std::size_t bits_per_pixel    = 4;
+    using ColorType                                = uint8_t;
+    constexpr static Modes mode                    = Modes::Text_80x30_16;
+    constexpr static std::size_t resolution_width  = 640;
     constexpr static std::size_t resolution_height = 480;
-    constexpr static bool uses_color_palette = true;
-    constexpr static bool double_buffered = false;
- 
-    enum Color : ColorType {
-        black = 0x0, 
-        blue = 0x1,
-        green = 0x2,
-        cyan = 0x3, 
-        red = 0x4, 
-        mageta = 0x5,
-        orange = 0x6, 
-        grey = 0x7, 
-        dark_grey = 0x8,
-        bright_blue = 0x9,
-        bright_green = 0xa, 
-        bright_cyan = 0xb, 
-        bright_red = 0xc, 
-        bright_magneta = 0xd, 
-        yellow = 0xe, 
-        white = 0xf
+    constexpr static bool uses_color_palette       = true;
+    constexpr static bool double_buffered          = false;
+
+    enum Color : ColorType
+    {
+        black          = 0x0,
+        blue           = 0x1,
+        green          = 0x2,
+        cyan           = 0x3,
+        red            = 0x4,
+        mageta         = 0x5,
+        orange         = 0x6,
+        grey           = 0x7,
+        dark_grey      = 0x8,
+        bright_blue    = 0x9,
+        bright_green   = 0xa,
+        bright_cyan    = 0xb,
+        bright_red     = 0xc,
+        bright_magneta = 0xd,
+        yellow         = 0xe,
+        white          = 0xf
     };
 
     static inline std::array<uint16_t, 16> color_palette = {
@@ -81,9 +78,4 @@ struct Text_80x30_16color
     };
 };
 
-} // namespace text
-} // namespace modes
-} // namespace vga
-
-
-
+} // namespace msgpu::modes::text

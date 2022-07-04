@@ -17,8 +17,10 @@
 
 #include <cstdio>
 
+vec4 &frag_color  = *reinterpret_cast<vec4 *>(*out_argument[0]);
+vec3 color_to_set = vec3(1.0f, 1.0f, 1.0f);
+
 int main()
 {
-    vec4 &frag_color = *reinterpret_cast<vec4 *>(*out_argument[0]);
-    frag_color       = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    frag_color = vec4(color_to_set, 0.0f);
 }

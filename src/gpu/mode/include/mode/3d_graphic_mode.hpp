@@ -190,14 +190,8 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
 
     void process(const WriteBufferData &msg)
     {
-        log::Log::trace("Received data part %d with size %d\n", msg.part, msg.size);
+        log::Log::trace("Received data part %d with size %d", msg.part, msg.size);
 
-        for (int i = 0; i < msg.size; ++i)
-        {
-            printf("%x, ", msg.data[i]);
-        }
-        printf("\n");
-        printf("Write to %d, size %d, offset %ld\n", write_buffer_, msg.size, write_offset_);
         gpu_buffers_.write(write_buffer_, msg.data, msg.size, write_offset_);
 
         write_offset_ += msg.size;
@@ -307,20 +301,12 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                 {
                     if (vertex_attributes_[j].used)
                     {
-                        const std::size_t size = vertex_attributes_[j].size * sizeof(float);
-                        printf("Stride: %d\n", vertex_attributes_[j].stride);
+                        const std::size_t size        = vertex_attributes_[j].size * sizeof(float);
                         const std::size_t offset_size = vertex_attributes_[j].stride == 0
                                                             ? vertex_attributes_[j].size
                                                             : vertex_attributes_[j].stride;
                         const std::size_t offset = offset_size * i + vertex_attributes_[j].offset;
-                        printf("Read from %d, size: %ld, with offset: %ld, argument position: %d\n",
-                               vertex_attributes_[j].buffer, size, offset, j);
                         gpu_buffers_.read(vertex_attributes_[j].buffer, buffer[j], size, offset);
-                        for (std::size_t x = 0; x < size; ++x)
-                        {
-                            printf("%x, ", buffer[j][x]);
-                        }
-                        printf("\n");
                         in_argument_pointer[j] = buffer[j];
                     }
                 }
@@ -329,11 +315,8 @@ class GraphicMode3D : public GraphicMode2D<Configuration, I2CType>
                 out_argument_pointer[0] = &color;
                 if (this->used_program_ && this->used_program_->vertex_shader())
                 {
-                    printf("Call vertex shader\n");
                     this->used_program_->vertex_shader()->execute();
                 }
-
-                printf("Adding vertex: {%f %f %f}\n", gl_Position.x, gl_Position.y, gl_Position.z);
 
                 v[vertex_pos] = FloatVertex{
                     .x = gl_Position.x,

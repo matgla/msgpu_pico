@@ -73,14 +73,12 @@ class GpuBuffers : public GpuBuffersBase
 
     void write(uint32_t id, const void *data, std::size_t size, std::size_t offset = 0)
     {
-        printf("Write id: %d\n", id);
         if (!names_map_.test(id))
         {
             return;
         }
 
         auto &entry = entries_[id];
-        printf("write: 0x%lx\n", entry.address + offset);
 
         memory_.write(entry.address + offset, data, size);
     }

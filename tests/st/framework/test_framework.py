@@ -1,10 +1,10 @@
 import os
 
-from SutManager import load_binary
-from GpuInterface import GpuInterface
-from I2CInterface import I2CInterface
+from framework.sut_manager import load_binary
+from framework.gpu_interface import GpuInterface
+from framework.i2c_interface import I2CInterface
 
-import config_tests
+import st_config
 
 from tests.log import Logger, log
 
@@ -21,15 +21,15 @@ class SUT:
         # order is important, GPUIO waits for streams created by SUT
         self._logger.log("Initialize GPU/IO")
         self._gpuio = GpuInterface(
-            config_tests.gpu_io_in_path, config_tests.gpu_io_out_path)
+            st_config.gpu_io_in_path, st_config.gpu_io_out_path)
 
         self._logger.log("Initialize I2C")
         self._i2c = I2CInterface(
-            config_tests.i2c_r_path, config_tests.i2c_w_path
+            st_config.i2c_r_path, st_config.i2c_w_path
         )
 
     def _clear_io(self):
-        for file in [config_tests.gpu_io_in_path, config_tests.gpu_io_out_path, config_tests.i2c_r_path, config_tests.i2c_w_path]:
+        for file in [st_config.gpu_io_in_path, st_config.gpu_io_out_path, st_config.i2c_r_path, st_config.i2c_w_path]:
             if os.path.exists(file):
                 os.remove(file)
 

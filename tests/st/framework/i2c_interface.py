@@ -1,5 +1,6 @@
 import os
 import time
+from select import select
 
 from tests.log import Logger
 
@@ -31,9 +32,25 @@ class I2CInterface:
         self._i2c_in.close()
         self._i2c_out.close()
 
-    def read(self, size):
-        return self._i2c_in.read(size)
+    def read(self, size, timeout=0.5):
+        poll_time = 0.001
+        time_consumed = 0.0
+        while time_consumed < timeout:
+            r, _, _ = select([self._i2c_in], [], [], 0)
+            if self._i2c_in in r:
+                return self._i2c_in.read(size)
+            time.sleep(poll_time)
+            time_consumed += poll_time
+
+        assert False, "Message not received within timeout: " + str(timeout)
+        return []
 
     def write(self, data):
         self._i2c_out.write(data)
         self._i2c_out.flush()
+
+    def read_msg(self, timeout=0.5):
+        return self.read(2, timeout)
+
+    def expect_msg(self, expected, timeout=0.5):
+        assert self.read_msg(timeout) == expected, "Message not received"

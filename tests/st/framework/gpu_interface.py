@@ -60,10 +60,11 @@ class GpuInterface:
 
         return (int(r), int(g), int(b))
 
-    def dump_frame(self):
+    def dump_frame(self, output_name, verify_with=None):
         height = 240
         width = 320
         img = []
+
         for y in range(height):
             row = ()
             index = 1024*y
@@ -71,9 +72,22 @@ class GpuInterface:
                 row = row + self.from_rgb332(self._memory[index])
                 index += 2
             img.append(row)
-        with open("dump.png", "wb") as f:
-            w = png.Writer(width, height, greyscale=False)
+        w = png.Writer(width, height, greyscale=False)
+        with open(output_name, "wb") as f:
             w.write(f, img)
+
+        with open(verify_with, "rb") as f:
+            with open(output_name, "rb") as out:
+                w = png.Reader(out)
+
+                r = png.Reader(f)
+                r_width, r_height, r_data, r_info = r.asDirect()
+                _, _, w_data, _ = w.asDirect()
+                r_list = list(r_data)
+                w_list = list(w_data)
+
+                if (w_list != r_list):
+                    assert w_list != r_list, "Generated image dump is different from original"
 
     def _calculate_crc(self, data):
         return binascii.crc_hqx(data, 0x0000)
@@ -115,10 +129,8 @@ class GpuInterface:
         while b != GpuInterface.start_token:
             b = self._gpuin.read(1)
 
-        print("GOT token")
         payload = self._gpuin.read(len(Header))
         h = Header(payload)
-        print(h)
 
         h_crc = struct.unpack("H", self._gpuin.read(2))[0]
         calculated_crc = self._calculate_crc(payload)

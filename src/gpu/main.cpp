@@ -68,8 +68,10 @@
 //#include "io/usart_point.hpp"
 
 #include "mode/3d_graphic_mode.hpp"
+#include "mode/text_mode.hpp"
 
 #include "modes/graphic/320x240_256.hpp"
+#include "modes/text/80x30_16.hpp"
 
 #include <msos/dynamic_linker/dynamic_linker.hpp>
 #include <msos/dynamic_linker/environment.hpp>
@@ -88,11 +90,19 @@
 
 #include "log/log.hpp"
 
+#include <msgui/fonts/Font8x16.hpp>
+
 using DualBuffered3DGraphic_320x240_256 =
     msgpu::mode::DoubleBuffered3DGraphic<msgpu::modes::graphic::Graphic_320x240_256, msgpu::I2C>;
 
-static auto modes =
-    msgpu::mode::ModesFactory<>().add_mode<DualBuffered3DGraphic_320x240_256>().create();
+using DualBufferedTextMode_80x30_16 =
+    msgpu::mode::TextMode<msgpu::modes::text::Text_80x30_16color<msgui::fonts::Font8x16>,
+                          msgpu::I2C>;
+
+static auto modes = msgpu::mode::ModesFactory<>()
+                        .add_mode<DualBuffered3DGraphic_320x240_256>()
+                        .add_mode<DualBufferedTextMode_80x30_16>()
+                        .create();
 namespace msgpu
 {
 
@@ -110,7 +120,14 @@ static msos::dl::DynamicLinker dynamic_linker;
 template <typename MessageType>
 void register_handler(auto &proc)
 {
-    proc.template register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+    // proc.template register_handler<MessageType>(&decltype(modes)::process<MessageType>, &modes);
+    register_specific_handler<MessageType>(proc, modes);
+}
+
+template <typename MessageType>
+void register_specific_handler(auto &proc, auto &handler)
+{
+    proc.template register_handler<MessageType>(&decltype(handler)::process<MessageType>, &handler);
 }
 
 static msos::dl::Environment env{msos::dl::SymbolAddress{SymbolCode::libc_printf, &printf},
@@ -140,7 +157,6 @@ int exec(const std::size_t *module_address)
 
 void register_messages(auto &proc)
 {
-    register_handler<ChangeMode>(proc);
     register_handler<SetPixel>(proc);
     register_handler<DrawLine>(proc);
     register_handler<InfoReq>(proc);
@@ -215,6 +231,38 @@ int main()
 
     msgpu::processor::MessageProcessor proc;
     register_messages(proc);
+
+    struct
+    {
+        msgpu::memory::VideoRam &framebuffer;
+        msgpu::memory::GpuRAM &gpuram;
+        msgpu::I2C &i2c;
+        msgpu::io::UsartPoint &usart_io_data;
+    } handler_deps{
+        .framebuffer   = framebuffer,
+        .gpuram        = gpuram,
+        .i2c           = i2c,
+        .usart_io_data = usart_io_data,
+    };
+
+    struct ModeChangeHandler
+    {
+      public:
+        void process(const ModeChange &mode)
+        {
+            msgpu::log::Log::info("Change mode received: %d", req.mode);
+            if (req.mode == 1)
+            {
+                modes.switch_to<DualBufferedTextMode_80x30_16>(
+                    handler_deps.framebuffer, handler_deps.gpuram, handler_deps.i2c,
+                    handler_deps.usart_io_data);
+            }
+        }
+    };
+
+    ModeChangeHandler mc_handler{};
+
+    register_specific_handler<ChangeMode>(proc, mc_handler);
 
     usart_io.process_event(msgpu::io::init{});
 

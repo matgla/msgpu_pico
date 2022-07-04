@@ -89,7 +89,6 @@ void GpuBuffersBase::alloc(BufferEntry &entry, std::size_t size)
         static_cast<uint32_t>(size / block_size) + (size % block_size != 0);
     const uint32_t start_block = find_empty_block(size_in_blocks);
 
-    printf("Start block: %d\n", start_block);
     for (uint32_t i = start_block; i < start_block + size_in_blocks; ++i)
     {
         allocation_map_[i] = 1;

@@ -31,7 +31,6 @@ GpuRAM::GpuRAM(QspiPSRAM &memory)
 
 std::size_t GpuRAM::write(std::size_t address, const void *data, std::size_t nbyte)
 {
-    printf("Write 0x%lx,size: %ld\n", address, nbyte);
     AddressInfo a                    = get_address_information(address, nbyte);
     const std::size_t last_page_size = nbyte - a.bytes_to_align - a.pages * page_size;
     std::size_t bytes_written        = 0;
@@ -39,7 +38,6 @@ std::size_t GpuRAM::write(std::size_t address, const void *data, std::size_t nby
                   QspiPSRAM::ConstDataBuffer(static_cast<const uint8_t *>(data), a.bytes_to_align));
     memory_.wait_for_finish();
     bytes_written += a.bytes_to_align;
-    printf("Pages: %d, align: %d, last: %ld\n", a.pages, a.bytes_to_align, last_page_size);
 
     for (uint16_t i = 0; i < a.pages; ++i)
     {

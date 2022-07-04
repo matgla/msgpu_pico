@@ -72,19 +72,20 @@ class ModeBase
 
         const uint8_t cmd[] = {0x03, read_buf_id};
 
-        printf("Write command\n");
         this->i2c_.write(0x2e, cmd);
 
         uint8_t ack[2] = {};
-        printf("Wait for ack\n");
         this->i2c_.read(ack);
 
-        printf("Write Ack\n");
         this->point_.write(Ack{});
 
         framebuffer_.select_buffer(buffer_id_, read_buf_id);
     }
 
+    void process(const ChangeMode &req)
+    {
+        log::Log::info("Change mode to: %d", req.mode);
+    }
     virtual void render() = 0;
 
   protected:

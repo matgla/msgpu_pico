@@ -16,3 +16,23 @@
 
 add_subdirectory(framework)
 add_subdirectory(tests)
+
+find_package(msgpu_interface REQUIRED)
+
+get_target_property(msgpu_path msgpu BINARY_DIR) 
+get_target_property(msgpu_name msgpu NAME) 
+set (msgpu_path "${msgpu_path}/${msgpu_name}")
+set (path_to_binaries ${CMAKE_CURRENT_BINARY_DIR}/tests)
+set (path_to_messages ${MSGPU_INTERFACE_GENERATED_DIR}/py) 
+
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/st_config.py
+)
+
+add_custom_target(run_st 
+    COMMAND st_config_path=${CMAKE_CURRENT_BINARY_DIR} python3 -m unittest discover
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    
+)
+
+add_dependencies(run_st msgpu)

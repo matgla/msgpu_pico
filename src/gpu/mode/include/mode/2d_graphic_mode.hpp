@@ -96,8 +96,6 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
     void add_triangle(Triangle t)
     {
         sort_triangle(t);
-        printf("Adding triangle: {x: %d, y: %d}, {x: %d, y: %d}, {x: %d, y: %d}\n", t.v[0].x,
-               t.v[0].y, t.v[1].x, t.v[1].y, t.v[2].x, t.v[2].y);
 
         if (triangles_.size() == triangles_.max_size())
         {
@@ -141,8 +139,6 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
     void render() override
     {
-        //  static int i = 0;
-        //  printf("Render frame: %d\n", i++); printf("2D render: %ld\n", triangles_.size());
         for (uint16_t line = 0; line < Configuration::resolution_height; ++line)
         {
             std::memset(Base::line_buffer_.u8, this->clear_color_, sizeof(Base::line_buffer_));
@@ -214,7 +210,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
     void process(const AllocateProgramRequest &req)
     {
-        log::Log::trace("Received program allocation: %d\n", req.program_type);
+        log::Log::trace("Received program allocation: %d", req.program_type);
 
         uint8_t program_id = 0;
 
@@ -277,12 +273,13 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
 
         for (std::size_t i = x0; i <= x1; ++i)
         {
+            out_argument_pointer[0] = &gl_Color;
             if (used_program_ && used_program_->pixel_shader())
             {
                 used_program_->pixel_shader()->execute();
             }
 
-            Base::line_buffer_.u16[i] = color; // to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
+            Base::line_buffer_.u16[i] = to_rgb332(gl_Color.x, gl_Color.y, gl_Color.z);
         }
     }
 
@@ -304,7 +301,7 @@ class GraphicMode2D : public ModeBase<Configuration, I2CType>
         const float x0   = std::min(triangle.sx, triangle.ex);
         const float x1   = std::max(triangle.sx, triangle.ex);
         draw_horizontal_line(static_cast<uint16_t>(round(x0)), static_cast<uint16_t>(round(x1)),
-                             0xfff);
+                             0xf0);
         triangle.sx += triangle.dx2;
         triangle.ex += e_dx;
     }
